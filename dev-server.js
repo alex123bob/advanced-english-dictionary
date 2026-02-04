@@ -48,23 +48,19 @@ const LIVE_RELOAD_SCRIPT = `
         
         socket.addEventListener('message', function(event) {
           if (event.data === 'reload') {
-            console.log('🔄 Live reload triggered by file change');
+            console.log('🔄 Live reload triggered');
             window.location.reload();
           }
         });
         
-        socket.addEventListener('open', function() {
-          console.log('🔗 Connected to live reload server');
-          reconnectAttempts = 0; // Reset reconnect attempts on successful connection
-        });
-        
-        socket.addEventListener('close', function(event) {
-          console.log('🔌 Disconnected from live reload server');
+        socket.addEventListener('close', function() {
+          console.log('🔌 WebSocket disconnected');
+          socket = null;
           
-          // Only attempt reconnection if it wasn't a normal closure
-          if (event.code !== 1000 && reconnectAttempts < maxReconnectAttempts) {
+          // Attempt to reconnect
+          if (reconnectAttempts < maxReconnectAttempts) {
             reconnectAttempts++;
-            console.log('🔄 Attempting to reconnect (' + reconnectAttempts + '/' + maxReconnectAttempts + ')...');
+            console.log(\`🔄 Attempting to reconnect (\${reconnectAttempts}/\${maxReconnectAttempts})...\`);
             setTimeout(connectWebSocket, reconnectDelay);
           }
         });
@@ -73,8 +69,10 @@ const LIVE_RELOAD_SCRIPT = `
           console.error('❌ WebSocket error:', error);
         });
         
+        console.log('✅ WebSocket connected for live reload');
+        reconnectAttempts = 0; // Reset on successful connection
       } catch (error) {
-        console.error('❌ Failed to create WebSocket:', error);
+        console.error('❌ Failed to connect WebSocket:', error);
       }
     }
     
@@ -100,13 +98,7 @@ const server = http.createServer((req, res) => {
     handleWebSocket(req, res);
     return;
   }
-  
-  // Handle API endpoints
-  if (pathname === '/api/dictionary') {
-    handleDictionaryAPI(req, res);
-    return;
-  }
-  
+
   // Default to index.html
   if (pathname === '/') {
     pathname = '/index.html';
@@ -142,103 +134,6 @@ function handleWebSocket(req, socket, head) {
   });
 }
 
-// Mock dictionary API handler
-function handleDictionaryAPI(req, res) {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    res.writeHead(200, {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Content-Length': '0'
-    });
-    res.end();
-    return;
-  }
-  
-  // Only allow POST requests
-  if (req.method !== 'POST') {
-    res.writeHead(405, { 
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
-    });
-    res.end(JSON.stringify({ error: 'Method not allowed. Use POST.' }));
-    return;
-  }
-  
-  // Parse JSON body
-  let body = '';
-  req.on('data', chunk => {
-    body += chunk.toString();
-  });
-  
-  req.on('end', () => {
-    let word;
-    try {
-      const data = JSON.parse(body);
-      word = data.word;
-    } catch (error) {
-      res.writeHead(400, { 
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      });
-      res.end(JSON.stringify({ error: 'Invalid JSON body' }));
-      return;
-    }
-    
-    if (!word) {
-      res.writeHead(400, { 
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      });
-      res.end(JSON.stringify({ error: 'Missing word field in request body' }));
-      return;
-    }
-  
-    // Mock response data
-    const mockData = {
-      word: word,
-      pronunciation: `/${word.charAt(0)}ˈ${word.slice(1)}/`,
-      partOfSpeech: 'noun',
-      frequency: 'high',
-      senses: [
-        {
-          definition: `The meaning or significance of "${word}"`,
-          usage_notes: 'Commonly used in formal contexts',
-          collocations: [`common ${word}`, `${word} usage`, `advanced ${word}`]
-        },
-        {
-          definition: `An alternative meaning for "${word}"`,
-          usage_notes: 'Often used in technical writing',
-          collocations: [`technical ${word}`, `${word} analysis`, `complex ${word}`]
-        }
-      ],
-      examples: [
-        `This is an example sentence using the word "${word}".`,
-        `Another example showing how "${word}" can be used in context.`,
-        `"${word}" appears frequently in academic literature.`
-      ],
-      etymology: `From Latin "${word}us", meaning "related to ${word}"`,
-      synonyms: ['synonym1', 'synonym2', 'synonym3'],
-      antonyms: ['antonym1', 'antonym2'],
-      culturalNotes: `"${word}" has cultural significance in various contexts.`,
-      usageContext: 'Formal and academic writing',
-      wordFamily: [`${word}ly`, `${word}ness`, `${word}ful`, `un${word}`]
-    };
-    
-    // Simulate network delay
-    setTimeout(() => {
-      res.writeHead(200, { 
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      });
-      res.end(JSON.stringify(mockData));
-    }, 300); // 300ms delay to simulate network
-  });
-}
-
 // Watch for file changes
 const watchedFiles = new Set();
 
@@ -261,14 +156,14 @@ function watchFile(filePath) {
   watchedFiles.add(filePath);
 }
 
-// Serve a file
+// Serve a file with proper MIME type
 function serveFile(filePath, res, isFallback = false) {
   const ext = path.extname(filePath).toLowerCase();
-  const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+  const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
   
   fs.readFile(filePath, (err, content) => {
     if (err) {
-      if (isFallback) {
+      if (err.code === 'ENOENT') {
         serve404(res);
       } else {
         serve500(res, err);
@@ -277,26 +172,27 @@ function serveFile(filePath, res, isFallback = false) {
     }
     
     // Inject live reload script into HTML files
-    if (ext === '.html') {
+    if (ext === '.html' && !isFallback) {
       let html = content.toString();
       
-      // Inject before closing </body> tag
-      const bodyCloseIndex = html.lastIndexOf('</body>');
-      if (bodyCloseIndex !== -1) {
-        html = html.substring(0, bodyCloseIndex) + LIVE_RELOAD_SCRIPT + html.substring(bodyCloseIndex);
+      // Inject the live reload script before closing </body> tag
+      if (html.includes('</body>')) {
+        html = html.replace('</body>', `${LIVE_RELOAD_SCRIPT}</body>`);
+      } else {
+        html += LIVE_RELOAD_SCRIPT;
       }
       
       content = Buffer.from(html, 'utf8');
       
-      // Watch this file for changes
+      // Watch this HTML file for changes
       watchFile(filePath);
-    } else if (['.js', '.css'].includes(ext)) {
-      // Watch JS and CSS files too
+    } else if (ext === '.js' || ext === '.css') {
+      // Watch JS and CSS files for changes
       watchFile(filePath);
     }
     
     res.writeHead(200, {
-      'Content-Type': contentType,
+      'Content-Type': mimeType,
       'Cache-Control': 'no-cache, no-store, must-revalidate',
       'Pragma': 'no-cache',
       'Expires': '0'
@@ -310,56 +206,68 @@ function serveFile(filePath, res, isFallback = false) {
 function serve404(res) {
   res.writeHead(404, { 'Content-Type': 'text/html' });
   res.end(`
+    <!DOCTYPE html>
     <html>
-      <head><title>404 Not Found</title></head>
-      <body>
-        <h1>404 - Page Not Found</h1>
-        <p>The requested page could not be found.</p>
-        <p><a href="/">Go to homepage</a></p>
-      </body>
+    <head>
+      <title>404 - Not Found</title>
+      <style>
+        body { font-family: sans-serif; padding: 40px; text-align: center; }
+        h1 { color: #666; }
+      </style>
+    </head>
+    <body>
+      <h1>404 - File Not Found</h1>
+      <p>The requested file could not be found.</p>
+    </body>
     </html>
   `);
 }
 
 // 500 handler
 function serve500(res, err) {
-  console.error(chalk.red('Server error:'), err);
+  console.error(chalk.red('❌ Server error:', err));
   res.writeHead(500, { 'Content-Type': 'text/html' });
   res.end(`
+    <!DOCTYPE html>
     <html>
-      <head><title>500 Internal Server Error</title></head>
-      <body>
-        <h1>500 - Internal Server Error</h1>
-        <p>Something went wrong on the server.</p>
-        <pre>${err.message}</pre>
-        <p><a href="/">Go to homepage</a></p>
-      </body>
+    <head>
+      <title>500 - Internal Server Error</title>
+      <style>
+        body { font-family: sans-serif; padding: 40px; text-align: center; }
+        h1 { color: #c00; }
+        pre { background: #f0f0f0; padding: 20px; border-radius: 5px; text-align: left; }
+      </style>
+    </head>
+    <body>
+      <h1>500 - Internal Server Error</h1>
+      <p>Something went wrong on the server.</p>
+      <pre>${err.toString()}</pre>
+    </body>
     </html>
   `);
 }
 
-// Start the server
+// Upgrade handler for WebSocket
+server.on('upgrade', (req, socket, head) => {
+  if (req.url === '/_ws') {
+    handleWebSocket(req, socket, head);
+  } else {
+    socket.destroy();
+  }
+});
+
+// Start server
 server.listen(PORT, HOST, () => {
-  console.log(chalk.green('🚀 Development server started!'));
-  console.log(chalk.cyan(`📖 Open your browser to: http://${HOST}:${PORT}`));
-  console.log(chalk.yellow('🔄 Live reload is enabled'));
-  console.log(chalk.gray('Press Ctrl+C to stop the server\n'));
-  
-  // Watch all existing files
-  const filesToWatch = ['index.html', 'style.css', 'script.js', 'config.js', 'config.json'];
-  filesToWatch.forEach(file => {
-    const filePath = path.join(process.cwd(), file);
-    if (fs.existsSync(filePath)) {
-      watchFile(filePath);
-    }
-  });
+  console.log(chalk.green(`🚀 Development server running at:`));
+  console.log(chalk.cyan(`   Local: http://localhost:${PORT}`));
+  console.log(chalk.cyan(`   Network: http://${HOST}:${PORT}`));
+  console.log(chalk.yellow(`📁 Watching for file changes...`));
 });
 
 // Handle graceful shutdown
 process.on('SIGINT', () => {
-  console.log(chalk.yellow('\n👋 Shutting down server...'));
-  server.close(() => {
-    console.log(chalk.green('✅ Server stopped'));
-    process.exit(0);
-  });
+  console.log(chalk.yellow('\n👋 Shutting down development server...'));
+  wss.close();
+  server.close();
+  process.exit(0);
 });

@@ -25,8 +25,7 @@ const FILES_TO_PROCESS = [
   'index.html',
   'style.css', 
   'script.js',
-  'example.data.json',
-  'words.data.json'
+  'config.js'
 ];
 
 // Minify CSS
@@ -156,8 +155,7 @@ This folder contains the optimized production build of the Advanced English Dict
 - index.html - Main application (with inlined CSS)
 - style.css - Minified styles (also inlined in HTML)
 - script.js - Minified JavaScript
-- example.data.json - Dictionary data
-- words.data.json - Additional dictionary data
+- config.js - API configuration
 
 ## Deployment
 Simply upload the contents of this folder to your web server.

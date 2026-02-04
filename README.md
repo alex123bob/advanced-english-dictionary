@@ -28,8 +28,7 @@ advanced-english-dictionary/
 ├── index.html          # Main HTML page
 ├── style.css           # CSS styles
 ├── script.js           # JavaScript functionality
-├── example.data.json   # Detailed data for "pipe down"
-├── words.data.json     # Additional word entries
+├── config.js           # Configuration for API endpoints
 ├── LICENSE             # MIT License
 ├── README.md           # This file
 ├── package.json        # Node.js dependencies and scripts
@@ -109,10 +108,16 @@ Open http://localhost:8080 in your browser.
 
 ## Data Structure
 
-The dictionary uses two JSON data formats:
+The dictionary connects to a real API endpoint at `http://localhost:8000/api/dictionary` (configurable in `config.js`).
 
-1. **Detailed Format** (`example.data.json`): Comprehensive analysis with multiple senses, usage notes, collocations, etc.
-2. **Simple Format** (`words.data.json`): Basic word information suitable for most vocabulary
+The API is expected to return data in the following format:
+- `headword`: The word being looked up
+- `pronunciation`: Phonetic pronunciation
+- `detailed_senses`: Array of sense objects with definitions, examples, synonyms, etc.
+- `etymology_info.etymology`: Word origin information
+- `cultural_notes_info.notes`: Cultural context
+- `usage_context_info`: Usage context and formality
+- `word_family_info.word_family`: Related words
 
 ## Browser Compatibility
 
