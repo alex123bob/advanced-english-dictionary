@@ -1,0 +1,17 @@
+{
+  "name": "advanced-english-dictionary",
+  "version": "1.0.0",
+  "description": "Advanced English Dictionary web application",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node dev-server.js",
+    "start": "node server.js",
+    "build": "node build.js",
+    "preview": "npm run build && node server.js"
+  },
+  "keywords": ["dictionary", "english", "learning", "vocabulary"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}
