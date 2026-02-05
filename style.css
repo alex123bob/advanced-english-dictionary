@@ -80,6 +80,7 @@ body {
 
 .search-box {
     display: flex;
+    align-items: center;
     background: var(--card-bg);
     border-radius: var(--radius);
     padding: 0.5rem;
@@ -97,8 +98,6 @@ body {
     color: var(--text-lighter);
     font-size: 1.2rem;
     padding: 0 1rem;
-    display: flex;
-    align-items: center;
 }
 
 #searchInput {
@@ -207,6 +206,40 @@ body {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
+.pronunciation-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.pronunciation-audio {
+    height: 32px;
+    border-radius: 16px;
+}
+
+.audio-play-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.5rem 0.75rem;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+}
+
+.audio-play-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+.audio-play-btn i {
+    font-size: 1rem;
+}
+
 .part-of-speech {
     background: #e3f2fd;
     color: #1565c0;
@@ -254,17 +287,59 @@ body {
     overflow: hidden;
     transition: var(--transition);
     margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    max-height: 600px;
+    position: relative;
 }
 
 .card:hover {
     box-shadow: var(--shadow-hover);
-    transform: translateY(-2px);
+}
+
+.card.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-height: 100vh;
+    z-index: 1000;
+    margin: 0;
+    border-radius: 0;
+    animation: expandCard 0.3s ease-out;
+}
+
+.fullscreen-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes expandCard {
+    from {
+        transform: scale(0.9);
+        opacity: 0.8;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 .card-header {
     background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
     color: white;
     padding: 1.25rem 1.5rem;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .card-header h3 {
@@ -273,10 +348,86 @@ body {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    margin: 0;
+}
+
+.card-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.card-action-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.card-action-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .card-body {
     padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+    scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for card bodies */
+.card-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.card-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.card-body::-webkit-scrollbar-thumb {
+    background: #c4c4c4;
+    border-radius: 4px;
+    transition: background 0.3s;
+}
+
+.card-body::-webkit-scrollbar-thumb:hover {
+    background: #888;
+}
+
+/* Firefox scrollbar */
+.card-body {
+    scrollbar-width: thin;
+    scrollbar-color: #c4c4c4 #f1f1f1;
+}
+
+/* Scroll shadow indicator */
+.card-body::before {
+    content: '';
+    position: sticky;
+    top: 0;
+    display: block;
+    height: 0;
+    box-shadow: 0 8px 8px -8px rgba(0, 0, 0, 0.15) inset;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.card-body::after {
+    content: '';
+    position: sticky;
+    bottom: 0;
+    display: block;
+    height: 0;
+    box-shadow: 0 -8px 8px -8px rgba(0, 0, 0, 0.15) inset;
+    pointer-events: none;
+    z-index: 1;
 }
 
 /* Definition card */
@@ -298,6 +449,42 @@ body {
     color: var(--text-color);
     margin-bottom: 0.75rem;
     line-height: 1.5;
+}
+
+.sense-pos {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    margin: 0 0.4rem;
+    background: #e3f2fd;
+    color: #1565c0;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.sense-examples {
+    margin: 1rem 0;
+}
+
+.sense-examples .example-item {
+    background: #f8f9fa;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-sm);
+    margin-bottom: 0.5rem;
+    border-left: 3px solid var(--accent-color);
+    font-style: italic;
+}
+
+.sense-examples .example-item:last-child {
+    margin-bottom: 0;
+}
+
+.sense-collocations,
+.sense-synonyms,
+.sense-antonyms {
+    margin: 0.75rem 0;
+    font-size: 0.95rem;
+    color: var(--text-light);
 }
 
 .sense-meta {
@@ -558,6 +745,10 @@ body {
         padding: 1.5rem;
     }
     
+    .card {
+        max-height: 400px;
+    }
+    
     .card-body {
         padding: 1.25rem;
     }
@@ -588,6 +779,31 @@ body {
     
     .example-btn {
         width: 100%;
+    }
+    
+    .card {
+        max-height: 350px;
+    }
+}
+
+/* Large desktop screens */
+@media (min-width: 1400px) {
+    .card {
+        max-height: 700px;
+    }
+}
+
+/* Medium desktop screens */
+@media (min-width: 1025px) and (max-width: 1399px) {
+    .card {
+        max-height: 600px;
+    }
+}
+
+/* Tablet landscape */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .card {
+        max-height: 500px;
     }
 }
 

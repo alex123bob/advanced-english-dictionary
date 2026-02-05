@@ -9,9 +9,16 @@
     "build": "node build.js",
     "preview": "npm run build && node server.js"
   },
-  "keywords": ["dictionary", "english", "learning", "vocabulary"],
+  "keywords": [
+    "dictionary",
+    "english",
+    "learning",
+    "vocabulary"
+  ],
   "author": "",
   "license": "MIT",
-  "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {
+    "chalk": "^4.1.2",
+    "ws": "^8.19.0"
+  }
 }

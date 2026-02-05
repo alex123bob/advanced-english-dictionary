@@ -39,8 +39,16 @@ async function minifyCSS(css) {
 }
 
 // Minify JS
-async function minifyJS(js) {
-  // Basic minification (for production, you might want to use a proper minifier like terser)
+async function minifyJS(js, isConfig = false) {
+  // For config.js, preserve more structure to avoid breaking logic
+  if (isConfig) {
+    return js
+      .replace(/\/\/.*$/gm, '') // Remove single-line comments
+      .replace(/\/\*[\s\S]*?\*\//g, '') // Remove multi-line comments
+      .trim();
+  }
+  
+  // Basic minification for other JS files
   return js
     .replace(/\/\/.*$/gm, '') // Remove single-line comments
     .replace(/\/\*[\s\S]*?\*\//g, '') // Remove multi-line comments
@@ -116,8 +124,14 @@ async function createProductionBundle() {
           break;
           
         case '.js':
-          processedContent = await minifyJS(content);
-          console.log(chalk.green(`✅ Minified JS: ${fileName}`));
+          // Special handling for config.js - don't minify to preserve logic
+          if (fileName === 'config.js') {
+            processedContent = content; // Copy as-is
+            console.log(chalk.green(`✅ Copied JS: ${fileName}`));
+          } else {
+            processedContent = await minifyJS(content, false);
+            console.log(chalk.green(`✅ Minified JS: ${fileName}`));
+          }
           break;
           
         case '.json':

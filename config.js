@@ -5,8 +5,11 @@ const config = {
     // API Configuration
     api: {
         // Base URL for the dictionary API
-        // Default: local development on port 8000
-        host: 'http://10.197.34.72:8000',
+        // In production: use relative path (Nginx will proxy to backend)
+        // In development: specify full URL with port
+        host: (typeof window !== 'undefined' && window.location.hostname === 'localhost')
+            ? 'http://localhost:8000'  // Development
+            : '',  // Production: relative path (same origin)
         
         // API endpoint paths
         endpoints: {
