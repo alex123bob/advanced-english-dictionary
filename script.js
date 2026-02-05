@@ -160,7 +160,18 @@ document.addEventListener('DOMContentLoaded', () => {
             // Populate results from API response
             headword.textContent = data.headword;
             renderPronunciation(data.pronunciation);
-            frequency.textContent = data.frequency ? `${data.frequency} frequency` : '';
+            
+            // Format frequency display more concisely with icon
+            if (data.frequency) {
+                // Capitalize first letter for better display
+                const freqText = data.frequency.charAt(0).toUpperCase() + data.frequency.slice(1);
+                frequency.innerHTML = `<i class="fas fa-chart-line"></i> ${freqText}`;
+                frequency.style.display = '';
+            } else {
+                frequency.innerHTML = '';
+                frequency.style.display = 'none';
+            }
+            
             totalSenses.textContent = data.total_senses ? `${data.total_senses} sense${data.total_senses !== 1 ? 's' : ''}` : '';
             
             // Definitions from detailed_senses
