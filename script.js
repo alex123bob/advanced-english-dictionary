@@ -40,6 +40,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function isAudioUrl(str) {
         if (!str) return false;
         
+        // IPA strings typically start and end with / and contain phonetic symbols
+        // Example: /paɪp daʊn/ or /həˈloʊ/
+        // Check if it looks like IPA notation
+        if (str.startsWith('/') && str.endsWith('/') && str.length < 100) {
+            // It's likely IPA notation, not a URL
+            return false;
+        }
+        
         // Check for common audio file extensions in the string
         const audioExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac'];
         const hasAudioExtension = audioExtensions.some(ext => str.toLowerCase().endsWith(ext));
@@ -52,9 +60,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = new URL(str);
             return url.protocol === 'http:' || url.protocol === 'https:';
         } catch {
-            // Not a valid absolute URL, could be relative
-            // Check if it starts with / or contains /api/ or /static/ (common API patterns)
-            return str.startsWith('/') || str.includes('/api/') || str.includes('/static/');
+            // Not a valid absolute URL, could be relative path to audio
+            // Check if it contains common API path patterns
+            if (str.includes('/api/') || str.includes('/static/') || str.includes('/audio/')) {
+                return true;
+            }
+            return false;
         }
     }
 
