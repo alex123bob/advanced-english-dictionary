@@ -347,6 +347,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
+    // Adjust placeholder text for mobile
+    function updatePlaceholder() {
+        if (window.innerWidth <= 480) {
+            searchInput.placeholder = 'Word or phrase';
+        } else if (window.innerWidth <= 768) {
+            searchInput.placeholder = 'Search a word or phrase';
+        } else {
+            searchInput.placeholder = "Enter a word or phrase (e.g., 'pipe down', 'serendipity')";
+        }
+    }
+    
+    // Set placeholder on load and resize
+    updatePlaceholder();
+    window.addEventListener('resize', updatePlaceholder);
+    
     // Initial state
     showResults(false);
     showLoading(false);
