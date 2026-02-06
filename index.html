@@ -50,7 +50,7 @@
                             <div class="pronunciation-container" id="pronunciationContainer">
                                 <span class="pronunciation" id="pronunciation">/paɪp daʊn/</span>
                             </div>
-                            <span class="frequency" id="frequency"><i class="fas fa-chart-line"></i> High</span>
+                            <span class="frequency" id="frequency" style="display: none;"></span>
                         </div>
                     </div>
                     <div class="word-stats">
@@ -81,36 +81,6 @@
                             </div>
                         </section>
 
-                        <section class="card etymology-card">
-                            <div class="card-header">
-                                <h3><i class="fas fa-history"></i> Etymology</h3>
-                                <div class="card-actions">
-                                    <button class="card-action-btn fullscreen-btn" title="Toggle Fullscreen">
-                                        <i class="fas fa-expand"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="card-body" id="etymologyContent">
-                                <!-- Etymology will be populated here -->
-                            </div>
-                        </section>
-                    </div>
-
-                    <div class="sidebar-column">
-                        <section class="card synonyms-card">
-                            <div class="card-header">
-                                <h3><i class="fas fa-exchange-alt"></i> Synonyms & Antonyms</h3>
-                                <div class="card-actions">
-                                    <button class="card-action-btn fullscreen-btn" title="Toggle Fullscreen">
-                                        <i class="fas fa-expand"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="card-body" id="synonymsContent">
-                                <!-- Synonyms/Antonyms will be populated here -->
-                            </div>
-                        </section>
-
                         <section class="card cultural-card">
                             <div class="card-header">
                                 <h3><i class="fas fa-globe-americas"></i> Cultural Notes</h3>
@@ -136,6 +106,36 @@
                             </div>
                             <div class="card-body" id="usageContent">
                                 <!-- Usage context will be populated here -->
+                            </div>
+                        </section>
+                    </div>
+
+                    <div class="sidebar-column">
+                        <section class="card etymology-card">
+                            <div class="card-header">
+                                <h3><i class="fas fa-history"></i> Etymology</h3>
+                                <div class="card-actions">
+                                    <button class="card-action-btn fullscreen-btn" title="Toggle Fullscreen">
+                                        <i class="fas fa-expand"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body" id="etymologyContent">
+                                <!-- Etymology will be populated here -->
+                            </div>
+                        </section>
+
+                        <section class="card synonyms-card">
+                            <div class="card-header">
+                                <h3><i class="fas fa-exchange-alt"></i> Synonyms & Antonyms</h3>
+                                <div class="card-actions">
+                                    <button class="card-action-btn fullscreen-btn" title="Toggle Fullscreen">
+                                        <i class="fas fa-expand"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body" id="synonymsContent">
+                                <!-- Synonyms/Antonyms will be populated here -->
                             </div>
                         </section>
 
@@ -176,6 +176,36 @@
             <p class="footer-note">This dictionary provides detailed information including etymology, cultural context, and usage notes for English learners and enthusiasts.</p>
         </footer>
     </div>
+
+    <!-- Floating History Button -->
+    <button id="historyToggleBtn" class="history-toggle-btn" title="Search History">
+        <i class="fas fa-history"></i>
+        <span class="history-badge" id="historyBadge" style="display: none;">0</span>
+    </button>
+
+    <!-- Floating History Panel -->
+    <div id="historyPanel" class="history-panel">
+        <div class="history-panel-header">
+            <h3><i class="fas fa-history"></i> Search History</h3>
+            <button id="closeHistoryBtn" class="close-history-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="history-panel-content" id="historyPanelContent">
+            <div class="empty-history">
+                <i class="fas fa-clock"></i>
+                <p>No search history yet</p>
+            </div>
+        </div>
+        <div class="history-panel-footer">
+            <button id="clearAllHistoryBtn" class="clear-all-history-btn">
+                <i class="fas fa-trash-alt"></i> Clear All History
+            </button>
+        </div>
+    </div>
+
+    <!-- Overlay for panel -->
+    <div id="historyOverlay" class="history-overlay"></div>
 
     <script src="script.js" onload="console.log('script.js loaded successfully')" onerror="console.error('Failed to load script.js')"></script>
 </body>
