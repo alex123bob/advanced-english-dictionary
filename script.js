@@ -437,7 +437,7 @@ document.addEventListener('DOMContentLoaded', () => {
             html += '<div class="cultural-insights">';
             
             if (originMatch) {
-                const originText = originMatch[0].length > 60 ? originMatch[0].substring(0, 57) + '...' : originMatch[0];
+                const originText = originMatch[0];
                 html += `
                     <div class="insight-badge">
                         <i class="fas fa-landmark"></i>
@@ -448,7 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             if (usageMatch) {
-                const usageText = usageMatch[0].length > 60 ? usageMatch[0].substring(0, 57) + '...' : usageMatch[0];
+                const usageText = usageMatch[0];
                 html += `
                     <div class="insight-badge">
                         <i class="fas fa-comments"></i>
@@ -459,7 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             if (toneMatch) {
-                const toneText = toneMatch[0].length > 60 ? toneMatch[0].substring(0, 57) + '...' : toneMatch[0];
+                const toneText = toneMatch[0];
                 html += `
                     <div class="insight-badge">
                         <i class="fas fa-volume-up"></i>
@@ -777,107 +777,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const totalSensesToLoad = basicData.total_senses;
             const initialSensesToLoad = Math.min(3, totalSensesToLoad);
             
-            definitionsContent.innerHTML = `
-                <div class="carousel-container">
-                    <button class="carousel-nav carousel-prev" disabled>
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <div class="carousel-wrapper">
-                        <div class="carousel-track"></div>
-                    </div>
-                    <button class="carousel-nav carousel-next">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-                <div class="carousel-dots"></div>
-            `;
+            // Create simple scrollable container for senses
+            definitionsContent.innerHTML = `<div class="senses-list"></div>`;
             
-            const carouselTrack = definitionsContent.querySelector('.carousel-track');
-            const carouselDots = definitionsContent.querySelector('.carousel-dots');
-            const prevBtn = definitionsContent.querySelector('.carousel-prev');
-            const nextBtn = definitionsContent.querySelector('.carousel-next');
-            
-            let currentSlide = 0;
-            let totalLoadedSenses = 0;
-            
-            function updateCarousel() {
-                const slideWidth = carouselTrack.querySelector('.carousel-slide')?.offsetWidth || 0;
-                carouselTrack.style.transform = `translateX(-${currentSlide * slideWidth}px)`;
-                
-                // Update dots
-                document.querySelectorAll('.carousel-dot').forEach((dot, index) => {
-                    dot.classList.toggle('active', index === currentSlide);
-                });
-                
-                // Update button states
-                prevBtn.disabled = currentSlide === 0;
-                nextBtn.disabled = currentSlide >= totalLoadedSenses - 1;
-            }
-            
-            function goToSlide(index) {
-                currentSlide = Math.max(0, Math.min(index, totalLoadedSenses - 1));
-                updateCarousel();
-            }
-            
-            function nextSlide() {
-                goToSlide(currentSlide + 1);
-            }
-            
-            function prevSlide() {
-                goToSlide(currentSlide - 1);
-            }
-            
-            // Add event listeners
-            prevBtn.addEventListener('click', prevSlide);
-            nextBtn.addEventListener('click', nextSlide);
-            
-            // Touch swipe support
-            let touchStartX = 0;
-            let touchEndX = 0;
-            
-            carouselTrack.addEventListener('touchstart', (e) => {
-                touchStartX = e.touches[0].clientX;
-            });
-            
-            carouselTrack.addEventListener('touchend', (e) => {
-                touchEndX = e.changedTouches[0].clientX;
-                const diff = touchStartX - touchEndX;
-                
-                if (Math.abs(diff) > 50) { // Minimum swipe distance
-                    if (diff > 0) {
-                        nextSlide();
-                    } else {
-                        prevSlide();
-                    }
-                }
-            });
-            
-            // Keyboard navigation
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'ArrowLeft') prevSlide();
-                if (e.key === 'ArrowRight') nextSlide();
-            });
-            
-            // Create placeholders for initial senses
-            for (let i = 0; i < initialSensesToLoad; i++) {
-                const slide = document.createElement('div');
-                slide.className = 'carousel-slide sense-placeholder';
-                slide.dataset.senseIndex = i;
-                slide.innerHTML = `<div class="section-loading"><div class="spinner"></div><p>Loading sense ${i + 1}...</p></div>`;
-                carouselTrack.appendChild(slide);
-                
-                // Add dot
-                const dot = document.createElement('button');
-                dot.className = 'carousel-dot';
-                dot.onclick = () => goToSlide(i);
-                carouselDots.appendChild(dot);
-            }
-            
-            totalLoadedSenses = initialSensesToLoad;
+            const sensesList = definitionsContent.querySelector('.senses-list');
             
             // Load senses sequentially (to avoid overwhelming the API)
             const allSynonyms = new Set();
             const allAntonyms = new Set();
+            
+            // Create placeholders for initial senses
+            for (let i = 0; i < initialSensesToLoad; i++) {
+                const senseItem = document.createElement('div');
+                senseItem.className = 'sense-item-container sense-placeholder';
+                senseItem.dataset.senseIndex = i;
+                senseItem.innerHTML = `<div class="section-loading"><div class="spinner"></div><p>Loading sense ${i + 1}...</p></div>`;
+                sensesList.appendChild(senseItem);
+            }
             
             // Load senses asynchronously without blocking
             (async () => {
@@ -886,10 +802,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         const senseData = await fetchSection(query, 'detailed_sense', i);
                         const sense = senseData.detailed_sense;
                         
-                        const slide = carouselTrack.querySelector(`[data-sense-index="${i}"]`);
-                        if (slide && sense) {
-                            slide.className = 'carousel-slide';
-                            slide.innerHTML = `<div class="sense-card">${renderSenseHTML(sense, i)}</div>`;
+                        const senseItem = sensesList.querySelector(`[data-sense-index="${i}"]`);
+                        if (senseItem && sense) {
+                            senseItem.className = 'sense-item-container';
+                            senseItem.innerHTML = renderSenseHTML(sense, i);
                             
                             // Collect synonyms and antonyms
                             if (sense.synonyms) sense.synonyms.forEach(s => allSynonyms.add(s));
@@ -897,17 +813,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             
                             // Update synonyms section as we collect them
                             updateSynonymsSection(allSynonyms, allAntonyms);
-                            
-                            // Update carousel after first slide loads
-                            if (i === 0) {
-                                updateCarousel();
-                            }
                         }
                     } catch (err) {
                         console.error(`Error fetching sense ${i}:`, err);
-                        const slide = carouselTrack.querySelector(`[data-sense-index="${i}"]`);
-                        if (slide) {
-                            slide.innerHTML = `<div class="error-message">Failed to load sense ${i + 1}</div>`;
+                        const senseItem = sensesList.querySelector(`[data-sense-index="${i}"]`);
+                        if (senseItem) {
+                            senseItem.innerHTML = `<div class="error-message">Failed to load sense ${i + 1}</div>`;
                         }
                     }
                 }
@@ -921,10 +832,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     loadMoreBtn.className = 'load-more-btn-header';
                     loadMoreBtn.innerHTML = `<i class="fas fa-plus-circle"></i> Load More (${totalSensesToLoad - initialSensesToLoad})`;
                     loadMoreBtn.title = `Load ${totalSensesToLoad - initialSensesToLoad} more senses`;
-                    loadMoreBtn.onclick = () => loadRemainingSenses(query, initialSensesToLoad, totalSensesToLoad, carouselTrack, carouselDots, allSynonyms, allAntonyms, loadMoreBtn, () => {
-                        totalLoadedSenses = carouselTrack.querySelectorAll('.carousel-slide').length;
-                        updateCarousel();
-                    });
+                    loadMoreBtn.onclick = () => loadRemainingSenses(query, initialSensesToLoad, totalSensesToLoad, sensesList, allSynonyms, allAntonyms, loadMoreBtn);
                     
                     // Insert before the fullscreen button
                     cardActions.insertBefore(loadMoreBtn, cardActions.firstChild);
@@ -938,7 +846,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    async function loadRemainingSenses(word, startIndex, totalSenses, carouselTrack, carouselDots, allSynonyms, allAntonyms, loadMoreBtn, updateCallback) {
+    async function loadRemainingSenses(word, startIndex, totalSenses, sensesList, allSynonyms, allAntonyms, loadMoreBtn) {
         loadMoreBtn.disabled = true;
         loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
         
@@ -948,38 +856,19 @@ document.addEventListener('DOMContentLoaded', () => {
         
         for (let i = startIndex; i < endIndex; i++) {
             try {
-                // Create new slide
-                const slide = document.createElement('div');
-                slide.className = 'carousel-slide sense-placeholder';
-                slide.dataset.senseIndex = i;
-                slide.innerHTML = `<div class="section-loading"><div class="spinner"></div><p>Loading sense ${i + 1}...</p></div>`;
-                carouselTrack.appendChild(slide);
-                
-                // Add new dot
-                const dot = document.createElement('button');
-                dot.className = 'carousel-dot';
-                const currentIndex = i;
-                dot.onclick = () => {
-                    const totalSlides = carouselTrack.querySelectorAll('.carousel-slide').length;
-                    const slideIndex = Math.min(currentIndex, totalSlides - 1);
-                    // Update current slide in parent scope
-                    definitionsContent.querySelector('.carousel-prev').onclick = function() {
-                        const slideWidth = carouselTrack.querySelector('.carousel-slide')?.offsetWidth || 0;
-                        const currentTransform = carouselTrack.style.transform.match(/-?\d+/);
-                        const currentSlide = currentTransform ? Math.round(parseInt(currentTransform[0]) / slideWidth) : 0;
-                        const newSlide = Math.max(0, currentSlide - 1);
-                        carouselTrack.style.transform = `translateX(-${newSlide * slideWidth}px)`;
-                        updateCallback();
-                    };
-                };
-                carouselDots.appendChild(dot);
+                // Create new sense item placeholder
+                const senseItem = document.createElement('div');
+                senseItem.className = 'sense-item-container sense-placeholder';
+                senseItem.dataset.senseIndex = i;
+                senseItem.innerHTML = `<div class="section-loading"><div class="spinner"></div><p>Loading sense ${i + 1}...</p></div>`;
+                sensesList.appendChild(senseItem);
                 
                 const senseData = await fetchSection(word, 'detailed_sense', i);
                 const sense = senseData.detailed_sense;
                 
-                if (slide && sense) {
-                    slide.className = 'carousel-slide';
-                    slide.innerHTML = `<div class="sense-card">${renderSenseHTML(sense, i)}</div>`;
+                if (senseItem && sense) {
+                    senseItem.className = 'sense-item-container';
+                    senseItem.innerHTML = renderSenseHTML(sense, i);
                     
                     // Collect synonyms and antonyms
                     if (sense.synonyms) sense.synonyms.forEach(s => allSynonyms.add(s));
@@ -990,11 +879,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } catch (err) {
                 console.error(`Error fetching sense ${i}:`, err);
+                const senseItem = sensesList.querySelector(`[data-sense-index="${i}"]`);
+                if (senseItem) {
+                    senseItem.innerHTML = `<div class="error-message">Failed to load sense ${i + 1}</div>`;
+                }
             }
         }
-        
-        // Update carousel state
-        if (updateCallback) updateCallback();
         
         // Calculate remaining senses
         const remainingSenses = totalSenses - endIndex;
@@ -1005,7 +895,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loadMoreBtn.innerHTML = `<i class="fas fa-plus-circle"></i> Load More (${remainingSenses})`;
             loadMoreBtn.title = `Load ${remainingSenses} more senses`;
             // Update onclick to continue from endIndex
-            loadMoreBtn.onclick = () => loadRemainingSenses(word, endIndex, totalSenses, carouselTrack, carouselDots, allSynonyms, allAntonyms, loadMoreBtn, updateCallback);
+            loadMoreBtn.onclick = () => loadRemainingSenses(word, endIndex, totalSenses, sensesList, allSynonyms, allAntonyms, loadMoreBtn);
         } else {
             // All senses loaded, show completion and remove button after delay
             loadMoreBtn.innerHTML = '<i class="fas fa-check-circle"></i> All Loaded';
