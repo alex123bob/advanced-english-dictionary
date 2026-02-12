@@ -964,14 +964,37 @@ document.addEventListener('DOMContentLoaded', () => {
             senseItem.dataset.word = word;
             
             if (preloadedSenses[i]) {
-                const sense = preloadedSenses[i];
-                senseItem.innerHTML = renderSenseHTML(sense, i, false);
+                const basicSense = preloadedSenses[i];
                 
-                // Store basic sense data for immediate display when clicking "View Details"
-                senseItem.dataset.basicSense = JSON.stringify(sense);
+                const cacheKey = `${entryIndex}_${i}`;
+                const cachedDetailedSense = getCachedData(word, 'detailed_sense', cacheKey);
+                const cachedExamples = getCachedData(word, 'examples', cacheKey);
+                const cachedUsageNotes = getCachedData(word, 'usage_notes', cacheKey);
                 
-                if (sense.synonyms) sense.synonyms.forEach(s => allSynonyms.add(s));
-                if (sense.antonyms) sense.antonyms.forEach(a => allAntonyms.add(a));
+                let senseToRender = basicSense;
+                let isDetailed = false;
+                
+                if (cachedDetailedSense && cachedDetailedSense.detailed_sense) {
+                    senseToRender = cachedDetailedSense.detailed_sense;
+                    isDetailed = true;
+                    
+                    if (cachedExamples && cachedExamples.examples && cachedExamples.examples.length) {
+                        senseToRender.examples = cachedExamples.examples;
+                    }
+                    if (cachedExamples && cachedExamples.collocations && cachedExamples.collocations.length) {
+                        senseToRender.collocations = cachedExamples.collocations;
+                    }
+                    if (cachedUsageNotes && cachedUsageNotes.usage_notes) {
+                        senseToRender.usage_notes = cachedUsageNotes.usage_notes;
+                    }
+                }
+                
+                senseItem.innerHTML = renderSenseHTML(senseToRender, i, isDetailed);
+                
+                senseItem.dataset.basicSense = JSON.stringify(basicSense);
+                
+                if (senseToRender.synonyms) senseToRender.synonyms.forEach(s => allSynonyms.add(s));
+                if (senseToRender.antonyms) senseToRender.antonyms.forEach(a => allAntonyms.add(a));
             } else {
                 senseItem.innerHTML = `<div class="sense-placeholder-basic">
                     <div class="sense-definition"><strong>${i + 1}.</strong> Definition not available in basic response</div>
