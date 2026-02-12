@@ -412,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = '<div class="section-loading"><div class="spinner"></div><p>Loading...</p></div>';
     }
     
-    function renderSenseHTML(sense, index) {
+    function renderSenseHTML(sense, index, isDetailed = false) {
         let metaBadges = '';
         if (sense.tone || (sense.usage_register && sense.usage_register.length) || (sense.domain && sense.domain.length)) {
             metaBadges = '<div class="sense-meta">';
@@ -434,22 +434,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const examplesSection = hasExamples ? 
             `<div class="sense-examples">
                 ${examplesList.map(ex => `<div class="example-item">${ex}</div>`).join('')}
-            </div>` : 
-            `<div class="sense-examples sense-examples-loading" data-sense-index="${index}">
-                <div class="section-loading-inline"><div class="spinner-small"></div><span>Loading examples...</span></div>
-            </div>`;
+            </div>` : '';
         
         const collocationsSection = sense.collocations && sense.collocations.length ?
-            `<div class="sense-collocations"><strong>Common collocations:</strong><div class="collocation-tags">${sense.collocations.map(col => `<span class="collocation-tag">${col}</span>`).join('')}</div></div>` :
-            `<div class="sense-collocations sense-collocations-loading" data-sense-index="${index}">
-                <div class="section-loading-inline"><div class="spinner-small"></div><span>Loading collocations...</span></div>
-            </div>`;
+            `<div class="sense-collocations"><strong>Common collocations:</strong><div class="collocation-tags">${sense.collocations.map(col => `<span class="collocation-tag">${col}</span>`).join('')}</div></div>` : '';
         
         const usageNotesSection = sense.usage_notes ? 
-            `<div class="usage-notes"><strong>Usage notes:</strong> ${sense.usage_notes}</div>` :
-            `<div class="usage-notes usage-notes-loading" data-sense-index="${index}">
-                <div class="section-loading-inline"><div class="spinner-small"></div><span>Loading usage notes...</span></div>
-            </div>`;
+            `<div class="usage-notes"><strong>Usage notes:</strong> ${sense.usage_notes}</div>` : '';
+        
+        const detailsButton = !isDetailed ? 
+            `<button class="sense-detail-btn" data-sense-index="${index}" title="Load detailed information">
+                <i class="fas fa-info-circle"></i> View Details
+            </button>` : 
+            `<div class="sense-detailed-badge"><i class="fas fa-check-circle"></i> Detailed view loaded</div>`;
         
         return `
             <div class="sense-definition">
@@ -461,6 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ${collocationsSection}
             ${sense.synonyms && sense.synonyms.length ? `<div class="sense-synonyms"><strong>Synonyms:</strong><div class="synonym-tags">${sense.synonyms.map(syn => `<span class="synonym-tag">${syn}</span>`).join('')}</div></div>` : ''}
             ${sense.antonyms && sense.antonyms.length ? `<div class="sense-antonyms"><strong>Antonyms:</strong><div class="antonym-tags">${sense.antonyms.map(ant => `<span class="antonym-tag">${ant}</span>`).join('')}</div></div>` : ''}
+            <div class="sense-actions">${detailsButton}</div>
         `;
     }
     
@@ -929,53 +927,6 @@ document.addEventListener('DOMContentLoaded', () => {
         loadSensesForEntry(word, entryIndex, entryData);
     }
     
-    async function loadExamplesAndUsageNotes(word, entryIndex, senseIndex, senseItem) {
-        try {
-            const [examplesData, usageNotesData] = await Promise.all([
-                fetchSection(word, 'examples', entryIndex, senseIndex),
-                fetchSection(word, 'usage_notes', entryIndex, senseIndex)
-            ]);
-            
-            const examplesSection = senseItem.querySelector(`.sense-examples[data-sense-index="${senseIndex}"]`);
-            if (examplesSection && examplesData.examples && examplesData.examples.length) {
-                examplesSection.classList.remove('sense-examples-loading');
-                examplesSection.removeAttribute('data-sense-index');
-                examplesSection.innerHTML = examplesData.examples.map(ex => `<div class="example-item">${ex}</div>`).join('');
-            }
-            
-            const collocationsSection = senseItem.querySelector(`.sense-collocations[data-sense-index="${senseIndex}"]`);
-            if (collocationsSection && examplesData.collocations && examplesData.collocations.length) {
-                collocationsSection.classList.remove('sense-collocations-loading');
-                collocationsSection.removeAttribute('data-sense-index');
-                collocationsSection.innerHTML = `<strong>Common collocations:</strong><div class="collocation-tags">${examplesData.collocations.map(col => `<span class="collocation-tag">${col}</span>`).join('')}</div>`;
-            }
-            
-            const usageNotesSection = senseItem.querySelector(`.usage-notes[data-sense-index="${senseIndex}"]`);
-            if (usageNotesSection && usageNotesData.usage_notes) {
-                usageNotesSection.classList.remove('usage-notes-loading');
-                usageNotesSection.removeAttribute('data-sense-index');
-                usageNotesSection.innerHTML = `<strong>Usage notes:</strong> ${usageNotesData.usage_notes}`;
-            }
-        } catch (err) {
-            console.error(`Error fetching examples/usage_notes for sense ${senseIndex}:`, err);
-            
-            const examplesSection = senseItem.querySelector(`.sense-examples[data-sense-index="${senseIndex}"]`);
-            if (examplesSection) {
-                examplesSection.innerHTML = '<div class="error-message-inline">Failed to load examples</div>';
-            }
-            
-            const usageNotesSection = senseItem.querySelector(`.usage-notes[data-sense-index="${senseIndex}"]`);
-            if (usageNotesSection) {
-                usageNotesSection.innerHTML = '<div class="error-message-inline">Failed to load usage notes</div>';
-            }
-            
-            const collocationsSection = senseItem.querySelector(`.sense-collocations[data-sense-index="${senseIndex}"]`);
-            if (collocationsSection) {
-                collocationsSection.innerHTML = '<div class="error-message-inline">Failed to load collocations</div>';
-            }
-        }
-    }
-    
     function loadSensesForEntry(word, entryIndex, entryData) {
         const totalSensesToLoad = entryData ? entryData.total_senses : 0;
         
@@ -985,7 +936,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        // Extract preloaded senses from basic response (meanings_summary[].senses)
         const preloadedSenses = [];
         if (entryData && entryData.meanings_summary) {
             entryData.meanings_summary.forEach(meaning => {
@@ -993,38 +943,42 @@ document.addEventListener('DOMContentLoaded', () => {
                     meaning.senses.forEach(sense => {
                         preloadedSenses.push({
                             ...sense,
-                            part_of_speech: meaning.part_of_speech // Add POS from parent
+                            part_of_speech: meaning.part_of_speech
                         });
                     });
                 }
             });
         }
         
-        const initialSensesToLoad = Math.min(3, totalSensesToLoad);
-        
         definitionsContent.innerHTML = `<div class="senses-list"></div>`;
-        
         const sensesList = definitionsContent.querySelector('.senses-list');
         
         const allSynonyms = new Set();
         const allAntonyms = new Set();
-        const fetchedSenses = new Map();
         
-        for (let i = 0; i < initialSensesToLoad; i++) {
+        for (let i = 0; i < totalSensesToLoad; i++) {
             const senseItem = document.createElement('div');
             senseItem.className = 'sense-item-container';
             senseItem.dataset.senseIndex = i;
+            senseItem.dataset.entryIndex = entryIndex;
+            senseItem.dataset.word = word;
             
             if (preloadedSenses[i]) {
                 const sense = preloadedSenses[i];
-                senseItem.innerHTML = renderSenseHTML(sense, i);
+                senseItem.innerHTML = renderSenseHTML(sense, i, false);
                 
-                fetchedSenses.set(i, sense);
+                // Store basic sense data for immediate display when clicking "View Details"
+                senseItem.dataset.basicSense = JSON.stringify(sense);
+                
                 if (sense.synonyms) sense.synonyms.forEach(s => allSynonyms.add(s));
                 if (sense.antonyms) sense.antonyms.forEach(a => allAntonyms.add(a));
             } else {
-                senseItem.classList.add('sense-placeholder');
-                senseItem.innerHTML = `<div class="section-loading"><div class="spinner"></div><p>Loading sense ${i + 1}...</p></div>`;
+                senseItem.innerHTML = `<div class="sense-placeholder-basic">
+                    <div class="sense-definition"><strong>${i + 1}.</strong> Definition not available in basic response</div>
+                    <button class="sense-detail-btn" data-sense-index="${i}" title="Load full definition">
+                        <i class="fas fa-download"></i> Load Definition
+                    </button>
+                </div>`;
             }
             
             sensesList.appendChild(senseItem);
@@ -1032,153 +986,73 @@ document.addEventListener('DOMContentLoaded', () => {
         
         updateSynonymsSection(allSynonyms, allAntonyms);
         
-        (async () => {
-            for (let i = 0; i < initialSensesToLoad; i++) {
-                try {
-                    const senseData = await fetchSection(word, 'detailed_sense', entryIndex, i);
-                    const detailedSense = senseData.detailed_sense;
-                    
-                    const senseItem = sensesList.querySelector(`[data-sense-index="${i}"]`);
-                    if (senseItem && detailedSense) {
-                        const preloadedSense = preloadedSenses[i];
-                        const shouldUpdate = !preloadedSense || hasSignificantDifference(preloadedSense, detailedSense);
-                        
-                        if (shouldUpdate) {
-                            senseItem.className = 'sense-item-container';
-                            senseItem.innerHTML = renderSenseHTML(detailedSense, i);
-                            
-                            fetchedSenses.set(i, detailedSense);
-                            
-                            allSynonyms.clear();
-                            allAntonyms.clear();
-                            fetchedSenses.forEach(sense => {
-                                if (sense.synonyms) sense.synonyms.forEach(s => allSynonyms.add(s));
-                                if (sense.antonyms) sense.antonyms.forEach(a => allAntonyms.add(a));
-                            });
-                            
-                            updateSynonymsSection(allSynonyms, allAntonyms);
-                        }
-                        
-                        loadExamplesAndUsageNotes(word, entryIndex, i, senseItem);
-                    }
-                } catch (err) {
-                    console.error(`Error fetching sense ${i}:`, err);
-                    const senseItem = sensesList.querySelector(`[data-sense-index="${i}"]`);
-                    if (senseItem && !preloadedSenses[i]) {
-                        senseItem.innerHTML = `<div class="error-message">Failed to load sense ${i + 1}</div>`;
-                    }
-                }
-            }
-            
-            if (currentSelectedEntry !== entryIndex) {
-                return;
-            }
-            
-            if (totalSensesToLoad > initialSensesToLoad) {
-                const definitionsCard = document.querySelector('.definitions-card');
-                const cardActions = definitionsCard.querySelector('.card-actions');
-                
-                const existingLoadMoreBtn = cardActions.querySelector('.load-more-btn-header');
-                if (existingLoadMoreBtn) {
-                    existingLoadMoreBtn.remove();
-                }
-                
-                const loadMoreBtn = document.createElement('button');
-                loadMoreBtn.className = 'load-more-btn-header';
-                loadMoreBtn.innerHTML = `<i class="fas fa-plus-circle"></i> Load More (${totalSensesToLoad - initialSensesToLoad})`;
-                loadMoreBtn.title = `Load ${totalSensesToLoad - initialSensesToLoad} more senses`;
-                loadMoreBtn.onclick = () => loadRemainingSensesForEntry(word, initialSensesToLoad, totalSensesToLoad, sensesList, allSynonyms, allAntonyms, loadMoreBtn, entryIndex, preloadedSenses, fetchedSenses);
-                
-                cardActions.insertBefore(loadMoreBtn, cardActions.firstChild);
-            }
-        })();
+        attachDetailButtonHandlers();
     }
     
-    async function loadRemainingSensesForEntry(word, startIndex, totalSenses, sensesList, allSynonyms, allAntonyms, loadMoreBtn, entryIndex, preloadedSenses = [], fetchedSenses = new Map()) {
-        loadMoreBtn.disabled = true;
-        loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
-        
-        const batchSize = 3;
-        const endIndex = Math.min(startIndex + batchSize, totalSenses);
-        
-        for (let i = startIndex; i < endIndex; i++) {
-            const senseItem = document.createElement('div');
-            senseItem.className = 'sense-item-container';
-            senseItem.dataset.senseIndex = i;
-            sensesList.appendChild(senseItem);
-            
-            if (preloadedSenses[i]) {
-                const sense = preloadedSenses[i];
-                senseItem.innerHTML = renderSenseHTML(sense, i);
+    function attachDetailButtonHandlers() {
+        document.querySelectorAll('.sense-detail-btn').forEach(btn => {
+            btn.addEventListener('click', async function(e) {
+                e.preventDefault();
+                const senseIndex = parseInt(this.dataset.senseIndex);
+                const senseItem = this.closest('.sense-item-container');
+                const word = senseItem.dataset.word;
+                const entryIndex = parseInt(senseItem.dataset.entryIndex);
                 
-                fetchedSenses.set(i, sense);
-                if (sense.synonyms) sense.synonyms.forEach(s => allSynonyms.add(s));
-                if (sense.antonyms) sense.antonyms.forEach(a => allAntonyms.add(a));
+                const basicSenseJson = senseItem.dataset.basicSense;
+                if (basicSenseJson) {
+                    try {
+                        const basicSense = JSON.parse(basicSenseJson);
+                        senseItem.innerHTML = renderSenseHTML(basicSense, senseIndex, false);
+                        senseItem.innerHTML += '<div class="sense-loading-overlay"><i class="fas fa-spinner fa-spin"></i> Loading detailed information...</div>';
+                    } catch (e) {
+                        console.warn('Failed to parse basic sense data:', e);
+                    }
+                } else {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+                }
                 
-                updateSynonymsSection(allSynonyms, allAntonyms);
-            } else {
-                senseItem.classList.add('sense-placeholder');
-                senseItem.innerHTML = `<div class="section-loading"><div class="spinner"></div><p>Loading sense ${i + 1}...</p></div>`;
-            }
-        }
-        
-        for (let i = startIndex; i < endIndex; i++) {
-            try {
-                const senseData = await fetchSection(word, 'detailed_sense', entryIndex, i);
-                const detailedSense = senseData.detailed_sense;
-                
-                const senseItem = sensesList.querySelector(`[data-sense-index="${i}"]`);
-                if (senseItem && detailedSense) {
-                    const preloadedSense = preloadedSenses[i];
-                    const shouldUpdate = !preloadedSense || hasSignificantDifference(preloadedSense, detailedSense);
+                try {
+                    const [senseData, examplesData, usageNotesData] = await Promise.all([
+                        fetchSection(word, 'detailed_sense', entryIndex, senseIndex),
+                        fetchSection(word, 'examples', entryIndex, senseIndex),
+                        fetchSection(word, 'usage_notes', entryIndex, senseIndex)
+                    ]);
                     
-                    if (shouldUpdate) {
-                        senseItem.className = 'sense-item-container';
-                        senseItem.innerHTML = renderSenseHTML(detailedSense, i);
-                        
-                        fetchedSenses.set(i, detailedSense);
-                        
-                        allSynonyms.clear();
-                        allAntonyms.clear();
-                        fetchedSenses.forEach(sense => {
-                            if (sense.synonyms) sense.synonyms.forEach(s => allSynonyms.add(s));
-                            if (sense.antonyms) sense.antonyms.forEach(a => allAntonyms.add(a));
-                        });
-                        
-                        updateSynonymsSection(allSynonyms, allAntonyms);
+                    const detailedSense = senseData.detailed_sense;
+                    
+                    if (examplesData.examples && examplesData.examples.length) {
+                        detailedSense.examples = examplesData.examples;
+                    }
+                    if (examplesData.collocations && examplesData.collocations.length) {
+                        detailedSense.collocations = examplesData.collocations;
+                    }
+                    if (usageNotesData.usage_notes) {
+                        detailedSense.usage_notes = usageNotesData.usage_notes;
                     }
                     
-                    loadExamplesAndUsageNotes(word, entryIndex, i, senseItem);
+                    senseItem.innerHTML = renderSenseHTML(detailedSense, senseIndex, true);
+                    
+                    const sensesList = senseItem.closest('.senses-list');
+                    const allSynonyms = new Set();
+                    const allAntonyms = new Set();
+                    
+                    sensesList.querySelectorAll('.sense-item-container').forEach(item => {
+                        const synTags = item.querySelectorAll('.sense-synonyms .synonym-tag');
+                        synTags.forEach(tag => allSynonyms.add(tag.textContent));
+                        
+                        const antTags = item.querySelectorAll('.sense-antonyms .antonym-tag');
+                        antTags.forEach(tag => allAntonyms.add(tag.textContent));
+                    });
+                    
+                    updateSynonymsSection(allSynonyms, allAntonyms);
+                } catch (err) {
+                    console.error(`Error loading detailed sense ${senseIndex}:`, err);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Failed - Retry';
                 }
-            } catch (err) {
-                console.error(`Error fetching sense ${i}:`, err);
-                const senseItem = sensesList.querySelector(`[data-sense-index="${i}"]`);
-                if (senseItem && !preloadedSenses[i]) {
-                    senseItem.innerHTML = `<div class="error-message">Failed to load sense ${i + 1}</div>`;
-                }
-            }
-        }
-        
-        if (currentSelectedEntry !== entryIndex) {
-            loadMoreBtn.remove();
-            return;
-        }
-        
-        const remainingSenses = totalSenses - endIndex;
-        
-        if (remainingSenses > 0) {
-            loadMoreBtn.disabled = false;
-            loadMoreBtn.innerHTML = `<i class="fas fa-plus-circle"></i> Load More (${remainingSenses})`;
-            loadMoreBtn.title = `Load ${remainingSenses} more senses`;
-            loadMoreBtn.onclick = () => loadRemainingSensesForEntry(word, endIndex, totalSenses, sensesList, allSynonyms, allAntonyms, loadMoreBtn, entryIndex, preloadedSenses, fetchedSenses);
-        } else {
-            loadMoreBtn.innerHTML = '<i class="fas fa-check-circle"></i> All Loaded';
-            setTimeout(() => {
-                loadMoreBtn.remove();
-            }, 2000);
-        }
-        
-        updateSynonymsSection(allSynonyms, allAntonyms);
+            });
+        });
     }
     
     function updateSynonymsSection(allSynonyms, allAntonyms) {

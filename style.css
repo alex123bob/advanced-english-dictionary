@@ -2087,3 +2087,95 @@ body {
         font-size: 1.2rem;
     }
 }
+
+/* Sense detail button styling */
+.sense-actions {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.sense-detail-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.sense-detail-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.sense-detail-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.sense-detail-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.sense-detailed-badge {
+    color: #2e7d32;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    background: #e8f5e9;
+    border-radius: 8px;
+}
+
+.sense-placeholder-basic {
+    padding: 1.5rem;
+    text-align: center;
+    color: #666;
+}
+
+.sense-placeholder-basic .sense-definition {
+    margin-bottom: 1rem;
+    color: #999;
+    font-style: italic;
+}
+
+.sense-loading-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(102, 126, 234, 0.1);
+    padding: 0.8rem;
+    text-align: center;
+    color: #667eea;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-top: 2px solid rgba(102, 126, 234, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.sense-item-container {
+    position: relative;
+}
