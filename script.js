@@ -14,11 +14,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Result fields
     const headword = document.getElementById('headword');
-    const pronunciationContainer = document.getElementById('pronunciationContainer');
-    const pronunciation = document.getElementById('pronunciation');
+    const pronunciationContent = document.getElementById('pronunciationContent');
     const frequency = document.getElementById('frequency');
-    const totalSenses = document.getElementById('totalSenses');
+    const frequencyCard = document.getElementById('frequencyCard');
     const executionTime = document.getElementById('executionTime');
+    const entryTabsContainer = document.getElementById('entryTabsContainer');
     const definitionsContent = document.getElementById('definitionsContent');
     const etymologyContent = document.getElementById('etymologyContent');
     const synonymsContent = document.getElementById('synonymsContent');
@@ -338,35 +338,47 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Helper function to render pronunciation (audio or IPA text)
-    function renderPronunciation(pronunciationData) {
-        if (!pronunciationData) {
-            pronunciationContainer.innerHTML = '';
+    function renderPronunciation(entryData) {
+        if (!entryData) {
+            pronunciationContent.innerHTML = '';
             return;
         }
-
-        if (isAudioUrl(pronunciationData)) {
-            // Determine audio type based on file extension
-            let audioType = 'audio/mpeg'; // default
-            if (pronunciationData.endsWith('.wav')) audioType = 'audio/wav';
-            else if (pronunciationData.endsWith('.ogg')) audioType = 'audio/ogg';
-            else if (pronunciationData.endsWith('.m4a')) audioType = 'audio/mp4';
-            else if (pronunciationData.endsWith('.aac')) audioType = 'audio/aac';
-            else if (pronunciationData.endsWith('.flac')) audioType = 'audio/flac';
+        
+        const audioUrl = entryData.pronunciation || '';
+        const ipaText = entryData.ipa || '';
+        
+        if (!audioUrl && !ipaText) {
+            pronunciationContent.innerHTML = '<div class="no-data">No pronunciation available</div>';
+            return;
+        }
+        
+        let html = '<div class="pronunciation-wrapper">';
+        
+        if (audioUrl && isAudioUrl(audioUrl)) {
+            let audioType = 'audio/mpeg';
+            if (audioUrl.endsWith('.wav')) audioType = 'audio/wav';
+            else if (audioUrl.endsWith('.ogg')) audioType = 'audio/ogg';
+            else if (audioUrl.endsWith('.m4a')) audioType = 'audio/mp4';
+            else if (audioUrl.endsWith('.aac')) audioType = 'audio/aac';
+            else if (audioUrl.endsWith('.flac')) audioType = 'audio/flac';
             
-            // Render audio player
-            pronunciationContainer.innerHTML = `
+            html += `
                 <audio controls class="pronunciation-audio">
-                    <source src="${pronunciationData}" type="${audioType}">
+                    <source src="${audioUrl}" type="${audioType}">
                     Your browser does not support the audio element.
                 </audio>
                 <button class="audio-play-btn" onclick="this.previousElementSibling.play()">
                     <i class="fas fa-volume-up"></i>
                 </button>
             `;
-        } else {
-            // Render IPA text
-            pronunciationContainer.innerHTML = `<span class="pronunciation">${pronunciationData}</span>`;
         }
+        
+        if (ipaText) {
+            html += `<span class="pronunciation">${ipaText}</span>`;
+        }
+        
+        html += '</div>';
+        pronunciationContent.innerHTML = html;
     }
 
     function clearResults() {
@@ -600,20 +612,35 @@ document.addEventListener('DOMContentLoaded', () => {
         return html;
     }
 
-    async function fetchSection(word, section, index = null) {
-        // Check cache first
-        const cachedData = getCachedData(word, section, index);
+    async function fetchSection(word, section, indexOrEntryIndex = null, senseIndex = null) {
+        // For 2D indexing (detailed_sense with entry_index + sense_index)
+        const cacheKey = senseIndex !== null ? `${indexOrEntryIndex}_${senseIndex}` : indexOrEntryIndex;
+        const cachedData = getCachedData(word, section, cacheKey);
         if (cachedData) {
-            console.log(`Cache hit: ${word} - ${section}${index !== null ? ` (index ${index})` : ''}`);
+            console.log(`Cache hit: ${word} - ${section}${cacheKey !== null ? ` (${cacheKey})` : ''}`);
             return cachedData;
         }
         
-        console.log(`Cache miss: ${word} - ${section}${index !== null ? ` (index ${index})` : ''}`);
+        console.log(`Cache miss: ${word} - ${section}${cacheKey !== null ? ` (${cacheKey})` : ''}`);
         
         const apiUrl = config.api.getUrl('dictionary');
         const body = { word, section };
-        if (index !== null) {
-            body.index = index;
+        
+        if (section === 'detailed_sense') {
+            if (senseIndex !== null && indexOrEntryIndex !== null) {
+                // 2D indexing: entry_index + sense_index
+                body.entry_index = indexOrEntryIndex;
+                body.sense_index = senseIndex;
+            } else if (indexOrEntryIndex !== null) {
+                // DEPRECATED: Flat indexing for backward compatibility
+                body.index = indexOrEntryIndex;
+            }
+        } else if (['etymology', 'word_family', 'usage_context', 'cultural_notes', 'frequency'].includes(section)) {
+            if (indexOrEntryIndex !== null) {
+                body.entry_index = indexOrEntryIndex;
+            }
+        } else if (indexOrEntryIndex !== null) {
+            body.index = indexOrEntryIndex;
         }
         
         const response = await fetch(apiUrl, {
@@ -635,11 +662,15 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error(data.error || `Failed to fetch ${section}`);
         }
         
-        // Cache the successful response
-        setCachedData(word, section, index, data);
+        setCachedData(word, section, cacheKey, data);
         
         return data;
     }
+
+    // Store current entry data globally for entry switching
+    let currentWordData = null;
+    let currentWord = null;
+    let currentSelectedEntry = 0;
 
     async function handleSearch() {
         const query = searchInput.value.trim();
@@ -669,6 +700,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
+            // Store current word data for entry switching
+            currentWordData = basicData;
+            currentWord = query;
+            currentSelectedEntry = 0;
+            
             // Add to search history
             addToSearchHistory(query);
             
@@ -680,11 +716,12 @@ document.addEventListener('DOMContentLoaded', () => {
             executionTime.textContent = `${execTime}s`;
             
             headword.textContent = basicData.headword;
-            renderPronunciation(basicData.pronunciation);
             
-            totalSenses.textContent = basicData.total_senses ? `${basicData.total_senses} sense${basicData.total_senses !== 1 ? 's' : ''}` : '';
+            // Render entry selector if multiple entries
+            renderEntrySelector(basicData);
             
             // Show loading indicators for all sections
+            showSectionLoading(pronunciationContent);
             showSectionLoading(definitionsContent);
             showSectionLoading(etymologyContent);
             showSectionLoading(synonymsContent);
@@ -692,152 +729,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showSectionLoading(usageContent);
             showSectionLoading(wordFamilyContent);
             
-            // Step 2: Start loading ALL metadata sections immediately in parallel
-            // These load independently and won't wait for senses
-            
-            // Fetch frequency
-            fetchSection(query, 'frequency').then(data => {
-                if (data.frequency) {
-                    // Format frequency: very_common -> Very Common
-                    const freqText = data.frequency
-                        .split('_')
-                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                        .join(' ');
-                    frequency.innerHTML = `<i class="fas fa-chart-line"></i> ${freqText}`;
-                    frequency.style.display = '';
-                } else {
-                    frequency.innerHTML = '';
-                    frequency.style.display = 'none';
-                }
-            }).catch(err => {
-                console.error('Error fetching frequency:', err);
-                frequency.innerHTML = '';
-                frequency.style.display = 'none';
-            });
-            
-            // Fetch etymology (starts immediately, doesn't wait for senses)
-            fetchSection(query, 'etymology').then(data => {
-                if (data.etymology) {
-                    let etymologyHtml = '';
-                    if (data.etymology.etymology) {
-                        etymologyHtml += `<div class="etymology-text">${data.etymology.etymology}</div>`;
-                    }
-                    if (data.etymology.root_analysis) {
-                        etymologyHtml += `<div class="root-analysis"><div class="etymology-label">Root Analysis</div><div>${data.etymology.root_analysis}</div></div>`;
-                    }
-                    etymologyContent.innerHTML = etymologyHtml || '<div class="no-data">No etymology information available</div>';
-                } else {
-                    etymologyContent.innerHTML = '<div class="no-data">No etymology information available</div>';
-                }
-            }).catch(err => {
-                console.error('Error fetching etymology:', err);
-                etymologyContent.innerHTML = '<div class="error-message">Failed to load etymology</div>';
-            });
-            
-            // Fetch cultural notes (starts immediately, doesn't wait for senses)
-            fetchSection(query, 'cultural_notes').then(data => {
-                if (data.cultural_notes && data.cultural_notes.notes) {
-                    culturalContent.innerHTML = enhanceCulturalNotes(data.cultural_notes.notes);
-                } else {
-                    culturalContent.innerHTML = '<div class="no-data">No cultural notes available</div>';
-                }
-            }).catch(err => {
-                console.error('Error fetching cultural_notes:', err);
-                culturalContent.innerHTML = '<div class="error-message">Failed to load cultural notes</div>';
-            });
-            
-            // Fetch usage context (starts immediately, doesn't wait for senses)
-            fetchSection(query, 'usage_context').then(data => {
-                if (data.usage_context) {
-                    usageContent.innerHTML = enhanceUsageContext(data.usage_context);
-                } else {
-                    usageContent.innerHTML = '<div class="no-data">No usage context available</div>';
-                }
-            }).catch(err => {
-                console.error('Error fetching usage_context:', err);
-                usageContent.innerHTML = '<div class="error-message">Failed to load usage context</div>';
-            });
-            
-            // Fetch word family (starts immediately, doesn't wait for senses)
-            fetchSection(query, 'word_family').then(data => {
-                if (data.word_family && data.word_family.word_family && data.word_family.word_family.length) {
-                    const displayWords = data.word_family.word_family.slice(0, 20);
-                    wordFamilyContent.innerHTML = `<div class="word-family-tags">${displayWords.map(wf => `<span class="word-tag">${wf}</span>`).join('')}</div>`;
-                } else {
-                    wordFamilyContent.innerHTML = '<div class="no-data">No word family available</div>';
-                }
-            }).catch(err => {
-                console.error('Error fetching word_family:', err);
-                wordFamilyContent.innerHTML = '<div class="error-message">Failed to load word family</div>';
-            });
-            
-            // Step 3: Load individual senses one by one (slow ~10-13s each)
-            // This happens in parallel with the metadata sections above
-            // Load first 3 senses, or all if fewer than 3
-            const totalSensesToLoad = basicData.total_senses;
-            const initialSensesToLoad = Math.min(3, totalSensesToLoad);
-            
-            // Create simple scrollable container for senses
-            definitionsContent.innerHTML = `<div class="senses-list"></div>`;
-            
-            const sensesList = definitionsContent.querySelector('.senses-list');
-            
-            // Load senses sequentially (to avoid overwhelming the API)
-            const allSynonyms = new Set();
-            const allAntonyms = new Set();
-            
-            // Create placeholders for initial senses
-            for (let i = 0; i < initialSensesToLoad; i++) {
-                const senseItem = document.createElement('div');
-                senseItem.className = 'sense-item-container sense-placeholder';
-                senseItem.dataset.senseIndex = i;
-                senseItem.innerHTML = `<div class="section-loading"><div class="spinner"></div><p>Loading sense ${i + 1}...</p></div>`;
-                sensesList.appendChild(senseItem);
-            }
-            
-            // Load senses asynchronously without blocking
-            (async () => {
-                for (let i = 0; i < initialSensesToLoad; i++) {
-                    try {
-                        const senseData = await fetchSection(query, 'detailed_sense', i);
-                        const sense = senseData.detailed_sense;
-                        
-                        const senseItem = sensesList.querySelector(`[data-sense-index="${i}"]`);
-                        if (senseItem && sense) {
-                            senseItem.className = 'sense-item-container';
-                            senseItem.innerHTML = renderSenseHTML(sense, i);
-                            
-                            // Collect synonyms and antonyms
-                            if (sense.synonyms) sense.synonyms.forEach(s => allSynonyms.add(s));
-                            if (sense.antonyms) sense.antonyms.forEach(a => allAntonyms.add(a));
-                            
-                            // Update synonyms section as we collect them
-                            updateSynonymsSection(allSynonyms, allAntonyms);
-                        }
-                    } catch (err) {
-                        console.error(`Error fetching sense ${i}:`, err);
-                        const senseItem = sensesList.querySelector(`[data-sense-index="${i}"]`);
-                        if (senseItem) {
-                            senseItem.innerHTML = `<div class="error-message">Failed to load sense ${i + 1}</div>`;
-                        }
-                    }
-                }
-                
-                // Show "Load More" button in the card header if there are more senses
-                if (totalSensesToLoad > initialSensesToLoad) {
-                    const definitionsCard = document.querySelector('.definitions-card');
-                    const cardActions = definitionsCard.querySelector('.card-actions');
-                    
-                    const loadMoreBtn = document.createElement('button');
-                    loadMoreBtn.className = 'load-more-btn-header';
-                    loadMoreBtn.innerHTML = `<i class="fas fa-plus-circle"></i> Load More (${totalSensesToLoad - initialSensesToLoad})`;
-                    loadMoreBtn.title = `Load ${totalSensesToLoad - initialSensesToLoad} more senses`;
-                    loadMoreBtn.onclick = () => loadRemainingSenses(query, initialSensesToLoad, totalSensesToLoad, sensesList, allSynonyms, allAntonyms, loadMoreBtn);
-                    
-                    // Insert before the fullscreen button
-                    cardActions.insertBefore(loadMoreBtn, cardActions.firstChild);
-                }
-            })();
+            loadEntryContent(query, 0, basicData);
             
         } catch (error) {
             console.error('Search error:', error);
@@ -846,35 +738,261 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    async function loadRemainingSenses(word, startIndex, totalSenses, sensesList, allSynonyms, allAntonyms, loadMoreBtn) {
+    function renderEntrySelector(basicData) {
+        const hasMultipleEntries = basicData.total_entries && basicData.total_entries > 1;
+        
+        entryTabsContainer.innerHTML = '';
+        
+        if (!hasMultipleEntries) {
+            entryTabsContainer.style.display = 'none';
+            return;
+        }
+        
+        entryTabsContainer.style.display = 'block';
+        
+        const selectorHTML = `
+            <div class="entry-selector-label">
+                <span>Word Forms:</span>
+                <span class="entry-selector-hint">
+                    <i class="fas fa-info-circle" title="This word has multiple forms with different origins and meanings"></i>
+                </span>
+            </div>
+            <div class="entry-tabs">
+                ${basicData.entries.map((entry, idx) => {
+                    const posLabels = entry.meanings_summary.map(m => m.part_of_speech).join(', ');
+                    return `
+                        <button class="entry-tab ${idx === 0 ? 'active' : ''}" data-entry-index="${idx}">
+                            <div class="entry-tab-number">Form ${idx + 1}</div>
+                            <div class="entry-tab-meta">${posLabels}</div>
+                            <div class="entry-tab-count">${entry.total_senses} sense${entry.total_senses !== 1 ? 's' : ''}</div>
+                        </button>
+                    `;
+                }).join('')}
+            </div>
+        `;
+        
+        entryTabsContainer.innerHTML = selectorHTML;
+        
+        document.querySelectorAll('.entry-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const entryIndex = parseInt(tab.dataset.entryIndex);
+                switchToEntry(entryIndex);
+            });
+        });
+    }
+    
+    function switchToEntry(entryIndex) {
+        if (entryIndex === currentSelectedEntry) return;
+        
+        currentSelectedEntry = entryIndex;
+        
+        document.querySelectorAll('.entry-tab').forEach(tab => {
+            const tabIndex = parseInt(tab.dataset.entryIndex);
+            if (tabIndex === entryIndex) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
+        });
+        
+        const definitionsCard = document.querySelector('.definitions-card');
+        if (definitionsCard) {
+            const existingLoadMoreBtn = definitionsCard.querySelector('.load-more-btn-header');
+            if (existingLoadMoreBtn) {
+                existingLoadMoreBtn.remove();
+            }
+        }
+        
+        showSectionLoading(definitionsContent);
+        showSectionLoading(etymologyContent);
+        showSectionLoading(synonymsContent);
+        showSectionLoading(culturalContent);
+        showSectionLoading(usageContent);
+        showSectionLoading(wordFamilyContent);
+        
+        loadEntryContent(currentWord, entryIndex, currentWordData);
+    }
+    
+    function loadEntryContent(word, entryIndex, basicData) {
+        const entryData = basicData.entries ? basicData.entries[entryIndex] : null;
+        
+        if (entryData) {
+            renderPronunciation(entryData);
+        } else {
+            pronunciationContent.innerHTML = '<div class="no-data">No pronunciation available</div>';
+        }
+        
+        fetchSection(word, 'frequency', entryIndex).then(data => {
+            if (data.frequency) {
+                const freqText = data.frequency
+                    .split('_')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+                frequency.textContent = freqText;
+                frequencyCard.style.display = 'block';
+            } else {
+                frequencyCard.style.display = 'none';
+            }
+        }).catch(err => {
+            console.error('Error fetching frequency:', err);
+            frequencyCard.style.display = 'none';
+        });
+        
+        fetchSection(word, 'etymology', entryIndex).then(data => {
+            if (data.etymology) {
+                let etymologyHtml = '';
+                if (data.etymology.etymology) {
+                    etymologyHtml += `<div class="etymology-text">${data.etymology.etymology}</div>`;
+                }
+                if (data.etymology.root_analysis) {
+                    etymologyHtml += `<div class="root-analysis"><div class="etymology-label">Root Analysis</div><div>${data.etymology.root_analysis}</div></div>`;
+                }
+                etymologyContent.innerHTML = etymologyHtml || '<div class="no-data">No etymology information available</div>';
+            } else {
+                etymologyContent.innerHTML = '<div class="no-data">No etymology information available</div>';
+            }
+        }).catch(err => {
+            console.error('Error fetching etymology:', err);
+            etymologyContent.innerHTML = '<div class="error-message">Failed to load etymology</div>';
+        });
+        
+        fetchSection(word, 'cultural_notes', entryIndex).then(data => {
+            if (data.cultural_notes && data.cultural_notes.notes) {
+                culturalContent.innerHTML = enhanceCulturalNotes(data.cultural_notes.notes);
+            } else {
+                culturalContent.innerHTML = '<div class="no-data">No cultural notes available</div>';
+            }
+        }).catch(err => {
+            console.error('Error fetching cultural_notes:', err);
+            culturalContent.innerHTML = '<div class="error-message">Failed to load cultural notes</div>';
+        });
+        
+        fetchSection(word, 'usage_context', entryIndex).then(data => {
+            if (data.usage_context) {
+                usageContent.innerHTML = enhanceUsageContext(data.usage_context);
+            } else {
+                usageContent.innerHTML = '<div class="no-data">No usage context available</div>';
+            }
+        }).catch(err => {
+            console.error('Error fetching usage_context:', err);
+            usageContent.innerHTML = '<div class="error-message">Failed to load usage context</div>';
+        });
+        
+        fetchSection(word, 'word_family', entryIndex).then(data => {
+            if (data.word_family && data.word_family.word_family && data.word_family.word_family.length) {
+                const displayWords = data.word_family.word_family.slice(0, 20);
+                wordFamilyContent.innerHTML = `<div class="word-family-tags">${displayWords.map(wf => `<span class="word-tag">${wf}</span>`).join('')}</div>`;
+            } else {
+                wordFamilyContent.innerHTML = '<div class="no-data">No word family available</div>';
+            }
+        }).catch(err => {
+            console.error('Error fetching word_family:', err);
+            wordFamilyContent.innerHTML = '<div class="error-message">Failed to load word family</div>';
+        });
+        
+        loadSensesForEntry(word, entryIndex, entryData);
+    }
+    
+    function loadSensesForEntry(word, entryIndex, entryData) {
+        const totalSensesToLoad = entryData ? entryData.total_senses : 0;
+        
+        if (!totalSensesToLoad) {
+            definitionsContent.innerHTML = '<div class="no-data">No definitions available for this form</div>';
+            synonymsContent.innerHTML = '<div class="no-data">No synonyms or antonyms available</div>';
+            return;
+        }
+        
+        const initialSensesToLoad = Math.min(3, totalSensesToLoad);
+        
+        definitionsContent.innerHTML = `<div class="senses-list"></div>`;
+        
+        const sensesList = definitionsContent.querySelector('.senses-list');
+        
+        const allSynonyms = new Set();
+        const allAntonyms = new Set();
+        
+        for (let i = 0; i < initialSensesToLoad; i++) {
+            const senseItem = document.createElement('div');
+            senseItem.className = 'sense-item-container sense-placeholder';
+            senseItem.dataset.senseIndex = i;
+            senseItem.innerHTML = `<div class="section-loading"><div class="spinner"></div><p>Loading sense ${i + 1}...</p></div>`;
+            sensesList.appendChild(senseItem);
+        }
+        
+        (async () => {
+            for (let i = 0; i < initialSensesToLoad; i++) {
+                try {
+                    const senseData = await fetchSection(word, 'detailed_sense', entryIndex, i);
+                    const sense = senseData.detailed_sense;
+                    
+                    const senseItem = sensesList.querySelector(`[data-sense-index="${i}"]`);
+                    if (senseItem && sense) {
+                        senseItem.className = 'sense-item-container';
+                        senseItem.innerHTML = renderSenseHTML(sense, i);
+                        
+                        if (sense.synonyms) sense.synonyms.forEach(s => allSynonyms.add(s));
+                        if (sense.antonyms) sense.antonyms.forEach(a => allAntonyms.add(a));
+                        
+                        updateSynonymsSection(allSynonyms, allAntonyms);
+                    }
+                } catch (err) {
+                    console.error(`Error fetching sense ${i}:`, err);
+                    const senseItem = sensesList.querySelector(`[data-sense-index="${i}"]`);
+                    if (senseItem) {
+                        senseItem.innerHTML = `<div class="error-message">Failed to load sense ${i + 1}</div>`;
+                    }
+                }
+            }
+            
+            if (currentSelectedEntry !== entryIndex) {
+                return;
+            }
+            
+            if (totalSensesToLoad > initialSensesToLoad) {
+                const definitionsCard = document.querySelector('.definitions-card');
+                const cardActions = definitionsCard.querySelector('.card-actions');
+                
+                const existingLoadMoreBtn = cardActions.querySelector('.load-more-btn-header');
+                if (existingLoadMoreBtn) {
+                    existingLoadMoreBtn.remove();
+                }
+                
+                const loadMoreBtn = document.createElement('button');
+                loadMoreBtn.className = 'load-more-btn-header';
+                loadMoreBtn.innerHTML = `<i class="fas fa-plus-circle"></i> Load More (${totalSensesToLoad - initialSensesToLoad})`;
+                loadMoreBtn.title = `Load ${totalSensesToLoad - initialSensesToLoad} more senses`;
+                loadMoreBtn.onclick = () => loadRemainingSensesForEntry(word, initialSensesToLoad, totalSensesToLoad, sensesList, allSynonyms, allAntonyms, loadMoreBtn, entryIndex);
+                
+                cardActions.insertBefore(loadMoreBtn, cardActions.firstChild);
+            }
+        })();
+    }
+    
+    async function loadRemainingSensesForEntry(word, startIndex, totalSenses, sensesList, allSynonyms, allAntonyms, loadMoreBtn, entryIndex) {
         loadMoreBtn.disabled = true;
         loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
         
-        // Load 3 senses at a time
         const batchSize = 3;
         const endIndex = Math.min(startIndex + batchSize, totalSenses);
         
         for (let i = startIndex; i < endIndex; i++) {
             try {
-                // Create new sense item placeholder
                 const senseItem = document.createElement('div');
                 senseItem.className = 'sense-item-container sense-placeholder';
                 senseItem.dataset.senseIndex = i;
                 senseItem.innerHTML = `<div class="section-loading"><div class="spinner"></div><p>Loading sense ${i + 1}...</p></div>`;
                 sensesList.appendChild(senseItem);
                 
-                const senseData = await fetchSection(word, 'detailed_sense', i);
+                const senseData = await fetchSection(word, 'detailed_sense', entryIndex, i);
                 const sense = senseData.detailed_sense;
                 
                 if (senseItem && sense) {
                     senseItem.className = 'sense-item-container';
                     senseItem.innerHTML = renderSenseHTML(sense, i);
                     
-                    // Collect synonyms and antonyms
                     if (sense.synonyms) sense.synonyms.forEach(s => allSynonyms.add(s));
                     if (sense.antonyms) sense.antonyms.forEach(a => allAntonyms.add(a));
                     
-                    // Update synonyms section as we load more
                     updateSynonymsSection(allSynonyms, allAntonyms);
                 }
             } catch (err) {
@@ -886,25 +1004,25 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        // Calculate remaining senses
+        if (currentSelectedEntry !== entryIndex) {
+            loadMoreBtn.remove();
+            return;
+        }
+        
         const remainingSenses = totalSenses - endIndex;
         
         if (remainingSenses > 0) {
-            // Update button text and re-enable
             loadMoreBtn.disabled = false;
             loadMoreBtn.innerHTML = `<i class="fas fa-plus-circle"></i> Load More (${remainingSenses})`;
             loadMoreBtn.title = `Load ${remainingSenses} more senses`;
-            // Update onclick to continue from endIndex
-            loadMoreBtn.onclick = () => loadRemainingSenses(word, endIndex, totalSenses, sensesList, allSynonyms, allAntonyms, loadMoreBtn);
+            loadMoreBtn.onclick = () => loadRemainingSensesForEntry(word, endIndex, totalSenses, sensesList, allSynonyms, allAntonyms, loadMoreBtn, entryIndex);
         } else {
-            // All senses loaded, show completion and remove button after delay
             loadMoreBtn.innerHTML = '<i class="fas fa-check-circle"></i> All Loaded';
             setTimeout(() => {
                 loadMoreBtn.remove();
             }, 2000);
         }
         
-        // Update synonyms/antonyms section
         updateSynonymsSection(allSynonyms, allAntonyms);
     }
     
