@@ -395,7 +395,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function renderSenseHTML(sense, index) {
-        // Build metadata badges (tone, register, domain)
         let metaBadges = '';
         if (sense.tone || (sense.usage_register && sense.usage_register.length) || (sense.domain && sense.domain.length)) {
             metaBadges = '<div class="sense-meta">';
@@ -411,18 +410,34 @@ document.addEventListener('DOMContentLoaded', () => {
             metaBadges += '</div>';
         }
         
+        const examplesSection = sense.examples && sense.examples.length ? 
+            `<div class="sense-examples">
+                ${sense.examples.map(ex => `<div class="example-item">${ex}</div>`).join('')}
+            </div>` : 
+            `<div class="sense-examples sense-examples-loading" data-sense-index="${index}">
+                <div class="section-loading-inline"><div class="spinner-small"></div><span>Loading examples...</span></div>
+            </div>`;
+        
+        const collocationsSection = sense.collocations && sense.collocations.length ?
+            `<div class="sense-collocations"><strong>Common collocations:</strong><div class="collocation-tags">${sense.collocations.map(col => `<span class="collocation-tag">${col}</span>`).join('')}</div></div>` :
+            `<div class="sense-collocations sense-collocations-loading" data-sense-index="${index}">
+                <div class="section-loading-inline"><div class="spinner-small"></div><span>Loading collocations...</span></div>
+            </div>`;
+        
+        const usageNotesSection = sense.usage_notes ? 
+            `<div class="usage-notes"><strong>Usage notes:</strong> ${sense.usage_notes}</div>` :
+            `<div class="usage-notes usage-notes-loading" data-sense-index="${index}">
+                <div class="section-loading-inline"><div class="spinner-small"></div><span>Loading usage notes...</span></div>
+            </div>`;
+        
         return `
             <div class="sense-definition">
                 <strong>${index + 1}.</strong> ${sense.part_of_speech ? `<span class="sense-pos">(${sense.part_of_speech})</span>` : ''} ${sense.definition}
             </div>
             ${metaBadges}
-            ${sense.examples && sense.examples.length ? `
-                <div class="sense-examples">
-                    ${sense.examples.map(ex => `<div class="example-item">${ex}</div>`).join('')}
-                </div>
-            ` : ''}
-            ${sense.usage_notes ? `<div class="usage-notes"><strong>Usage notes:</strong> ${sense.usage_notes}</div>` : ''}
-            ${sense.collocations && sense.collocations.length ? `<div class="sense-collocations"><strong>Common collocations:</strong><div class="collocation-tags">${sense.collocations.map(col => `<span class="collocation-tag">${col}</span>`).join('')}</div></div>` : ''}
+            ${examplesSection}
+            ${usageNotesSection}
+            ${collocationsSection}
             ${sense.synonyms && sense.synonyms.length ? `<div class="sense-synonyms"><strong>Synonyms:</strong><div class="synonym-tags">${sense.synonyms.map(syn => `<span class="synonym-tag">${syn}</span>`).join('')}</div></div>` : ''}
             ${sense.antonyms && sense.antonyms.length ? `<div class="sense-antonyms"><strong>Antonyms:</strong><div class="antonym-tags">${sense.antonyms.map(ant => `<span class="antonym-tag">${ant}</span>`).join('')}</div></div>` : ''}
         `;
@@ -613,7 +628,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function fetchSection(word, section, indexOrEntryIndex = null, senseIndex = null) {
-        // For 2D indexing (detailed_sense with entry_index + sense_index)
+        // For 2D indexing (detailed_sense, examples, usage_notes with entry_index + sense_index)
         const cacheKey = senseIndex !== null ? `${indexOrEntryIndex}_${senseIndex}` : indexOrEntryIndex;
         const cachedData = getCachedData(word, section, cacheKey);
         if (cachedData) {
@@ -626,12 +641,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const apiUrl = config.api.getUrl('dictionary');
         const body = { word, section };
         
-        if (section === 'detailed_sense') {
+        if (section === 'detailed_sense' || section === 'examples' || section === 'usage_notes') {
             if (senseIndex !== null && indexOrEntryIndex !== null) {
                 // 2D indexing: entry_index + sense_index
                 body.entry_index = indexOrEntryIndex;
                 body.sense_index = senseIndex;
-            } else if (indexOrEntryIndex !== null) {
+            } else if (indexOrEntryIndex !== null && section === 'detailed_sense') {
                 // DEPRECATED: Flat indexing for backward compatibility
                 body.index = indexOrEntryIndex;
             }
@@ -893,6 +908,53 @@ document.addEventListener('DOMContentLoaded', () => {
         loadSensesForEntry(word, entryIndex, entryData);
     }
     
+    async function loadExamplesAndUsageNotes(word, entryIndex, senseIndex, senseItem) {
+        try {
+            const [examplesData, usageNotesData] = await Promise.all([
+                fetchSection(word, 'examples', entryIndex, senseIndex),
+                fetchSection(word, 'usage_notes', entryIndex, senseIndex)
+            ]);
+            
+            const examplesSection = senseItem.querySelector(`.sense-examples[data-sense-index="${senseIndex}"]`);
+            if (examplesSection && examplesData.examples && examplesData.examples.length) {
+                examplesSection.classList.remove('sense-examples-loading');
+                examplesSection.removeAttribute('data-sense-index');
+                examplesSection.innerHTML = examplesData.examples.map(ex => `<div class="example-item">${ex}</div>`).join('');
+            }
+            
+            const collocationsSection = senseItem.querySelector(`.sense-collocations[data-sense-index="${senseIndex}"]`);
+            if (collocationsSection && examplesData.collocations && examplesData.collocations.length) {
+                collocationsSection.classList.remove('sense-collocations-loading');
+                collocationsSection.removeAttribute('data-sense-index');
+                collocationsSection.innerHTML = `<strong>Common collocations:</strong><div class="collocation-tags">${examplesData.collocations.map(col => `<span class="collocation-tag">${col}</span>`).join('')}</div>`;
+            }
+            
+            const usageNotesSection = senseItem.querySelector(`.usage-notes[data-sense-index="${senseIndex}"]`);
+            if (usageNotesSection && usageNotesData.usage_notes) {
+                usageNotesSection.classList.remove('usage-notes-loading');
+                usageNotesSection.removeAttribute('data-sense-index');
+                usageNotesSection.innerHTML = `<strong>Usage notes:</strong> ${usageNotesData.usage_notes}`;
+            }
+        } catch (err) {
+            console.error(`Error fetching examples/usage_notes for sense ${senseIndex}:`, err);
+            
+            const examplesSection = senseItem.querySelector(`.sense-examples[data-sense-index="${senseIndex}"]`);
+            if (examplesSection) {
+                examplesSection.innerHTML = '<div class="error-message-inline">Failed to load examples</div>';
+            }
+            
+            const usageNotesSection = senseItem.querySelector(`.usage-notes[data-sense-index="${senseIndex}"]`);
+            if (usageNotesSection) {
+                usageNotesSection.innerHTML = '<div class="error-message-inline">Failed to load usage notes</div>';
+            }
+            
+            const collocationsSection = senseItem.querySelector(`.sense-collocations[data-sense-index="${senseIndex}"]`);
+            if (collocationsSection) {
+                collocationsSection.innerHTML = '<div class="error-message-inline">Failed to load collocations</div>';
+            }
+        }
+    }
+    
     function loadSensesForEntry(word, entryIndex, entryData) {
         const totalSensesToLoad = entryData ? entryData.total_senses : 0;
         
@@ -934,6 +996,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (sense.antonyms) sense.antonyms.forEach(a => allAntonyms.add(a));
                         
                         updateSynonymsSection(allSynonyms, allAntonyms);
+                        
+                        loadExamplesAndUsageNotes(word, entryIndex, i, senseItem);
                     }
                 } catch (err) {
                     console.error(`Error fetching sense ${i}:`, err);
@@ -994,6 +1058,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (sense.antonyms) sense.antonyms.forEach(a => allAntonyms.add(a));
                     
                     updateSynonymsSection(allSynonyms, allAntonyms);
+                    
+                    loadExamplesAndUsageNotes(word, entryIndex, i, senseItem);
                 }
             } catch (err) {
                 console.error(`Error fetching sense ${i}:`, err);
