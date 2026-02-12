@@ -390,6 +390,24 @@ document.addEventListener('DOMContentLoaded', () => {
         wordFamilyContent.innerHTML = '';
     }
     
+    function hasSignificantDifference(basicSense, detailedSense) {
+        if (basicSense.definition !== detailedSense.definition) return true;
+        
+        const basicExamples = basicSense.examples || (basicSense.example ? [basicSense.example] : []);
+        const detailedExamples = detailedSense.examples || [];
+        if (JSON.stringify(basicExamples) !== JSON.stringify(detailedExamples)) return true;
+        
+        const basicSynonyms = basicSense.synonyms || [];
+        const detailedSynonyms = detailedSense.synonyms || [];
+        if (JSON.stringify(basicSynonyms.sort()) !== JSON.stringify(detailedSynonyms.sort())) return true;
+        
+        const basicAntonyms = basicSense.antonyms || [];
+        const detailedAntonyms = detailedSense.antonyms || [];
+        if (JSON.stringify(basicAntonyms.sort()) !== JSON.stringify(detailedAntonyms.sort())) return true;
+        
+        return false;
+    }
+    
     function showSectionLoading(container) {
         container.innerHTML = '<div class="section-loading"><div class="spinner"></div><p>Loading...</p></div>';
     }
@@ -410,9 +428,12 @@ document.addEventListener('DOMContentLoaded', () => {
             metaBadges += '</div>';
         }
         
-        const examplesSection = sense.examples && sense.examples.length ? 
+        const hasExamples = (sense.examples && sense.examples.length) || sense.example;
+        const examplesList = sense.examples || (sense.example ? [sense.example] : []);
+        
+        const examplesSection = hasExamples ? 
             `<div class="sense-examples">
-                ${sense.examples.map(ex => `<div class="example-item">${ex}</div>`).join('')}
+                ${examplesList.map(ex => `<div class="example-item">${ex}</div>`).join('')}
             </div>` : 
             `<div class="sense-examples sense-examples-loading" data-sense-index="${index}">
                 <div class="section-loading-inline"><div class="spinner-small"></div><span>Loading examples...</span></div>
@@ -964,6 +985,21 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
+        // Extract preloaded senses from basic response (meanings_summary[].senses)
+        const preloadedSenses = [];
+        if (entryData && entryData.meanings_summary) {
+            entryData.meanings_summary.forEach(meaning => {
+                if (meaning.senses && Array.isArray(meaning.senses)) {
+                    meaning.senses.forEach(sense => {
+                        preloadedSenses.push({
+                            ...sense,
+                            part_of_speech: meaning.part_of_speech // Add POS from parent
+                        });
+                    });
+                }
+            });
+        }
+        
         const initialSensesToLoad = Math.min(3, totalSensesToLoad);
         
         definitionsContent.innerHTML = `<div class="senses-list"></div>`;
@@ -972,37 +1008,63 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const allSynonyms = new Set();
         const allAntonyms = new Set();
+        const fetchedSenses = new Map();
         
         for (let i = 0; i < initialSensesToLoad; i++) {
             const senseItem = document.createElement('div');
-            senseItem.className = 'sense-item-container sense-placeholder';
+            senseItem.className = 'sense-item-container';
             senseItem.dataset.senseIndex = i;
-            senseItem.innerHTML = `<div class="section-loading"><div class="spinner"></div><p>Loading sense ${i + 1}...</p></div>`;
+            
+            if (preloadedSenses[i]) {
+                const sense = preloadedSenses[i];
+                senseItem.innerHTML = renderSenseHTML(sense, i);
+                
+                fetchedSenses.set(i, sense);
+                if (sense.synonyms) sense.synonyms.forEach(s => allSynonyms.add(s));
+                if (sense.antonyms) sense.antonyms.forEach(a => allAntonyms.add(a));
+            } else {
+                senseItem.classList.add('sense-placeholder');
+                senseItem.innerHTML = `<div class="section-loading"><div class="spinner"></div><p>Loading sense ${i + 1}...</p></div>`;
+            }
+            
             sensesList.appendChild(senseItem);
         }
+        
+        updateSynonymsSection(allSynonyms, allAntonyms);
         
         (async () => {
             for (let i = 0; i < initialSensesToLoad; i++) {
                 try {
                     const senseData = await fetchSection(word, 'detailed_sense', entryIndex, i);
-                    const sense = senseData.detailed_sense;
+                    const detailedSense = senseData.detailed_sense;
                     
                     const senseItem = sensesList.querySelector(`[data-sense-index="${i}"]`);
-                    if (senseItem && sense) {
-                        senseItem.className = 'sense-item-container';
-                        senseItem.innerHTML = renderSenseHTML(sense, i);
+                    if (senseItem && detailedSense) {
+                        const preloadedSense = preloadedSenses[i];
+                        const shouldUpdate = !preloadedSense || hasSignificantDifference(preloadedSense, detailedSense);
                         
-                        if (sense.synonyms) sense.synonyms.forEach(s => allSynonyms.add(s));
-                        if (sense.antonyms) sense.antonyms.forEach(a => allAntonyms.add(a));
-                        
-                        updateSynonymsSection(allSynonyms, allAntonyms);
+                        if (shouldUpdate) {
+                            senseItem.className = 'sense-item-container';
+                            senseItem.innerHTML = renderSenseHTML(detailedSense, i);
+                            
+                            fetchedSenses.set(i, detailedSense);
+                            
+                            allSynonyms.clear();
+                            allAntonyms.clear();
+                            fetchedSenses.forEach(sense => {
+                                if (sense.synonyms) sense.synonyms.forEach(s => allSynonyms.add(s));
+                                if (sense.antonyms) sense.antonyms.forEach(a => allAntonyms.add(a));
+                            });
+                            
+                            updateSynonymsSection(allSynonyms, allAntonyms);
+                        }
                         
                         loadExamplesAndUsageNotes(word, entryIndex, i, senseItem);
                     }
                 } catch (err) {
                     console.error(`Error fetching sense ${i}:`, err);
                     const senseItem = sensesList.querySelector(`[data-sense-index="${i}"]`);
-                    if (senseItem) {
+                    if (senseItem && !preloadedSenses[i]) {
                         senseItem.innerHTML = `<div class="error-message">Failed to load sense ${i + 1}</div>`;
                     }
                 }
@@ -1025,14 +1087,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadMoreBtn.className = 'load-more-btn-header';
                 loadMoreBtn.innerHTML = `<i class="fas fa-plus-circle"></i> Load More (${totalSensesToLoad - initialSensesToLoad})`;
                 loadMoreBtn.title = `Load ${totalSensesToLoad - initialSensesToLoad} more senses`;
-                loadMoreBtn.onclick = () => loadRemainingSensesForEntry(word, initialSensesToLoad, totalSensesToLoad, sensesList, allSynonyms, allAntonyms, loadMoreBtn, entryIndex);
+                loadMoreBtn.onclick = () => loadRemainingSensesForEntry(word, initialSensesToLoad, totalSensesToLoad, sensesList, allSynonyms, allAntonyms, loadMoreBtn, entryIndex, preloadedSenses, fetchedSenses);
                 
                 cardActions.insertBefore(loadMoreBtn, cardActions.firstChild);
             }
         })();
     }
     
-    async function loadRemainingSensesForEntry(word, startIndex, totalSenses, sensesList, allSynonyms, allAntonyms, loadMoreBtn, entryIndex) {
+    async function loadRemainingSensesForEntry(word, startIndex, totalSenses, sensesList, allSynonyms, allAntonyms, loadMoreBtn, entryIndex, preloadedSenses = [], fetchedSenses = new Map()) {
         loadMoreBtn.disabled = true;
         loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
         
@@ -1040,31 +1102,58 @@ document.addEventListener('DOMContentLoaded', () => {
         const endIndex = Math.min(startIndex + batchSize, totalSenses);
         
         for (let i = startIndex; i < endIndex; i++) {
-            try {
-                const senseItem = document.createElement('div');
-                senseItem.className = 'sense-item-container sense-placeholder';
-                senseItem.dataset.senseIndex = i;
+            const senseItem = document.createElement('div');
+            senseItem.className = 'sense-item-container';
+            senseItem.dataset.senseIndex = i;
+            sensesList.appendChild(senseItem);
+            
+            if (preloadedSenses[i]) {
+                const sense = preloadedSenses[i];
+                senseItem.innerHTML = renderSenseHTML(sense, i);
+                
+                fetchedSenses.set(i, sense);
+                if (sense.synonyms) sense.synonyms.forEach(s => allSynonyms.add(s));
+                if (sense.antonyms) sense.antonyms.forEach(a => allAntonyms.add(a));
+                
+                updateSynonymsSection(allSynonyms, allAntonyms);
+            } else {
+                senseItem.classList.add('sense-placeholder');
                 senseItem.innerHTML = `<div class="section-loading"><div class="spinner"></div><p>Loading sense ${i + 1}...</p></div>`;
-                sensesList.appendChild(senseItem);
-                
+            }
+        }
+        
+        for (let i = startIndex; i < endIndex; i++) {
+            try {
                 const senseData = await fetchSection(word, 'detailed_sense', entryIndex, i);
-                const sense = senseData.detailed_sense;
+                const detailedSense = senseData.detailed_sense;
                 
-                if (senseItem && sense) {
-                    senseItem.className = 'sense-item-container';
-                    senseItem.innerHTML = renderSenseHTML(sense, i);
+                const senseItem = sensesList.querySelector(`[data-sense-index="${i}"]`);
+                if (senseItem && detailedSense) {
+                    const preloadedSense = preloadedSenses[i];
+                    const shouldUpdate = !preloadedSense || hasSignificantDifference(preloadedSense, detailedSense);
                     
-                    if (sense.synonyms) sense.synonyms.forEach(s => allSynonyms.add(s));
-                    if (sense.antonyms) sense.antonyms.forEach(a => allAntonyms.add(a));
-                    
-                    updateSynonymsSection(allSynonyms, allAntonyms);
+                    if (shouldUpdate) {
+                        senseItem.className = 'sense-item-container';
+                        senseItem.innerHTML = renderSenseHTML(detailedSense, i);
+                        
+                        fetchedSenses.set(i, detailedSense);
+                        
+                        allSynonyms.clear();
+                        allAntonyms.clear();
+                        fetchedSenses.forEach(sense => {
+                            if (sense.synonyms) sense.synonyms.forEach(s => allSynonyms.add(s));
+                            if (sense.antonyms) sense.antonyms.forEach(a => allAntonyms.add(a));
+                        });
+                        
+                        updateSynonymsSection(allSynonyms, allAntonyms);
+                    }
                     
                     loadExamplesAndUsageNotes(word, entryIndex, i, senseItem);
                 }
             } catch (err) {
                 console.error(`Error fetching sense ${i}:`, err);
                 const senseItem = sensesList.querySelector(`[data-sense-index="${i}"]`);
-                if (senseItem) {
+                if (senseItem && !preloadedSenses[i]) {
                     senseItem.innerHTML = `<div class="error-message">Failed to load sense ${i + 1}</div>`;
                 }
             }
@@ -1081,7 +1170,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loadMoreBtn.disabled = false;
             loadMoreBtn.innerHTML = `<i class="fas fa-plus-circle"></i> Load More (${remainingSenses})`;
             loadMoreBtn.title = `Load ${remainingSenses} more senses`;
-            loadMoreBtn.onclick = () => loadRemainingSensesForEntry(word, endIndex, totalSenses, sensesList, allSynonyms, allAntonyms, loadMoreBtn, entryIndex);
+            loadMoreBtn.onclick = () => loadRemainingSensesForEntry(word, endIndex, totalSenses, sensesList, allSynonyms, allAntonyms, loadMoreBtn, entryIndex, preloadedSenses, fetchedSenses);
         } else {
             loadMoreBtn.innerHTML = '<i class="fas fa-check-circle"></i> All Loaded';
             setTimeout(() => {
