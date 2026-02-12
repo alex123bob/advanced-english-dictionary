@@ -8,7 +8,9 @@
 
 const fs = require('fs');
 const path = require('path');
+
 const { promisify } = require('util');
+const crypto = require('crypto');
 const chalk = require('chalk');
 
 const readFile = promisify(fs.readFile);
@@ -23,10 +25,16 @@ const DIST_DIR = path.join(__dirname, 'dist');
 // Files to process
 const FILES_TO_PROCESS = [
   'index.html',
-  'style.css', 
+  'style.css',
   'script.js',
   'config.js'
 ];
+
+// Helper to create a hash from file content and current timestamp
+function getHash(content) {
+  const now = Date.now().toString();
+  return crypto.createHash('md5').update(content + now).digest('hex').slice(0, 8);
+}
 
 // Minify CSS
 async function minifyCSS(css) {
@@ -57,26 +65,14 @@ async function minifyJS(js, isConfig = false) {
     .trim();
 }
 
-// Optimize HTML
-async function optimizeHTML(html) {
-  // Inline critical CSS
-  const styleMatch = html.match(/<link[^>]*href="[^"]*style\.css"[^>]*>/);
-  if (styleMatch) {
-    try {
-      const cssPath = path.join(SOURCE_DIR, 'style.css');
-      const cssContent = await readFile(cssPath, 'utf8');
-      const minifiedCSS = await minifyCSS(cssContent);
-      
-      // Replace link tag with inline style
-      html = html.replace(styleMatch[0], `<style>${minifiedCSS}</style>`);
-    } catch (err) {
-      console.warn(chalk.yellow('⚠️  Could not inline CSS:', err.message));
-    }
-  }
-  
+// Optimize HTML and update references to hashed files
+async function optimizeHTML(html, cssHashed, jsHashed) {
+  // Replace style.css reference with hashed version
+  html = html.replace(/href="style\.css"/g, `href="${cssHashed}"`);
+  // Replace script.js reference with hashed version
+  html = html.replace(/src="script\.js"/g, `src="${jsHashed}"`);
   // Remove live reload script if present
   html = html.replace(/<script>[^<]*live reload[^<]*<\/script>/gi, '');
-  
   // Basic HTML minification
   return html
     .replace(/\s+/g, ' ') // Collapse whitespace
@@ -84,10 +80,31 @@ async function optimizeHTML(html) {
     .trim();
 }
 
+// Helper to recursively delete a directory
+async function deleteFolderRecursive(folderPath) {
+  if (fs.existsSync(folderPath)) {
+    for (const file of fs.readdirSync(folderPath)) {
+      const curPath = path.join(folderPath, file);
+      if (fs.lstatSync(curPath).isDirectory()) {
+        await deleteFolderRecursive(curPath);
+      } else {
+        fs.unlinkSync(curPath);
+      }
+    }
+    fs.rmdirSync(folderPath);
+  }
+}
+
 // Create production bundle
 async function createProductionBundle() {
   console.log(chalk.blue('🔨 Starting production build...'));
-  
+
+  // Delete dist directory if it exists
+  if (fs.existsSync(DIST_DIR)) {
+    console.log(chalk.yellow('⚠️  Removing existing dist directory...'));
+    await deleteFolderRecursive(DIST_DIR);
+  }
+
   // Create dist directory
   try {
     await mkdir(DIST_DIR, { recursive: true });
@@ -98,59 +115,54 @@ async function createProductionBundle() {
     }
     console.log(chalk.yellow('📁 dist directory already exists'));
   }
-  
-  // Process each file
+
+  // Read and hash CSS and JS
+  const cssPath = path.join(SOURCE_DIR, 'style.css');
+  const jsPath = path.join(SOURCE_DIR, 'script.js');
+  const cssContent = await readFile(cssPath, 'utf8');
+  const jsContent = await readFile(jsPath, 'utf8');
+  const minifiedCSS = await minifyCSS(cssContent);
+  const minifiedJS = await minifyJS(jsContent, false);
+  const cssHash = getHash(minifiedCSS);
+  const jsHash = getHash(minifiedJS);
+  const cssHashed = `style.${cssHash}.css`;
+  const jsHashed = `script.${jsHash}.js`;
+
+  // Write hashed CSS and JS
+  await writeFile(path.join(DIST_DIR, cssHashed), minifiedCSS, 'utf8');
+  console.log(chalk.green(`✅ Minified & Hashed CSS: ${cssHashed}`));
+  await writeFile(path.join(DIST_DIR, jsHashed), minifiedJS, 'utf8');
+  console.log(chalk.green(`✅ Minified & Hashed JS: ${jsHashed}`));
+
+  // Process other files
   for (const fileName of FILES_TO_PROCESS) {
+    if (fileName === 'style.css' || fileName === 'script.js') continue; // Already handled
     const sourcePath = path.join(SOURCE_DIR, fileName);
-    const distPath = path.join(DIST_DIR, fileName);
-    
+    let distPath = path.join(DIST_DIR, fileName);
+
     try {
-      // Check if file exists
       await stat(sourcePath);
-      
       let content = await readFile(sourcePath, 'utf8');
       let processedContent = content;
-      
-      // Process based on file type
+
       switch (path.extname(fileName)) {
         case '.html':
-          processedContent = await optimizeHTML(content);
-          console.log(chalk.green(`✅ Processed HTML: ${fileName}`));
+          processedContent = await optimizeHTML(content, cssHashed, jsHashed);
           break;
-          
-        case '.css':
-          processedContent = await minifyCSS(content);
-          console.log(chalk.green(`✅ Minified CSS: ${fileName}`));
-          break;
-          
         case '.js':
-          // Special handling for config.js - don't minify to preserve logic
-          if (fileName === 'config.js') {
-            processedContent = content; // Copy as-is
-            console.log(chalk.green(`✅ Copied JS: ${fileName}`));
-          } else {
-            processedContent = await minifyJS(content, false);
-            console.log(chalk.green(`✅ Minified JS: ${fileName}`));
-          }
+          // config.js: copy as-is
           break;
-          
         case '.json':
-          // Minify JSON by parsing and re-stringifying
           try {
             const jsonData = JSON.parse(content);
             processedContent = JSON.stringify(jsonData);
-            console.log(chalk.green(`✅ Minified JSON: ${fileName}`));
           } catch (err) {
             console.warn(chalk.yellow(`⚠️  Could not parse JSON ${fileName}, copying as-is`));
           }
           break;
-          
-        default:
-          console.log(chalk.blue(`📄 Copied: ${fileName}`));
       }
-      
       await writeFile(distPath, processedContent, 'utf8');
-      
+      console.log(chalk.green(`✅ Processed: ${fileName}`));
     } catch (err) {
       if (err.code === 'ENOENT') {
         console.warn(chalk.yellow(`⚠️  Skipping missing file: ${fileName}`));
