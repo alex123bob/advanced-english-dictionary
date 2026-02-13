@@ -1022,6 +1022,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         entryTabsContainer.style.display = 'block';
         
+        const currentEntry = basicData.entries[currentSelectedEntry || 0];
+        const currentPos = currentEntry.meanings_summary.map(m => m.part_of_speech).join(', ');
+        const currentText = `Form ${(currentSelectedEntry || 0) + 1}: ${currentPos} (${currentEntry.total_senses} sense${currentEntry.total_senses !== 1 ? 's' : ''})`;
+        
         const selectorHTML = `
             <div class="entry-selector-label">
                 <span>Word Forms:</span>
@@ -1030,25 +1034,57 @@ document.addEventListener('DOMContentLoaded', () => {
                 </span>
             </div>
             <div class="entry-dropdown-container">
-                <select class="entry-dropdown" id="entryDropdown">
+                <div class="entry-dropdown-custom" id="entryDropdownCustom">
+                    <span class="dropdown-selected">${currentText}</span>
+                    <i class="fas fa-chevron-down dropdown-arrow"></i>
+                </div>
+                <div class="dropdown-menu" id="dropdownMenu" style="display: none;">
                     ${basicData.entries.map((entry, idx) => {
                         const posLabels = entry.meanings_summary.map(m => m.part_of_speech).join(', ');
-                        return `<option value="${idx}" ${idx === 0 ? 'selected' : ''}>Form ${idx + 1}: ${posLabels} (${entry.total_senses} sense${entry.total_senses !== 1 ? 's' : ''})</option>`;
+                        const text = `Form ${idx + 1}: ${posLabels} (${entry.total_senses} sense${entry.total_senses !== 1 ? 's' : ''})`;
+                        const isSelected = idx === (currentSelectedEntry || 0);
+                        return `<div class="dropdown-option ${isSelected ? 'selected' : ''}" data-index="${idx}">${text}</div>`;
                     }).join('')}
-                </select>
+                </div>
             </div>
         `;
         
         entryTabsContainer.innerHTML = selectorHTML;
         
-        // Add change event listener
-        const dropdown = document.getElementById('entryDropdown');
-        if (dropdown) {
-            dropdown.addEventListener('change', () => {
-                const entryIndex = parseInt(dropdown.value);
+        const dropdownContainer = entryTabsContainer.querySelector('.entry-dropdown-container');
+        const dropdownCustom = document.getElementById('entryDropdownCustom');
+        const dropdownMenu = document.getElementById('dropdownMenu');
+        const options = dropdownMenu.querySelectorAll('.dropdown-option');
+        
+        dropdownCustom.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = dropdownMenu.style.display === 'block';
+            dropdownMenu.style.display = isVisible ? 'none' : 'block';
+            if (isVisible) {
+                dropdownContainer.classList.remove('active');
+            } else {
+                dropdownContainer.classList.add('active');
+            }
+        });
+        
+        options.forEach(option => {
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const entryIndex = parseInt(option.dataset.index);
+                
+                dropdownMenu.style.display = 'none';
+                dropdownContainer.classList.remove('active');
+                
                 switchToEntry(entryIndex);
             });
-        }
+        });
+        
+        document.addEventListener('click', (e) => {
+            if (!dropdownContainer.contains(e.target)) {
+                dropdownMenu.style.display = 'none';
+                dropdownContainer.classList.remove('active');
+            }
+        });
     }
     
     function switchToEntry(entryIndex) {
@@ -1056,9 +1092,32 @@ document.addEventListener('DOMContentLoaded', () => {
         
         currentSelectedEntry = entryIndex;
         
-        const dropdown = document.getElementById('entryDropdown');
-        if (dropdown) {
-            dropdown.value = entryIndex.toString();
+        const options = entryTabsContainer.querySelectorAll('.dropdown-option');
+        if (options.length > 0) {
+            let selectedText = '';
+            
+            options.forEach(option => {
+                option.classList.remove('selected');
+                if (parseInt(option.dataset.index) === entryIndex) {
+                    option.classList.add('selected');
+                    selectedText = option.textContent;
+                }
+            });
+            
+            const selectedTextEl = entryTabsContainer.querySelector('.dropdown-selected');
+            if (selectedTextEl && selectedText) {
+                selectedTextEl.textContent = selectedText;
+            }
+            
+            const dropdownMenu = document.getElementById('dropdownMenu');
+            const dropdownContainer = entryTabsContainer.querySelector('.entry-dropdown-container');
+            
+            if (dropdownMenu) {
+                dropdownMenu.style.display = 'none';
+            }
+            if (dropdownContainer) {
+                dropdownContainer.classList.remove('active');
+            }
         }
         
         updateHeadwordAndPronunciation(currentWordData, entryIndex);

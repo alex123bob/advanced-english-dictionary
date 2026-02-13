@@ -1998,6 +1998,10 @@ body {
         max-height: 350px;
         width: 100%;
     }
+
+    .definitions-card {
+        max-height: 500px;
+    }
     
     .content-grid {
         padding: 0.75rem;
@@ -2301,4 +2305,91 @@ body {
 
 .sense-item-container {
     position: relative;
+}
+
+/* Custom Dropdown Styles */
+.entry-dropdown-container {
+    position: relative;
+    width: 100%;
+    margin-top: 1rem;
+    font-family: 'Inter', sans-serif;
+}
+
+.entry-dropdown-custom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 0.85rem 1.25rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    user-select: none;
+}
+
+.entry-dropdown-custom:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.15);
+    transform: translateY(-1px);
+}
+
+.dropdown-selected {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 0.95rem;
+}
+
+.dropdown-arrow {
+    color: var(--primary-color);
+    transition: transform 0.3s ease;
+}
+
+.entry-dropdown-container.active .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.entry-dropdown-container.active .entry-dropdown-custom {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: 100%;
+    background: white;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border: 1px solid var(--border-color);
+    z-index: 100;
+    overflow: hidden;
+    animation: fadeInUp 0.2s ease-out;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.dropdown-option {
+    padding: 0.85rem 1.25rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    border-bottom: 1px solid rgba(0,0,0,0.03);
+    font-size: 0.95rem;
+    color: var(--text-color);
+}
+
+.dropdown-option:last-child {
+    border-bottom: none;
+}
+
+.dropdown-option:hover {
+    background-color: #f0f4ff;
+    color: var(--primary-color);
+}
+
+.dropdown-option.selected {
+    background: linear-gradient(135deg, rgba(67, 97, 238, 0.15), rgba(114, 9, 183, 0.15));
+    color: var(--primary-color);
 }
