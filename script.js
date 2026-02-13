@@ -774,6 +774,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             loadEntryContent(query, 0, basicData);
             
+            // Blur the search input to prevent mobile zoom persistence
+            searchInput.blur();
+            
         } catch (error) {
             console.error('Search error:', error);
             showLoading(false);

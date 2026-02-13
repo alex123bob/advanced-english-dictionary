@@ -2171,6 +2171,8 @@ body {
     .history-panel {
         width: 100%;
         right: -100%;
+        height: calc(100vh - 20px); /* Account for mobile browser UI */
+        top: 10px;
     }
     
     .history-toggle-btn {
