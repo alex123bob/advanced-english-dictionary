@@ -14,10 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Result fields
     const headword = document.getElementById('headword');
-    const pronunciationContent = document.getElementById('pronunciationContent');
     const frequency = document.getElementById('frequency');
-    const frequencyCard = document.getElementById('frequencyCard');
-    const executionTime = document.getElementById('executionTime');
+    const wordFrequency = document.getElementById('wordFrequency');
     const entryTabsContainer = document.getElementById('entryTabsContainer');
     const definitionsContent = document.getElementById('definitionsContent');
     const etymologyContent = document.getElementById('etymologyContent');
@@ -27,7 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const wordFamilyContent = document.getElementById('wordFamilyContent');
 
     // Cache management for API responses
-    const CACHE_PREFIX = 'dict_cache_';
+    const CACHE_KEY = 'dict_cache'; // Single localStorage key for all cached data
+    const CACHE_VERSION = '1.0.0'; // Increment this when cache structure changes
     const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
     
     function getCacheKey(word, section, index) {
@@ -36,20 +35,29 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function getCachedData(word, section, index = null) {
         try {
-            const key = getCacheKey(word, section, index);
-            const cached = localStorage.getItem(key);
-            if (!cached) return null;
+            const cacheObject = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+            const cacheKey = `${word.toLowerCase()}_${section}${index !== null ? `_${index}` : ''}`;
+            const cacheEntry = cacheObject[cacheKey];
             
-            const { data, timestamp } = JSON.parse(cached);
+            if (!cacheEntry) return null;
+            
             const now = Date.now();
             
-            // Check if cache is expired
-            if (now - timestamp > CACHE_EXPIRY) {
-                localStorage.removeItem(key);
+            // Check if cache version is compatible
+            if (cacheEntry.version !== CACHE_VERSION) {
+                delete cacheObject[cacheKey];
+                localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObject));
                 return null;
             }
             
-            return data;
+            // Check if cache is expired
+            if (now - cacheEntry.timestamp > CACHE_EXPIRY) {
+                delete cacheObject[cacheKey];
+                localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObject));
+                return null;
+            }
+            
+            return cacheEntry.data;
         } catch (err) {
             console.error('Error reading cache:', err);
             return null;
@@ -58,12 +66,15 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function setCachedData(word, section, index, data) {
         try {
-            const key = getCacheKey(word, section, index);
-            const cacheObject = {
+            const cacheObject = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+            const cacheKey = `${word.toLowerCase()}_${section}${index !== null ? `_${index}` : ''}`;
+            const cacheEntry = {
                 data,
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                version: CACHE_VERSION
             };
-            localStorage.setItem(key, JSON.stringify(cacheObject));
+            cacheObject[cacheKey] = cacheEntry;
+            localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObject));
         } catch (err) {
             // If localStorage is full or unavailable, just log and continue
             console.warn('Failed to cache data:', err);
@@ -72,24 +83,20 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function clearExpiredCache() {
         try {
-            const keys = Object.keys(localStorage);
+            const cacheObject = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
             const now = Date.now();
+            let hasChanges = false;
             
-            keys.forEach(key => {
-                if (key.startsWith(CACHE_PREFIX)) {
-                    try {
-                        const cached = localStorage.getItem(key);
-                        const { timestamp } = JSON.parse(cached);
-                        
-                        if (now - timestamp > CACHE_EXPIRY) {
-                            localStorage.removeItem(key);
-                        }
-                    } catch (err) {
-                        // If parsing fails, remove the corrupted cache entry
-                        localStorage.removeItem(key);
-                    }
+            for (const [key, cacheEntry] of Object.entries(cacheObject)) {
+                if (cacheEntry.version !== CACHE_VERSION || now - cacheEntry.timestamp > CACHE_EXPIRY) {
+                    delete cacheObject[key];
+                    hasChanges = true;
                 }
-            });
+            }
+            
+            if (hasChanges) {
+                localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObject));
+            }
         } catch (err) {
             console.error('Error clearing expired cache:', err);
         }
@@ -97,17 +104,21 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function clearCacheForWord(word) {
         try {
+            const cacheObject = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
             const wordLower = word.toLowerCase();
-            const keys = Object.keys(localStorage);
             let count = 0;
             
-            keys.forEach(key => {
-                // Match pattern: dict_cache_{word}_*
-                if (key.startsWith(CACHE_PREFIX + wordLower + '_')) {
-                    localStorage.removeItem(key);
+            for (const key of Object.keys(cacheObject)) {
+                // Match pattern: {word}_*
+                if (key.startsWith(wordLower + '_')) {
+                    delete cacheObject[key];
                     count++;
                 }
-            });
+            }
+            
+            if (count > 0) {
+                localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObject));
+            }
             
             console.log(`Cleared ${count} cache entries for word: ${word}`);
             return count;
@@ -119,16 +130,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function clearAllCache() {
         try {
-            const keys = Object.keys(localStorage).filter(k => k.startsWith(CACHE_PREFIX));
-            const count = keys.length;
-            
-            keys.forEach(key => localStorage.removeItem(key));
-            
-            console.log(`Cleared ${count} total cache entries`);
-            return count;
+            localStorage.removeItem(CACHE_KEY);
+            console.log('Cleared all cache entries');
+            return true;
         } catch (err) {
             console.error('Error clearing all cache:', err);
-            return 0;
+            return false;
         }
     }
 
@@ -294,6 +301,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function updateHeadwordAndPronunciation(basicData, entryIndex) {
+        headword.textContent = basicData.headword;
+        
+        const entryData = basicData.entries ? basicData.entries[entryIndex] : null;
+        const wordPronunciation = document.getElementById('wordPronunciation');
+        
+        if (wordPronunciation && entryData) {
+            const pronunciationHtml = renderInlinePronunciation(entryData);
+            if (pronunciationHtml) {
+                wordPronunciation.innerHTML = pronunciationHtml;
+                wordPronunciation.style.display = 'flex';
+            } else {
+                wordPronunciation.style.display = 'none';
+            }
+        }
+    }
+
     function showLoading(show) {
         loadingContainer.style.display = show ? 'block' : 'none';
     }
@@ -337,22 +361,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Helper function to render pronunciation (audio or IPA text)
-    function renderPronunciation(entryData) {
-        if (!entryData) {
-            pronunciationContent.innerHTML = '';
-            return;
-        }
+    // Helper function to render pronunciation (audio or IPA text) for inline use
+    function renderInlinePronunciation(entryData) {
+        if (!entryData) return '';
         
         const audioUrl = entryData.pronunciation || '';
         const ipaText = entryData.ipa || '';
         
-        if (!audioUrl && !ipaText) {
-            pronunciationContent.innerHTML = '<div class="no-data">No pronunciation available</div>';
-            return;
-        }
+        if (!audioUrl && !ipaText) return '';
         
-        let html = '<div class="pronunciation-wrapper">';
+        let html = '<div class="sense-pronunciation">';
         
         if (audioUrl && isAudioUrl(audioUrl)) {
             let audioType = 'audio/mpeg';
@@ -363,13 +381,10 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (audioUrl.endsWith('.flac')) audioType = 'audio/flac';
             
             html += `
-                <audio controls class="pronunciation-audio">
+                <audio controls class="pronunciation-audio-small">
                     <source src="${audioUrl}" type="${audioType}">
                     Your browser does not support the audio element.
                 </audio>
-                <button class="audio-play-btn" onclick="this.previousElementSibling.play()">
-                    <i class="fas fa-volume-up"></i>
-                </button>
             `;
         }
         
@@ -378,7 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         html += '</div>';
-        pronunciationContent.innerHTML = html;
+        return html;
     }
 
     function clearResults() {
@@ -721,8 +736,6 @@ document.addEventListener('DOMContentLoaded', () => {
         showLoading(true);
         clearResults();
         
-        const startTime = performance.now();
-        
         try {
             // Step 1: Fetch basic info first (fast ~0.5s)
             const basicData = await fetchSection(query, 'basic');
@@ -746,16 +759,12 @@ document.addEventListener('DOMContentLoaded', () => {
             showResults(true);
             
             // Populate basic info
-            const execTime = ((performance.now() - startTime) / 1000).toFixed(2);
-            executionTime.textContent = `${execTime}s`;
-            
-            headword.textContent = basicData.headword;
+            updateHeadwordAndPronunciation(basicData, 0);
             
             // Render entry selector if multiple entries
             renderEntrySelector(basicData);
             
             // Show loading indicators for all sections
-            showSectionLoading(pronunciationContent);
             showSectionLoading(definitionsContent);
             showSectionLoading(etymologyContent);
             showSectionLoading(synonymsContent);
@@ -772,89 +781,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    function renderEntrySelector(basicData) {
-        const hasMultipleEntries = basicData.total_entries && basicData.total_entries > 1;
-        
-        entryTabsContainer.innerHTML = '';
-        
-        if (!hasMultipleEntries) {
-            entryTabsContainer.style.display = 'none';
-            return;
-        }
-        
-        entryTabsContainer.style.display = 'block';
-        
-        const selectorHTML = `
-            <div class="entry-selector-label">
-                <span>Word Forms:</span>
-                <span class="entry-selector-hint">
-                    <i class="fas fa-info-circle" title="This word has multiple forms with different origins and meanings"></i>
-                </span>
-            </div>
-            <div class="entry-tabs">
-                ${basicData.entries.map((entry, idx) => {
-                    const posLabels = entry.meanings_summary.map(m => m.part_of_speech).join(', ');
-                    return `
-                        <button class="entry-tab ${idx === 0 ? 'active' : ''}" data-entry-index="${idx}">
-                            <div class="entry-tab-number">Form ${idx + 1}</div>
-                            <div class="entry-tab-meta">${posLabels}</div>
-                            <div class="entry-tab-count">${entry.total_senses} sense${entry.total_senses !== 1 ? 's' : ''}</div>
-                        </button>
-                    `;
-                }).join('')}
-            </div>
-        `;
-        
-        entryTabsContainer.innerHTML = selectorHTML;
-        
-        document.querySelectorAll('.entry-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                const entryIndex = parseInt(tab.dataset.entryIndex);
-                switchToEntry(entryIndex);
-            });
-        });
-    }
-    
-    function switchToEntry(entryIndex) {
-        if (entryIndex === currentSelectedEntry) return;
-        
-        currentSelectedEntry = entryIndex;
-        
-        document.querySelectorAll('.entry-tab').forEach(tab => {
-            const tabIndex = parseInt(tab.dataset.entryIndex);
-            if (tabIndex === entryIndex) {
-                tab.classList.add('active');
-            } else {
-                tab.classList.remove('active');
-            }
-        });
-        
-        const definitionsCard = document.querySelector('.definitions-card');
-        if (definitionsCard) {
-            const existingLoadMoreBtn = definitionsCard.querySelector('.load-more-btn-header');
-            if (existingLoadMoreBtn) {
-                existingLoadMoreBtn.remove();
-            }
-        }
-        
-        showSectionLoading(definitionsContent);
-        showSectionLoading(etymologyContent);
-        showSectionLoading(synonymsContent);
-        showSectionLoading(culturalContent);
-        showSectionLoading(usageContent);
-        showSectionLoading(wordFamilyContent);
-        
-        loadEntryContent(currentWord, entryIndex, currentWordData);
-    }
-    
     function loadEntryContent(word, entryIndex, basicData) {
         const entryData = basicData.entries ? basicData.entries[entryIndex] : null;
-        
-        if (entryData) {
-            renderPronunciation(entryData);
-        } else {
-            pronunciationContent.innerHTML = '<div class="no-data">No pronunciation available</div>';
-        }
         
         fetchSection(word, 'frequency', entryIndex).then(data => {
             if (data.frequency) {
@@ -863,13 +791,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                     .join(' ');
                 frequency.textContent = freqText;
-                frequencyCard.style.display = 'block';
+                wordFrequency.style.display = 'flex';
             } else {
-                frequencyCard.style.display = 'none';
+                wordFrequency.style.display = 'none';
             }
         }).catch(err => {
             console.error('Error fetching frequency:', err);
-            frequencyCard.style.display = 'none';
+            wordFrequency.style.display = 'none';
         });
         
         fetchSection(word, 'etymology', entryIndex).then(data => {
@@ -1025,7 +953,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (basicSenseJson) {
                     try {
                         const basicSense = JSON.parse(basicSenseJson);
-                        senseItem.innerHTML = renderSenseHTML(basicSense, senseIndex, false);
+                        senseItem.innerHTML = renderSenseHTML(basicSense, senseIndex, false, '');
                         senseItem.innerHTML += '<div class="sense-loading-overlay"><i class="fas fa-spinner fa-spin"></i> Loading detailed information...</div>';
                     } catch (e) {
                         console.warn('Failed to parse basic sense data:', e);
@@ -1054,6 +982,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         detailedSense.usage_notes = usageNotesData.usage_notes;
                     }
                     
+                    // Get pronunciation for this entry
+                    const entryData = currentWordData.entries[entryIndex];
+                    const pronunciationHtml = renderInlinePronunciation(entryData);
+                    
                     senseItem.innerHTML = renderSenseHTML(detailedSense, senseIndex, true);
                     
                     const sensesList = senseItem.closest('.senses-list');
@@ -1076,6 +1008,77 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
+    }
+    
+    function renderEntrySelector(basicData) {
+        const hasMultipleEntries = basicData.total_entries && basicData.total_entries > 1;
+        
+        entryTabsContainer.innerHTML = '';
+        
+        if (!hasMultipleEntries) {
+            entryTabsContainer.style.display = 'none';
+            return;
+        }
+        
+        entryTabsContainer.style.display = 'block';
+        
+        const selectorHTML = `
+            <div class="entry-selector-label">
+                <span>Word Forms:</span>
+                <span class="entry-selector-hint">
+                    <i class="fas fa-info-circle" title="This word has multiple forms with different origins and meanings"></i>
+                </span>
+            </div>
+            <div class="entry-dropdown-container">
+                <select class="entry-dropdown" id="entryDropdown">
+                    ${basicData.entries.map((entry, idx) => {
+                        const posLabels = entry.meanings_summary.map(m => m.part_of_speech).join(', ');
+                        return `<option value="${idx}" ${idx === 0 ? 'selected' : ''}>Form ${idx + 1}: ${posLabels} (${entry.total_senses} sense${entry.total_senses !== 1 ? 's' : ''})</option>`;
+                    }).join('')}
+                </select>
+            </div>
+        `;
+        
+        entryTabsContainer.innerHTML = selectorHTML;
+        
+        // Add change event listener
+        const dropdown = document.getElementById('entryDropdown');
+        if (dropdown) {
+            dropdown.addEventListener('change', () => {
+                const entryIndex = parseInt(dropdown.value);
+                switchToEntry(entryIndex);
+            });
+        }
+    }
+    
+    function switchToEntry(entryIndex) {
+        if (entryIndex === currentSelectedEntry) return;
+        
+        currentSelectedEntry = entryIndex;
+        
+        const dropdown = document.getElementById('entryDropdown');
+        if (dropdown) {
+            dropdown.value = entryIndex.toString();
+        }
+        
+        updateHeadwordAndPronunciation(currentWordData, entryIndex);
+        
+        const definitionsCard = document.querySelector('.definitions-card');
+        if (definitionsCard) {
+            const existingLoadMoreBtn = definitionsCard.querySelector('.load-more-btn-header');
+            if (existingLoadMoreBtn) {
+                existingLoadMoreBtn.remove();
+            }
+        }
+        
+        showSectionLoading(definitionsContent);
+        showSectionLoading(etymologyContent);
+        showSectionLoading(synonymsContent);
+        showSectionLoading(culturalContent);
+        showSectionLoading(usageContent);
+        showSectionLoading(wordFamilyContent);
+        
+        loadEntryContent(currentWord, entryIndex, currentWordData);
     }
     
     function updateSynonymsSection(allSynonyms, allAntonyms) {
