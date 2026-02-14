@@ -681,22 +681,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Extract time parameter from video URL if present
             const timeMatch = video.video_url.match(/[?&]t=(\d+)/);
-            const timeParam = timeMatch ? '&t=' + timeMatch[1] : '';
-
-            // Construct iframe element manually to avoid template literal issues
-            const iframe = document.createElement('iframe');
-            iframe.src = 'https://player.bilibili.com/player.html?bvid=' + encodeURIComponent(bvid) + '&page=1&autoplay=0&high_quality=0&danmaku=0' + timeParam;
-            iframe.scrolling = 'no';
-            iframe.border = '0';
-            iframe.frameBorder = 'no';
-            iframe.frameSpacing = '0';
-            iframe.allowFullscreen = true;
-            iframe.style.cssText = 'width: 100%; height: 100%; border-radius: var(--radius-sm);';
+            const timeParam = timeMatch ? `&t=${timeMatch[1]}` : '';
 
             return `
                 <div class="bilibili-video-card">
                     <div class="video-thumbnail">
-                        ${iframe.outerHTML}
+                        <iframe 
+                            src="https://player.bilibili.com/player.html?bvid=${bvid}&page=1&autoplay=0&high_quality=0&danmaku=0${timeParam}"
+                            scrolling="no" 
+                            border="0" 
+                            frameborder="no" 
+                            framespacing="0" 
+                            allowfullscreen="true"
+                            style="width: 100%; height: 100%; border-radius: var(--radius-sm);">
+                        </iframe>
                         <div class="video-play-overlay" style="display: none;">
                             <i class="fab fa-bilibili"></i>
                         </div>
