@@ -687,7 +687,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="bilibili-video-card">
                     <div class="video-thumbnail">
                         <iframe 
-                            src="//player.bilibili.com/player.html?bvid=${bvid}&page=1&autoplay=0&high_quality=0&danmaku=0${timeParam}"
+                            src="https://player.bilibili.com/player.html?bvid=${bvid}&page=1&autoplay=0&high_quality=0&danmaku=0${timeParam}"
                             scrolling="no" 
                             border="0" 
                             frameborder="no" 
