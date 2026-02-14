@@ -19,6 +19,7 @@
   "license": "MIT",
   "devDependencies": {
     "chalk": "^4.1.2",
+    "terser": "^5.46.0",
     "ws": "^8.19.0"
   }
 }

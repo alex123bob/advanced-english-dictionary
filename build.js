@@ -12,6 +12,7 @@ const path = require('path');
 const { promisify } = require('util');
 const crypto = require('crypto');
 const chalk = require('chalk');
+const { minify } = require('terser');
 
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
@@ -43,25 +44,6 @@ async function minifyCSS(css) {
     .replace(/\s+/g, ' ') // Collapse whitespace
     .replace(/\s*([{}:;,])\s*/g, '$1') // Remove spaces around braces, colons, etc.
     .replace(/;}/g, '}') // Remove trailing semicolons
-    .trim();
-}
-
-// Minify JS
-async function minifyJS(js, isConfig = false) {
-  // For config.js, preserve more structure to avoid breaking logic
-  if (isConfig) {
-    return js
-      .replace(/\/\/.*$/gm, '') // Remove single-line comments
-      .replace(/\/\*[\s\S]*?\*\//g, '') // Remove multi-line comments
-      .trim();
-  }
-  
-  // Basic minification for other JS files
-  return js
-    .replace(/^\s*\/\/.*$/gm, '') // Remove single-line comments (only at start of line)
-    .replace(/\/\*[\s\S]*?\*\//g, '') // Remove multi-line comments
-    .replace(/\s+/g, ' ') // Collapse whitespace
-    .replace(/\s*([=+\-*\/%&|^~!<>?:;,()[\]])\s*/g, '$1') // Remove spaces around operators
     .trim();
 }
 
@@ -122,7 +104,7 @@ async function createProductionBundle() {
   const cssContent = await readFile(cssPath, 'utf8');
   const jsContent = await readFile(jsPath, 'utf8');
   const minifiedCSS = await minifyCSS(cssContent);
-  const minifiedJS = await minifyJS(jsContent, false);
+  const minifiedJS = (await minify(jsContent)).code;
   const cssHash = getHash(minifiedCSS);
   const jsHash = getHash(minifiedJS);
   const cssHashed = `style.${cssHash}.css`;
