@@ -2588,6 +2588,56 @@ body {
     overflow: hidden;
 }
 
+.video-matched-phrases {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.matched-phrases-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.matched-phrases-header i {
+    font-size: 0.75rem;
+}
+
+.matched-phrases-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+}
+
+.matched-phrase-tag {
+    background: linear-gradient(135deg, rgba(67, 97, 238, 0.1), rgba(114, 9, 183, 0.1));
+    color: var(--primary-color);
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid rgba(67, 97, 238, 0.2);
+    transition: all 0.2s ease;
+}
+
+.matched-phrase-tag:hover {
+    background: linear-gradient(135deg, rgba(67, 97, 238, 0.15), rgba(114, 9, 183, 0.15));
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(67, 97, 238, 0.1);
+}
+
+.no-matched-phrases {
+    color: var(--text-lighter);
+    font-size: 0.75rem;
+    font-style: italic;
+    padding: 0.25rem 0;
+}
+
 /* Mobile responsive for Bilibili videos */
 @media (max-width: 768px) {
     .bilibili-videos-grid {
@@ -2637,7 +2687,40 @@ body {
     }
 
     .video-stats {
+        gap: 0.75rem;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .video-thumbnail {
+        height: 120px;
+    }
+
+    .video-info {
+        padding: 0.75rem;
+    }
+
+    .video-title {
+        font-size: 0.9rem;
+    }
+
+    .video-meta {
         flex-direction: column;
         gap: 0.25rem;
+    }
+
+    .video-stats {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .matched-phrases-list {
+        gap: 0.25rem;
+    }
+
+    .matched-phrase-tag {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
     }
 }

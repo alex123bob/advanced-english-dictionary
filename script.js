@@ -716,16 +716,27 @@ document.addEventListener('DOMContentLoaded', () => {
                             </span>
                         </div>
                         <div class="video-stats">
-                            <span class="video-views">
-                                <i class="fas fa-eye"></i> ${viewCount}
-                            </span>
-                            <span class="video-likes">
-                                <i class="fas fa-heart"></i> ${likeCount}
-                            </span>
-                        </div>
-                        ${video.description && video.description !== '-' ? 
-                            `<div class="video-description">${video.description}</div>` : ''}
-                    </div>
+                             <span class="video-views">
+                                 <i class="fas fa-eye"></i> ${viewCount}
+                             </span>
+                             <span class="video-likes">
+                                 <i class="fas fa-heart"></i> ${likeCount}
+                             </span>
+                         </div>
+                         ${video.description ? 
+                             `<div class="video-description">${video.description}</div>` : ''}
+                         <div class="video-matched-phrases">
+                             <div class="matched-phrases-header">
+                                 <i class="fas fa-quote-left"></i>
+                                 <span>Matched Phrases</span>
+                             </div>
+                             <div class="matched-phrases-list">
+                                 ${video.matched_phrase && video.matched_phrase.trim() ? 
+                                     `<span class="matched-phrase-tag">${video.matched_phrase}</span>` : 
+                                     '<span class="no-matched-phrases">No matched phrases found</span>'}
+                             </div>
+                         </div>
+                     </div>
                 </div>
             `;
         }).join('');
