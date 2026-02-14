@@ -679,6 +679,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const bvidMatch = video.video_url.match(/\/(BV[0-9A-Za-z]+)/);
             const bvid = bvidMatch ? bvidMatch[1] : video.bvid;
 
+            console.log(`Rendering video: ${video.title} (BVID: ${bvid})`);
+
             // Extract time parameter from video URL if present
             const timeMatch = video.video_url.match(/[?&]t=(\d+)/);
             const timeParam = timeMatch ? `&t=${timeMatch[1]}` : '';
