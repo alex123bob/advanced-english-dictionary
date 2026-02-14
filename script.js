@@ -683,11 +683,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const timeMatch = video.video_url.match(/[?&]t=(\d+)/);
             const timeParam = timeMatch ? `&t=${timeMatch[1]}` : '';
 
+            // Construct iframe URL safely
+            const iframeUrl = `https://player.bilibili.com/player.html?bvid=${encodeURIComponent(bvid)}&page=1&autoplay=0&high_quality=0&danmaku=0${timeParam}`;
+
             return `
                 <div class="bilibili-video-card">
                     <div class="video-thumbnail">
                         <iframe 
-                            src="https://player.bilibili.com/player.html?bvid=${bvid}&page=1&autoplay=0&high_quality=0&danmaku=0${timeParam}"
+                            src="${iframeUrl}"
                             scrolling="no" 
                             border="0" 
                             frameborder="no" 
