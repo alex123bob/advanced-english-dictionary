@@ -58,10 +58,10 @@ async function minifyJS(js, isConfig = false) {
   
   // Basic minification for other JS files
   return js
-    .replace(/\/\/.*$/gm, '') // Remove single-line comments
+    .replace(/^\s*\/\/.*$/gm, '') // Remove single-line comments (only at start of line)
     .replace(/\/\*[\s\S]*?\*\//g, '') // Remove multi-line comments
     .replace(/\s+/g, ' ') // Collapse whitespace
-    .replace(/\s*([=+\-*\/%&|^~!<>?:;,{}()[\]])\s*/g, '$1') // Remove spaces around operators
+    .replace(/\s*([=+\-*\/%&|^~!<>?:;,()[\]])\s*/g, '$1') // Remove spaces around operators
     .trim();
 }
 
