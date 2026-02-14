@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const culturalContent = document.getElementById('culturalContent');
     const usageContent = document.getElementById('usageContent');
     const wordFamilyContent = document.getElementById('wordFamilyContent');
+    const bilibiliContent = document.getElementById('bilibiliContent');
 
     // Cache management for API responses
     const CACHE_KEY = 'dict_cache'; // Single localStorage key for all cached data
@@ -403,6 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
         culturalContent.innerHTML = '';
         usageContent.innerHTML = '';
         wordFamilyContent.innerHTML = '';
+        bilibiliContent.innerHTML = '';
     }
     
     function hasSignificantDifference(basicSense, detailedSense) {
@@ -660,6 +662,91 @@ document.addEventListener('DOMContentLoaded', () => {
         html += '</div>';
         return html;
     }
+ 
+    // Helper function to render Bilibili videos
+    function renderBilibiliVideos(videos) {
+        if (!videos || videos.length === 0) {
+            return '<div class="no-data">No Bilibili videos available</div>';
+        }
+
+        const videoCards = videos.map(video => {
+            const durationFormatted = formatDuration(video.duration);
+            const pubDate = new Date(video.pubdate * 1000).toLocaleDateString();
+            const viewCount = formatNumber(video.view);
+            const likeCount = formatNumber(video.like);
+            
+            // Extract BVID from video URL or use provided bvid
+            const bvidMatch = video.video_url.match(/\/(BV[0-9A-Za-z]+)/);
+            const bvid = bvidMatch ? bvidMatch[1] : video.bvid;
+
+            // Extract time parameter from video URL if present
+            const timeMatch = video.video_url.match(/[?&]t=(\d+)/);
+            const timeParam = timeMatch ? `&t=${timeMatch[1]}` : '';
+
+            return `
+                <div class="bilibili-video-card">
+                    <div class="video-thumbnail">
+                        <iframe 
+                            src="//player.bilibili.com/player.html?bvid=${bvid}&page=1&autoplay=0&high_quality=0&danmaku=0${timeParam}"
+                            scrolling="no" 
+                            border="0" 
+                            frameborder="no" 
+                            framespacing="0" 
+                            allowfullscreen="true"
+                            style="width: 100%; height: 100%; border-radius: var(--radius-sm);">
+                        </iframe>
+                        <div class="video-play-overlay" style="display: none;">
+                            <i class="fab fa-bilibili"></i>
+                        </div>
+                    </div>
+                    <div class="video-info">
+                        <h4 class="video-title">
+                            <a href="${video.video_url}" target="_blank" rel="noopener noreferrer">
+                                ${video.title}
+                            </a>
+                        </h4>
+                        <div class="video-meta">
+                            <span class="video-author">
+                                <i class="fas fa-user"></i> ${video.author}
+                            </span>
+                            <span class="video-date">
+                                <i class="fas fa-calendar"></i> ${pubDate}
+                            </span>
+                        </div>
+                        <div class="video-stats">
+                            <span class="video-views">
+                                <i class="fas fa-eye"></i> ${viewCount}
+                            </span>
+                            <span class="video-likes">
+                                <i class="fas fa-heart"></i> ${likeCount}
+                            </span>
+                        </div>
+                        ${video.description && video.description !== '-' ? 
+                            `<div class="video-description">${video.description}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        return `<div class="bilibili-videos-grid">${videoCards}</div>`;
+    }
+
+    // Helper function to format duration in MM:SS
+    function formatDuration(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+
+    // Helper function to format large numbers
+    function formatNumber(num) {
+        if (num >= 1000000) {
+            return (num / 1000000).toFixed(1) + 'M';
+        } else if (num >= 1000) {
+            return (num / 1000).toFixed(1) + 'K';
+        }
+        return num.toString();
+    }
 
     async function fetchSection(word, section, indexOrEntryIndex = null, senseIndex = null) {
         // For 2D indexing (detailed_sense, examples, usage_notes with entry_index + sense_index)
@@ -771,6 +858,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showSectionLoading(culturalContent);
             showSectionLoading(usageContent);
             showSectionLoading(wordFamilyContent);
+            showSectionLoading(bilibiliContent);
             
             loadEntryContent(query, 0, basicData);
             
@@ -853,6 +941,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }).catch(err => {
             console.error('Error fetching word_family:', err);
             wordFamilyContent.innerHTML = '<div class="error-message">Failed to load word family</div>';
+        });
+        
+        fetchSection(word, 'bilibili_videos').then(data => {
+            if (data.bilibili_videos && data.bilibili_videos.length) {
+                bilibiliContent.innerHTML = renderBilibiliVideos(data.bilibili_videos);
+            } else {
+                bilibiliContent.innerHTML = '<div class="no-data">No Bilibili videos available</div>';
+            }
+        }).catch(err => {
+            console.error('Error fetching bilibili_videos:', err);
+            bilibiliContent.innerHTML = '<div class="error-message">Failed to load Bilibili videos</div>';
         });
         
         loadSensesForEntry(word, entryIndex, entryData);
@@ -1139,6 +1238,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showSectionLoading(culturalContent);
         showSectionLoading(usageContent);
         showSectionLoading(wordFamilyContent);
+        showSectionLoading(bilibiliContent);
         
         loadEntryContent(currentWord, entryIndex, currentWordData);
     }
