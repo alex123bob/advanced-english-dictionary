@@ -35,6 +35,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function getCachedData(word, section, index = null) {
+        // Skip cache if disabled in local dev
+        if (!config.cache.enabled) {
+            return null;
+        }
+        
         try {
             const cacheObject = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
             const cacheKey = `${word.toLowerCase()}_${section}${index !== null ? `_${index}` : ''}`;
@@ -66,6 +71,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function setCachedData(word, section, index, data) {
+        // Skip cache if disabled in local dev
+        if (!config.cache.enabled) {
+            return;
+        }
+        
         try {
             const cacheObject = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
             const cacheKey = `${word.toLowerCase()}_${section}${index !== null ? `_${index}` : ''}`;
@@ -158,15 +168,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function addToSearchHistory(word) {
+        // Skip history if cache is disabled in local dev
+        if (!config.cache.enabled) {
+            return;
+        }
+        
         try {
             let history = getSearchHistory();
             
             // Remove if already exists (we'll add it to the front)
             history = history.filter(item => item.word.toLowerCase() !== word.toLowerCase());
             
-            // Add to front
+            // Add to front with lowercased word
             history.unshift({
-                word,
+                word: word.toLowerCase(),
                 timestamp: Date.now()
             });
             
