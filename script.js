@@ -691,10 +691,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function fetchSection(word, section, indexOrEntryIndex = null, senseIndex = null) {
-        // For 2D indexing (detailed_sense, examples, usage_notes with entry_index + sense_index)
-        const cacheKey = senseIndex !== null ? `${indexOrEntryIndex}_${senseIndex}` : indexOrEntryIndex;
-
-        
         const apiUrl = config.api.getUrl('dictionary');
         const body = { word, section };
         
@@ -984,9 +980,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (preloadedSenses[i]) {
                 const basicSense = preloadedSenses[i];
-                
-                const cacheKey = `${entryIndex}_${i}`;
-
                 
                 let senseToRender = basicSense;
                 let isDetailed = false;
