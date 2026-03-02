@@ -25,133 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const wordFamilyContent = document.getElementById('wordFamilyContent');
     const bilibiliContent = document.getElementById('bilibiliContent');
 
-    // Cache management for API responses
-    const CACHE_KEY = 'dict_cache'; // Single localStorage key for all cached data
-    const CACHE_VERSION = '1.0.0'; // Increment this when cache structure changes
-    const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-    
-    function getCacheKey(word, section, index) {
-        return `${CACHE_PREFIX}${word.toLowerCase()}_${section}${index !== null ? `_${index}` : ''}`;
-    }
-    
-    function getCachedData(word, section, index = null) {
-        // Skip cache if disabled in local dev
-        if (!config.cache.enabled) {
-            return null;
-        }
-        
-        try {
-            const cacheObject = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
-            const cacheKey = `${word.toLowerCase()}_${section}${index !== null ? `_${index}` : ''}`;
-            const cacheEntry = cacheObject[cacheKey];
-            
-            if (!cacheEntry) return null;
-            
-            const now = Date.now();
-            
-            // Check if cache version is compatible
-            if (cacheEntry.version !== CACHE_VERSION) {
-                delete cacheObject[cacheKey];
-                localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObject));
-                return null;
-            }
-            
-            // Check if cache is expired
-            if (now - cacheEntry.timestamp > CACHE_EXPIRY) {
-                delete cacheObject[cacheKey];
-                localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObject));
-                return null;
-            }
-            
-            return cacheEntry.data;
-        } catch (err) {
-            console.error('Error reading cache:', err);
-            return null;
-        }
-    }
-    
-    function setCachedData(word, section, index, data) {
-        // Skip cache if disabled in local dev
-        if (!config.cache.enabled) {
-            return;
-        }
-        
-        try {
-            const cacheObject = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
-            const cacheKey = `${word.toLowerCase()}_${section}${index !== null ? `_${index}` : ''}`;
-            const cacheEntry = {
-                data,
-                timestamp: Date.now(),
-                version: CACHE_VERSION
-            };
-            cacheObject[cacheKey] = cacheEntry;
-            localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObject));
-        } catch (err) {
-            // If localStorage is full or unavailable, just log and continue
-            console.warn('Failed to cache data:', err);
-        }
-    }
-    
-    function clearExpiredCache() {
-        try {
-            const cacheObject = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
-            const now = Date.now();
-            let hasChanges = false;
-            
-            for (const [key, cacheEntry] of Object.entries(cacheObject)) {
-                if (cacheEntry.version !== CACHE_VERSION || now - cacheEntry.timestamp > CACHE_EXPIRY) {
-                    delete cacheObject[key];
-                    hasChanges = true;
-                }
-            }
-            
-            if (hasChanges) {
-                localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObject));
-            }
-        } catch (err) {
-            console.error('Error clearing expired cache:', err);
-        }
-    }
-    
-    function clearCacheForWord(word) {
-        try {
-            const cacheObject = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
-            const wordLower = word.toLowerCase();
-            let count = 0;
-            
-            for (const key of Object.keys(cacheObject)) {
-                // Match pattern: {word}_*
-                if (key.startsWith(wordLower + '_')) {
-                    delete cacheObject[key];
-                    count++;
-                }
-            }
-            
-            if (count > 0) {
-                localStorage.setItem(CACHE_KEY, JSON.stringify(cacheObject));
-            }
-            
-            console.log(`Cleared ${count} cache entries for word: ${word}`);
-            return count;
-        } catch (err) {
-            console.error('Error clearing cache for word:', err);
-            return 0;
-        }
-    }
-    
-    function clearAllCache() {
-        try {
-            localStorage.removeItem(CACHE_KEY);
-            console.log('Cleared all cache entries');
-            return true;
-        } catch (err) {
-            console.error('Error clearing all cache:', err);
-            return false;
-        }
-    }
 
-    // Clear expired cache on page load
-    clearExpiredCache();
 
     // Search history management
     const HISTORY_KEY = 'dict_search_history';
@@ -168,11 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function addToSearchHistory(word) {
-        // Skip history if cache is disabled in local dev
-        if (!config.cache.enabled) {
-            return;
-        }
-        
         try {
             let history = getSearchHistory();
             
@@ -286,8 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
             history.splice(index, 1);
             localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
             
-            // Clear all cache for this word
-            clearCacheForWord(wordToRemove);
+
             
             updateSearchHistoryUI();
         } catch (err) {
@@ -334,8 +202,54 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function showLoading(show) {
+    function showLoading(show, cacheStatus = null) {
+        // If it's a fresh or stale cache hit, we don't need to show the full loading screen
+        if (cacheStatus === 'fresh' || cacheStatus === 'stale') {
+            show = false;
+        }
         loadingContainer.style.display = show ? 'block' : 'none';
+    }
+
+    function showStaleRefreshBadge(cacheAge) {
+        // Remove existing badge if any
+        const existingBadge = document.getElementById('staleRefreshBadge');
+        if (existingBadge) existingBadge.remove();
+
+        const badge = document.createElement('div');
+        badge.id = 'staleRefreshBadge';
+        badge.className = 'stale-refresh-badge';
+        badge.innerHTML = `<i class="fas fa-sync fa-spin"></i> Refreshing...`;
+        
+        // Style the badge
+        Object.assign(badge.style, {
+            position: 'absolute',
+            top: '10px',
+            right: '10px',
+            background: 'rgba(255, 255, 255, 0.9)',
+            padding: '5px 10px',
+            borderRadius: '20px',
+            fontSize: '0.8rem',
+            color: '#666',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+            zIndex: '1000',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px',
+            transition: 'opacity 0.3s ease'
+        });
+
+        // Add to the results container or header area
+        const container = document.getElementById('resultsContainer');
+        if (container) {
+            container.style.position = 'relative'; // Ensure relative positioning
+            container.appendChild(badge);
+            
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                badge.style.opacity = '0';
+                setTimeout(() => badge.remove(), 300);
+            }, 3000);
+        }
     }
     function showResults(show) {
         resultsContainer.style.display = show ? 'block' : 'none';
@@ -779,13 +693,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchSection(word, section, indexOrEntryIndex = null, senseIndex = null) {
         // For 2D indexing (detailed_sense, examples, usage_notes with entry_index + sense_index)
         const cacheKey = senseIndex !== null ? `${indexOrEntryIndex}_${senseIndex}` : indexOrEntryIndex;
-        const cachedData = getCachedData(word, section, cacheKey);
-        if (cachedData) {
-            console.log(`Cache hit: ${word} - ${section}${cacheKey !== null ? ` (${cacheKey})` : ''}`);
-            return cachedData;
-        }
-        
-        console.log(`Cache miss: ${word} - ${section}${cacheKey !== null ? ` (${cacheKey})` : ''}`);
+
         
         const apiUrl = config.api.getUrl('dictionary');
         const body = { word, section };
@@ -820,15 +728,25 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error(`Failed to fetch ${section}`);
         }
         
-        const data = await response.json();
+        const responseData = await response.json();
         
-        if (!data.success) {
-            throw new Error(data.error || `Failed to fetch ${section}`);
+        if (!responseData.success) {
+            throw new Error(responseData.error || `Failed to fetch ${section}`);
         }
         
-        setCachedData(word, section, cacheKey, data);
+        // Extract metadata fields
+        const cacheStatus = responseData._cache_status || 'miss';
+        const cacheAge = responseData._cache_age_seconds || 0;
+        const waitedForInflight = responseData._waited_for_inflight || false;
         
-        return data;
+
+        
+        return {
+            data: responseData,
+            cacheStatus,
+            cacheAge,
+            waitedForInflight
+        };
     }
 
     // Store current entry data globally for entry switching
@@ -853,14 +771,27 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             // Step 1: Fetch basic info first (fast ~0.5s)
-            const basicData = await fetchSection(query, 'basic');
+
+            const basicResult = await fetchSection(query, 'basic');
+            const basicData = basicResult.data;
+            const cacheStatus = basicResult.cacheStatus;
             
-            showLoading(false);
+            showLoading(false, cacheStatus);
             
+            if (cacheStatus === 'stale') {
+                showStaleRefreshBadge(basicResult.cacheAge);
+                console.log('⚠️ Cache hit (stale, refreshing)');
+            } else if (cacheStatus === 'miss') {
+                console.log('🌐 Cache miss');
+            } else {
+                console.log('✅ Cache hit (fresh)');
+            }
             if (!basicData || !basicData.headword) {
                 showEmptyState(true);
                 return;
             }
+            
+
             
             // Store current word data for entry switching
             currentWordData = basicData;
@@ -903,7 +834,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadEntryContent(word, entryIndex, basicData) {
         const entryData = basicData.entries ? basicData.entries[entryIndex] : null;
         
-        fetchSection(word, 'frequency', entryIndex).then(data => {
+        fetchSection(word, 'frequency', entryIndex).then(result => {
+            const data = result.data;
+            const cacheStatus = result.cacheStatus;
+            if (cacheStatus === 'stale') console.log('⚠️ Cache hit (stale, refreshing) - frequency');
+            else if (cacheStatus === 'miss') console.log('🌐 Cache miss - frequency');
+            else if (cacheStatus === 'fresh') console.log('✅ Cache hit (fresh) - frequency');
             if (data.frequency) {
                 const freqText = data.frequency
                     .split('_')
@@ -919,7 +855,12 @@ document.addEventListener('DOMContentLoaded', () => {
             wordFrequency.style.display = 'none';
         });
         
-        fetchSection(word, 'etymology', entryIndex).then(data => {
+        fetchSection(word, 'etymology', entryIndex).then(result => {
+            const data = result.data;
+            const cacheStatus = result.cacheStatus;
+            if (cacheStatus === 'stale') console.log('⚠️ Cache hit (stale, refreshing) - etymology');
+            else if (cacheStatus === 'miss') console.log('🌐 Cache miss - etymology');
+            else if (cacheStatus === 'fresh') console.log('✅ Cache hit (fresh) - etymology');
             if (data.etymology) {
                 let etymologyHtml = '';
                 if (data.etymology.etymology) {
@@ -937,7 +878,12 @@ document.addEventListener('DOMContentLoaded', () => {
             etymologyContent.innerHTML = '<div class="error-message">Failed to load etymology</div>';
         });
         
-        fetchSection(word, 'cultural_notes', entryIndex).then(data => {
+        fetchSection(word, 'cultural_notes', entryIndex).then(result => {
+            const data = result.data;
+            const cacheStatus = result.cacheStatus;
+            if (cacheStatus === 'stale') console.log('⚠️ Cache hit (stale, refreshing) - cultural_notes');
+            else if (cacheStatus === 'miss') console.log('🌐 Cache miss - cultural_notes');
+            else if (cacheStatus === 'fresh') console.log('✅ Cache hit (fresh) - cultural_notes');
             if (data.cultural_notes && data.cultural_notes.notes) {
                 culturalContent.innerHTML = enhanceCulturalNotes(data.cultural_notes.notes);
             } else {
@@ -948,7 +894,12 @@ document.addEventListener('DOMContentLoaded', () => {
             culturalContent.innerHTML = '<div class="error-message">Failed to load cultural notes</div>';
         });
         
-        fetchSection(word, 'usage_context', entryIndex).then(data => {
+        fetchSection(word, 'usage_context', entryIndex).then(result => {
+            const data = result.data;
+            const cacheStatus = result.cacheStatus;
+            if (cacheStatus === 'stale') console.log('⚠️ Cache hit (stale, refreshing) - usage_context');
+            else if (cacheStatus === 'miss') console.log('🌐 Cache miss - usage_context');
+            else if (cacheStatus === 'fresh') console.log('✅ Cache hit (fresh) - usage_context');
             if (data.usage_context) {
                 usageContent.innerHTML = enhanceUsageContext(data.usage_context);
             } else {
@@ -959,7 +910,12 @@ document.addEventListener('DOMContentLoaded', () => {
             usageContent.innerHTML = '<div class="error-message">Failed to load usage context</div>';
         });
         
-        fetchSection(word, 'word_family', entryIndex).then(data => {
+        fetchSection(word, 'word_family', entryIndex).then(result => {
+            const data = result.data;
+            const cacheStatus = result.cacheStatus;
+            if (cacheStatus === 'stale') console.log('⚠️ Cache hit (stale, refreshing) - word_family');
+            else if (cacheStatus === 'miss') console.log('🌐 Cache miss - word_family');
+            else if (cacheStatus === 'fresh') console.log('✅ Cache hit (fresh) - word_family');
             if (data.word_family && data.word_family.word_family && data.word_family.word_family.length) {
                 const displayWords = data.word_family.word_family.slice(0, 20);
                 wordFamilyContent.innerHTML = `<div class="word-family-tags">${displayWords.map(wf => `<span class="word-tag">${wf}</span>`).join('')}</div>`;
@@ -971,7 +927,12 @@ document.addEventListener('DOMContentLoaded', () => {
             wordFamilyContent.innerHTML = '<div class="error-message">Failed to load word family</div>';
         });
         
-        fetchSection(word, 'bilibili_videos').then(data => {
+        fetchSection(word, 'bilibili_videos').then(result => {
+            const data = result.data;
+            const cacheStatus = result.cacheStatus;
+            if (cacheStatus === 'stale') console.log('⚠️ Cache hit (stale, refreshing) - bilibili_videos');
+            else if (cacheStatus === 'miss') console.log('🌐 Cache miss - bilibili_videos');
+            else if (cacheStatus === 'fresh') console.log('✅ Cache hit (fresh) - bilibili_videos');
             if (data.bilibili_videos && data.bilibili_videos.length) {
                 bilibiliContent.innerHTML = renderBilibiliVideos(data.bilibili_videos);
             } else {
@@ -1025,27 +986,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const basicSense = preloadedSenses[i];
                 
                 const cacheKey = `${entryIndex}_${i}`;
-                const cachedDetailedSense = getCachedData(word, 'detailed_sense', cacheKey);
-                const cachedExamples = getCachedData(word, 'examples', cacheKey);
-                const cachedUsageNotes = getCachedData(word, 'usage_notes', cacheKey);
+
                 
                 let senseToRender = basicSense;
                 let isDetailed = false;
                 
-                if (cachedDetailedSense && cachedDetailedSense.detailed_sense) {
-                    senseToRender = cachedDetailedSense.detailed_sense;
-                    isDetailed = true;
-                    
-                    if (cachedExamples && cachedExamples.examples && cachedExamples.examples.length) {
-                        senseToRender.examples = cachedExamples.examples;
-                    }
-                    if (cachedExamples && cachedExamples.collocations && cachedExamples.collocations.length) {
-                        senseToRender.collocations = cachedExamples.collocations;
-                    }
-                    if (cachedUsageNotes && cachedUsageNotes.usage_notes) {
-                        senseToRender.usage_notes = cachedUsageNotes.usage_notes;
-                    }
-                }
+
                 
                 senseItem.innerHTML = renderSenseHTML(senseToRender, i, isDetailed);
                 
@@ -1094,12 +1040,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 try {
-                    const [senseData, examplesData, usageNotesData] = await Promise.all([
+                    const [senseResult, examplesResult, usageNotesResult] = await Promise.all([
                         fetchSection(word, 'detailed_sense', entryIndex, senseIndex),
                         fetchSection(word, 'examples', entryIndex, senseIndex),
                         fetchSection(word, 'usage_notes', entryIndex, senseIndex)
                     ]);
                     
+                    const senseData = senseResult.data;
+                    const examplesData = examplesResult.data;
+                    const usageNotesData = usageNotesResult.data;
+                    // Log cache status for detailed sense components
+                    const detailedCacheStatus = senseResult.cacheStatus;
+                    if (detailedCacheStatus === 'stale') console.log(`⚠️ Cache hit (stale, refreshing) - detailed_sense`);
+                    else if (detailedCacheStatus === 'miss') console.log(`🌐 Cache miss - detailed_sense`);
+                    else if (detailedCacheStatus === 'fresh') console.log(`✅ Cache hit (fresh) - detailed_sense`);
+
+                    const examplesCacheStatus = examplesResult.cacheStatus;
+                    if (examplesCacheStatus === 'stale') console.log(`⚠️ Cache hit (stale, refreshing) - examples`);
+                    else if (examplesCacheStatus === 'miss') console.log(`🌐 Cache miss - examples`);
+                    else if (examplesCacheStatus === 'fresh') console.log(`✅ Cache hit (fresh) - examples`);
+
+                    const usageNotesCacheStatus = usageNotesResult.cacheStatus;
+                    if (usageNotesCacheStatus === 'stale') console.log(`⚠️ Cache hit (stale, refreshing) - usage_notes`);
+                    else if (usageNotesCacheStatus === 'miss') console.log(`🌐 Cache miss - usage_notes`);
+                    else if (usageNotesCacheStatus === 'fresh') console.log(`✅ Cache hit (fresh) - usage_notes`);
+
+
                     const detailedSense = senseData.detailed_sense;
                     
                     if (examplesData.examples && examplesData.examples.length) {
@@ -1325,9 +1291,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (clearAllHistoryBtn) {
         clearAllHistoryBtn.addEventListener('click', () => {
-            if (confirm('Clear all search history and cached data?')) {
-                // Clear all cache
-                clearAllCache();
+            if (confirm('Clear all search history?')) {
+
                 
                 // Clear history
                 localStorage.removeItem(HISTORY_KEY);

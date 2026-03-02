@@ -23,11 +23,6 @@ const config = {
         version: '1.0.0'
     },
     
-    // Cache settings
-    cache: {
-        // Disable cache in local dev for easier testing
-        enabled: !(typeof window !== 'undefined' && window.location.hostname === 'localhost')
-    }
 };
 
 // Helper function to get full API URL
