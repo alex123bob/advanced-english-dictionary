@@ -13,7 +13,8 @@ const config = {
         
         // API endpoint paths
         endpoints: {
-            dictionary: '/api/dictionary'
+            dictionary: '/api/dictionary',
+            suggest: '/api/dictionary/suggest'
         }
     },
     

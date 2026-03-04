@@ -25,7 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const wordFamilyContent = document.getElementById('wordFamilyContent');
     const bilibiliContent = document.getElementById('bilibiliContent');
 
-
+    // Suggestions dropdown
+    const suggestionsDropdown = document.getElementById('suggestionsDropdown');
+    let suggestionDebounceTimer;
+    let currentFocus = -1;
 
     // Search history management
     const HISTORY_KEY = 'dict_search_history';
@@ -1394,4 +1397,170 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize search history UI
     updateSearchHistoryUI();
+
+    function debounce(func, wait) {
+        return function(...args) {
+            clearTimeout(suggestionDebounceTimer);
+            suggestionDebounceTimer = setTimeout(() => func.apply(this, args), wait);
+        };
+    }
+
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function highlightMatch(text, query) {
+        if (!query) return text;
+        const safeQuery = escapeRegExp(query);
+        const regex = new RegExp(`(${safeQuery})`, 'gi');
+        return text.replace(regex, '<strong>$1</strong>');
+    }
+
+    function closeSuggestions() {
+        if (suggestionsDropdown) {
+            suggestionsDropdown.classList.remove('active');
+            suggestionsDropdown.innerHTML = '';
+            currentFocus = -1;
+            searchInput.setAttribute('aria-expanded', 'false');
+            searchInput.removeAttribute('aria-activedescendant');
+        }
+    }
+
+    async function fetchSuggestions(query) {
+        if (!query || query.length < 2) {
+            closeSuggestions();
+            return;
+        }
+
+        try {
+            if (!suggestionsDropdown.classList.contains('active') || suggestionsDropdown.querySelector('.suggestions-error')) {
+                suggestionsDropdown.innerHTML = `
+                    <div class="suggestions-loading">
+                        <div class="spinner-small"></div>
+                        <span>Loading suggestions...</span>
+                    </div>
+                `;
+                suggestionsDropdown.classList.add('active');
+                searchInput.setAttribute('aria-expanded', 'true');
+            }
+
+            const apiUrl = config.api.getUrl('suggest');
+            const response = await fetch(`${apiUrl}?q=${encodeURIComponent(query)}&limit=10`);
+            
+            if (!response.ok) throw new Error('Network response was not ok');
+            
+            const data = await response.json();
+            
+            if (data.success && data.suggestions && data.suggestions.length > 0) {
+                renderSuggestions(data.suggestions, query);
+            } else {
+                renderNoSuggestions();
+            }
+        } catch (error) {
+            console.error('Error fetching suggestions:', error);
+            closeSuggestions();
+        }
+    }
+
+    function renderSuggestions(suggestions, query) {
+        if (!suggestionsDropdown) return;
+        
+        const html = suggestions.map((suggestion, index) => `
+            <div class="suggestion-item" data-value="${suggestion}" role="option" id="suggestion-${index}">
+                <i class="fas fa-search suggestion-icon"></i>
+                <span class="suggestion-text">${highlightMatch(suggestion, query)}</span>
+            </div>
+        `).join('');
+        
+        suggestionsDropdown.innerHTML = html;
+        suggestionsDropdown.classList.add('active');
+        searchInput.setAttribute('aria-expanded', 'true');
+        currentFocus = -1;
+
+        suggestionsDropdown.querySelectorAll('.suggestion-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const value = this.getAttribute('data-value');
+                selectSuggestion(value);
+            });
+        });
+    }
+
+    function renderNoSuggestions() {
+        suggestionsDropdown.innerHTML = '<div class="suggestions-empty">No suggestions found</div>';
+        suggestionsDropdown.classList.add('active');
+        searchInput.setAttribute('aria-expanded', 'true');
+    }
+
+    function selectSuggestion(value) {
+        searchInput.value = value;
+        closeSuggestions();
+        handleSearch();
+    }
+
+    function addActive(items) {
+        if (!items) return false;
+        removeActive(items);
+        if (currentFocus >= items.length) currentFocus = 0;
+        if (currentFocus < 0) currentFocus = (items.length - 1);
+        
+        items[currentFocus].classList.add('selected');
+        items[currentFocus].setAttribute('aria-selected', 'true');
+        items[currentFocus].scrollIntoView({ block: 'nearest' });
+        
+        searchInput.setAttribute('aria-activedescendant', items[currentFocus].id);
+    }
+
+    function removeActive(items) {
+        for (let i = 0; i < items.length; i++) {
+            items[i].classList.remove('selected');
+            items[i].removeAttribute('aria-selected');
+        }
+        searchInput.removeAttribute('aria-activedescendant');
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(function(e) {
+            const query = this.value.trim();
+            if (query.length >= 2) {
+                fetchSuggestions(query);
+            } else {
+                closeSuggestions();
+            }
+        }, 300));
+
+        searchInput.addEventListener('keydown', function(e) {
+            const dropdown = suggestionsDropdown;
+            if (!dropdown || !dropdown.classList.contains('active')) return;
+
+            const items = dropdown.querySelectorAll('.suggestion-item');
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                currentFocus++;
+                addActive(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                currentFocus--;
+                addActive(items);
+            } else if (e.key === 'Enter') {
+                if (currentFocus > -1) {
+                    e.preventDefault();
+                    if (items[currentFocus]) {
+                        items[currentFocus].click();
+                    }
+                } else {
+                    closeSuggestions();
+                }
+            } else if (e.key === 'Escape') {
+                closeSuggestions();
+            }
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (e.target !== searchInput && e.target !== suggestionsDropdown && !suggestionsDropdown.contains(e.target)) {
+                closeSuggestions();
+            }
+        });
+    }
 });
