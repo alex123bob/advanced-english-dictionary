@@ -3,7 +3,6 @@
 
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', () => {
-    // Configuration - loaded from config.js
     const config = window.config;
 
     const searchInput = document.getElementById('searchInput');
@@ -12,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingContainer = document.getElementById('loadingContainer');
     const emptyState = document.getElementById('emptyState');
 
-    // Result fields
     const headword = document.getElementById('headword');
     const frequency = document.getElementById('frequency');
     const wordFrequency = document.getElementById('wordFrequency');
@@ -25,14 +23,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const wordFamilyContent = document.getElementById('wordFamilyContent');
     const bilibiliContent = document.getElementById('bilibiliContent');
 
-    // Suggestions dropdown
     const suggestionsDropdown = document.getElementById('suggestionsDropdown');
     let suggestionDebounceTimer;
     let currentFocus = -1;
 
-    // Search history management
+    const stickyTabs = document.getElementById('stickyTabs');
+    const tabLinks = stickyTabs ? stickyTabs.querySelectorAll('.tab-link') : [];
+    const accordionSections = document.querySelectorAll('.accordion-section');
+
     const HISTORY_KEY = 'dict_search_history';
     const MAX_HISTORY_ITEMS = 10;
+    
+    function applyTheme() {
+        const theme = config.app.theme || 'teal-emerald';
+        document.documentElement.setAttribute('data-theme', theme);
+    }
+    
+    applyTheme();
     
     function getSearchHistory() {
         try {
@@ -152,13 +159,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function removeFromSearchHistory(index) {
         try {
             let history = getSearchHistory();
-            const wordToRemove = history[index].word;
             
             // Remove from history
             history.splice(index, 1);
             localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-            
-
             
             updateSearchHistoryUI();
         } catch (err) {
@@ -738,8 +742,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const cacheAge = responseData._cache_age_seconds || 0;
         const waitedForInflight = responseData._waited_for_inflight || false;
         
-
-        
         return {
             data: responseData,
             cacheStatus,
@@ -790,8 +792,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
-
-            
             // Store current word data for entry switching
             currentWordData = basicData;
             currentWord = query;
@@ -818,6 +818,15 @@ document.addEventListener('DOMContentLoaded', () => {
             showSectionLoading(wordFamilyContent);
             showSectionLoading(bilibiliContent);
             
+            // Ensure first section is open and active
+            if (accordionSections.length > 0) {
+                accordionSections.forEach(section => section.open = false);
+                accordionSections[0].open = true;
+            }
+            if (tabLinks.length > 0) {
+                activateTab('definitions-section'); // Assumes the first section ID
+            }
+
             loadEntryContent(query, 0, basicData);
             
             // Blur the search input to prevent mobile zoom persistence
@@ -835,10 +844,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         fetchSection(word, 'frequency', entryIndex).then(result => {
             const data = result.data;
-            const cacheStatus = result.cacheStatus;
-            if (cacheStatus === 'stale') console.log('⚠️ Cache hit (stale, refreshing) - frequency');
-            else if (cacheStatus === 'miss') console.log('🌐 Cache miss - frequency');
-            else if (cacheStatus === 'fresh') console.log('✅ Cache hit (fresh) - frequency');
             if (data.frequency) {
                 const freqText = data.frequency
                     .split('_')
@@ -856,10 +861,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         fetchSection(word, 'etymology', entryIndex).then(result => {
             const data = result.data;
-            const cacheStatus = result.cacheStatus;
-            if (cacheStatus === 'stale') console.log('⚠️ Cache hit (stale, refreshing) - etymology');
-            else if (cacheStatus === 'miss') console.log('🌐 Cache miss - etymology');
-            else if (cacheStatus === 'fresh') console.log('✅ Cache hit (fresh) - etymology');
             if (data.etymology) {
                 let etymologyHtml = '';
                 if (data.etymology.etymology) {
@@ -879,10 +880,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         fetchSection(word, 'cultural_notes', entryIndex).then(result => {
             const data = result.data;
-            const cacheStatus = result.cacheStatus;
-            if (cacheStatus === 'stale') console.log('⚠️ Cache hit (stale, refreshing) - cultural_notes');
-            else if (cacheStatus === 'miss') console.log('🌐 Cache miss - cultural_notes');
-            else if (cacheStatus === 'fresh') console.log('✅ Cache hit (fresh) - cultural_notes');
             if (data.cultural_notes && data.cultural_notes.notes) {
                 culturalContent.innerHTML = enhanceCulturalNotes(data.cultural_notes.notes);
             } else {
@@ -895,10 +892,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         fetchSection(word, 'usage_context', entryIndex).then(result => {
             const data = result.data;
-            const cacheStatus = result.cacheStatus;
-            if (cacheStatus === 'stale') console.log('⚠️ Cache hit (stale, refreshing) - usage_context');
-            else if (cacheStatus === 'miss') console.log('🌐 Cache miss - usage_context');
-            else if (cacheStatus === 'fresh') console.log('✅ Cache hit (fresh) - usage_context');
             if (data.usage_context) {
                 usageContent.innerHTML = enhanceUsageContext(data.usage_context);
             } else {
@@ -911,10 +904,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         fetchSection(word, 'word_family', entryIndex).then(result => {
             const data = result.data;
-            const cacheStatus = result.cacheStatus;
-            if (cacheStatus === 'stale') console.log('⚠️ Cache hit (stale, refreshing) - word_family');
-            else if (cacheStatus === 'miss') console.log('🌐 Cache miss - word_family');
-            else if (cacheStatus === 'fresh') console.log('✅ Cache hit (fresh) - word_family');
             if (data.word_family && data.word_family.word_family && data.word_family.word_family.length) {
                 const displayWords = data.word_family.word_family.slice(0, 20);
                 wordFamilyContent.innerHTML = `<div class="word-family-tags">${displayWords.map(wf => `<span class="word-tag">${wf}</span>`).join('')}</div>`;
@@ -928,10 +917,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         fetchSection(word, 'bilibili_videos').then(result => {
             const data = result.data;
-            const cacheStatus = result.cacheStatus;
-            if (cacheStatus === 'stale') console.log('⚠️ Cache hit (stale, refreshing) - bilibili_videos');
-            else if (cacheStatus === 'miss') console.log('🌐 Cache miss - bilibili_videos');
-            else if (cacheStatus === 'fresh') console.log('✅ Cache hit (fresh) - bilibili_videos');
             if (data.bilibili_videos && data.bilibili_videos.length) {
                 bilibiliContent.innerHTML = renderBilibiliVideos(data.bilibili_videos);
             } else {
@@ -986,8 +971,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 let senseToRender = basicSense;
                 let isDetailed = false;
-                
-
                 
                 senseItem.innerHTML = renderSenseHTML(senseToRender, i, isDetailed);
                 
@@ -1045,22 +1028,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const senseData = senseResult.data;
                     const examplesData = examplesResult.data;
                     const usageNotesData = usageNotesResult.data;
-                    // Log cache status for detailed sense components
-                    const detailedCacheStatus = senseResult.cacheStatus;
-                    if (detailedCacheStatus === 'stale') console.log(`⚠️ Cache hit (stale, refreshing) - detailed_sense`);
-                    else if (detailedCacheStatus === 'miss') console.log(`🌐 Cache miss - detailed_sense`);
-                    else if (detailedCacheStatus === 'fresh') console.log(`✅ Cache hit (fresh) - detailed_sense`);
-
-                    const examplesCacheStatus = examplesResult.cacheStatus;
-                    if (examplesCacheStatus === 'stale') console.log(`⚠️ Cache hit (stale, refreshing) - examples`);
-                    else if (examplesCacheStatus === 'miss') console.log(`🌐 Cache miss - examples`);
-                    else if (examplesCacheStatus === 'fresh') console.log(`✅ Cache hit (fresh) - examples`);
-
-                    const usageNotesCacheStatus = usageNotesResult.cacheStatus;
-                    if (usageNotesCacheStatus === 'stale') console.log(`⚠️ Cache hit (stale, refreshing) - usage_notes`);
-                    else if (usageNotesCacheStatus === 'miss') console.log(`🌐 Cache miss - usage_notes`);
-                    else if (usageNotesCacheStatus === 'fresh') console.log(`✅ Cache hit (fresh) - usage_notes`);
-
 
                     const detailedSense = senseData.detailed_sense;
                     
@@ -1214,14 +1181,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         updateHeadwordAndPronunciation(currentWordData, entryIndex);
         
-        const definitionsCard = document.querySelector('.definitions-card');
-        if (definitionsCard) {
-            const existingLoadMoreBtn = definitionsCard.querySelector('.load-more-btn-header');
-            if (existingLoadMoreBtn) {
-                existingLoadMoreBtn.remove();
-            }
-        }
-        
         showSectionLoading(definitionsContent);
         showSectionLoading(etymologyContent);
         showSectionLoading(synonymsContent);
@@ -1308,72 +1267,63 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // Fullscreen toggle functionality
-    document.addEventListener('click', (e) => {
-        if (e.target.closest('.fullscreen-btn')) {
-            const button = e.target.closest('.fullscreen-btn');
-            const card = button.closest('.card');
-            const icon = button.querySelector('i');
-            
-            // Toggle fullscreen
-            const isFullscreen = card.classList.contains('fullscreen');
-            
-            if (isFullscreen) {
-                // Exit fullscreen
-                card.classList.remove('fullscreen');
-                icon.classList.remove('fa-compress');
-                icon.classList.add('fa-expand');
-                removeBackdrop();
-            } else {
-                // Enter fullscreen
-                card.classList.add('fullscreen');
-                icon.classList.remove('fa-expand');
-                icon.classList.add('fa-compress');
-                addBackdrop();
+    // Sticky Tab & Scroll Handling
+    function activateTab(targetId) {
+        tabLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === `#${targetId}`) {
+                link.classList.add('active');
             }
-        }
-        
-        // Click backdrop to exit fullscreen
-        if (e.target.classList.contains('fullscreen-backdrop')) {
-            exitFullscreen();
-        }
-    });
-    
-    function addBackdrop() {
-        // Remove any existing backdrop first
-        removeBackdrop();
-        
-        const backdrop = document.createElement('div');
-        backdrop.className = 'fullscreen-backdrop';
-        document.body.appendChild(backdrop);
+        });
     }
-    
-    function removeBackdrop() {
-        const backdrop = document.querySelector('.fullscreen-backdrop');
-        if (backdrop) {
-            backdrop.remove();
-        }
-    }
-    
-    function exitFullscreen() {
-        const fullscreenCard = document.querySelector('.card.fullscreen');
-        if (fullscreenCard) {
-            fullscreenCard.classList.remove('fullscreen');
-            const icon = fullscreenCard.querySelector('.fullscreen-btn i');
-            if (icon) {
-                icon.classList.remove('fa-compress');
-                icon.classList.add('fa-expand');
+
+    if (tabLinks.length > 0 && accordionSections.length > 0) {
+        // Click handler for tabs
+        tabLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href').substring(1);
+                const targetSection = document.getElementById(targetId);
+                
+                if (targetSection) {
+                    // Open accordion if closed
+                    targetSection.open = true;
+                    
+                    // Scroll with offset
+                    const headerOffset = 140; // Approx header + sticky tabs height
+                    const elementPosition = targetSection.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: "smooth"
+                    });
+                    
+                    activateTab(targetId);
+                }
+            });
+        });
+        
+        // Scroll spy
+        window.addEventListener('scroll', () => {
+            let current = '';
+            const stickyTabsHeight = stickyTabs ? stickyTabs.offsetHeight : 0;
+            const viewportTriggerPoint = stickyTabsHeight + 50;
+            
+            accordionSections.forEach(section => {
+                const rect = section.getBoundingClientRect();
+                const isSectionVisible = rect.top <= viewportTriggerPoint && rect.bottom > viewportTriggerPoint;
+                
+                if (isSectionVisible) {
+                    current = section.getAttribute('id');
+                }
+            });
+            
+            if (current) {
+                activateTab(current);
             }
-            removeBackdrop();
-        }
+        });
     }
-    
-    // Close fullscreen on ESC key
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            exitFullscreen();
-        }
-    });
     
     // Adjust placeholder text for mobile
     function updatePlaceholder() {
