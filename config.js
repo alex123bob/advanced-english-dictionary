@@ -25,6 +25,9 @@ const config = {
          * NEUTRAL/PROFESSIONAL:
          *   'slate-cyan'        - Neutral, calm, professional (Slate #64748b + Cyan #06b6d4)
          *   'professional-blue' - Light business theme (Bright Blue #3b82f6 + Cyan #06b6d4)
+         *   'navy-gray'         - Conservative, formal, traditional (Navy #1e3a8a + Gray #6b7280)
+         *   'corporate-teal'    - Professional, trustworthy, stable (Dark Teal #0d9488 + Teal #14b8a6)
+         *   'enterprise-blue'   - Corporate, authoritative, reliable (Deep Blue #1d4ed8 + Blue #3b82f6)
          * 
          * NATURAL/BALANCED:
          *   'teal-emerald'      - Fresh, natural, growth-oriented (Teal #14b8a6 + Emerald #10b981)

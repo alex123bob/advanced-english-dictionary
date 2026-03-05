@@ -190,6 +190,51 @@
     --border-color: #ffd4cc;
 }
 
+/* Theme: Navy & Gray */
+[data-theme="navy-gray"] {
+    --primary-color: #1e3a8a;
+    --primary-dark: #1e40af;
+    --secondary-color: #6b7280;
+    --accent-color: #9ca3af;
+    --text-color: #1f2937;
+    --text-light: #4b5563;
+    --text-lighter: #6b7280;
+    --bg-color: #f9fafb;
+    --card-bg: #ffffff;
+    --section-bg: #eff6ff;
+    --border-color: #dbeafe;
+}
+
+/* Theme: Corporate Teal */
+[data-theme="corporate-teal"] {
+    --primary-color: #0d9488;
+    --primary-dark: #0f766e;
+    --secondary-color: #14b8a6;
+    --accent-color: #2dd4bf;
+    --text-color: #0f172a;
+    --text-light: #334155;
+    --text-lighter: #64748b;
+    --bg-color: #f8fafb;
+    --card-bg: #ffffff;
+    --section-bg: #f0fdfa;
+    --border-color: #ccfbf1;
+}
+
+/* Theme: Enterprise Blue */
+[data-theme="enterprise-blue"] {
+    --primary-color: #1d4ed8;
+    --primary-dark: #1e40af;
+    --secondary-color: #3b82f6;
+    --accent-color: #60a5fa;
+    --text-color: #0f172a;
+    --text-light: #334155;
+    --text-lighter: #64748b;
+    --bg-color: #f8fafc;
+    --card-bg: #ffffff;
+    --section-bg: #eff6ff;
+    --border-color: #bfdbfe;
+}
+
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     line-height: 1.6;
