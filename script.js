@@ -1086,12 +1086,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentText = `Form ${(currentSelectedEntry || 0) + 1}: ${currentPos} (${currentEntry.total_senses} sense${currentEntry.total_senses !== 1 ? 's' : ''})`;
         
         const selectorHTML = `
-            <div class="entry-selector-label">
-                <span>Word Forms:</span>
-                <span class="entry-selector-hint">
-                    <i class="fas fa-info-circle" title="This word has multiple forms with different origins and meanings"></i>
-                </span>
-            </div>
             <div class="entry-dropdown-container">
                 <div class="entry-dropdown-custom" id="entryDropdownCustom">
                     <span class="dropdown-selected">${currentText}</span>
