@@ -415,60 +415,67 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
     
-    // Helper function to enhance cultural notes with visual structure
-    function enhanceCulturalNotes(notesText) {
-        if (!notesText) return '<div class="no-data">No cultural notes available</div>';
+    // Helper function to render structured cultural notes
+    function renderCulturalNotes(culturalNotesData) {
+        if (!culturalNotesData) return '<div class="no-data">No cultural notes available</div>';
         
-        // Parse for key insights
-        const originMatch = notesText.match(/(originat[es]{2,}|comes? from|derives? from|rooted in)[^.]+\./i);
-        const usageMatch = notesText.match(/(modern usage|commonly|often employed|used)[^.,;]+/i);
-        const toneMatch = notesText.match(/(tone|manner|style)[^.,;]+/i);
+        const { historical_context, cultural_associations, social_perceptions } = culturalNotesData;
         
-        let html = '<div class="cultural-enhanced">';
+        // Check if we have any data
+        if (!historical_context && (!cultural_associations || !cultural_associations.length) && 
+            (!social_perceptions || !social_perceptions.length)) {
+            return '<div class="no-data">No cultural notes available</div>';
+        }
         
-        // Main quote-style text
-        html += '<div class="cultural-quote">';
-        html += `<p class="cultural-text">${notesText}</p>`;
-        html += '</div>';
+        let html = '<div class="cultural-notes-structured">';
         
-        // Insight badges (only if we found something)
-        if (originMatch || usageMatch || toneMatch) {
-            html += '<div class="cultural-insights">';
-            
-            if (originMatch) {
-                const originText = originMatch[0];
-                html += `
-                    <div class="insight-badge">
+        // Historical Context Section
+        if (historical_context) {
+            html += `
+                <div class="cultural-section">
+                    <div class="cultural-section-header">
                         <i class="fas fa-landmark"></i>
-                        <div class="insight-label">Origins</div>
-                        <div class="insight-value">${originText}</div>
+                        <span>Historical Context</span>
                     </div>
-                `;
-            }
-            
-            if (usageMatch) {
-                const usageText = usageMatch[0];
-                html += `
-                    <div class="insight-badge">
-                        <i class="fas fa-comments"></i>
-                        <div class="insight-label">Modern Usage</div>
-                        <div class="insight-value">${usageText}</div>
+                    <div class="cultural-section-content">
+                        <p>${historical_context}</p>
                     </div>
-                `;
-            }
-            
-            if (toneMatch) {
-                const toneText = toneMatch[0];
-                html += `
-                    <div class="insight-badge">
-                        <i class="fas fa-volume-up"></i>
-                        <div class="insight-label">Tone & Context</div>
-                        <div class="insight-value">${toneText}</div>
+                </div>
+            `;
+        }
+        
+        // Cultural Associations Section
+        if (cultural_associations && cultural_associations.length > 0) {
+            html += `
+                <div class="cultural-section">
+                    <div class="cultural-section-header">
+                        <i class="fas fa-palette"></i>
+                        <span>Cultural Associations</span>
                     </div>
-                `;
-            }
-            
-            html += '</div>';
+                    <div class="cultural-section-content">
+                        <ul class="cultural-list">
+                            ${cultural_associations.map(item => `<li>${item}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Social Perceptions Section
+        if (social_perceptions && social_perceptions.length > 0) {
+            html += `
+                <div class="cultural-section">
+                    <div class="cultural-section-header">
+                        <i class="fas fa-users"></i>
+                        <span>Social Perceptions</span>
+                    </div>
+                    <div class="cultural-section-content">
+                        <ul class="cultural-list">
+                            ${social_perceptions.map(item => `<li>${item}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
         }
         
         html += '</div>';
@@ -765,6 +772,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
+        closeSuggestions();
+        
         showEmptyState(false);
         showResults(false);
         showLoading(true);
@@ -880,8 +889,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         fetchSection(word, 'cultural_notes', entryIndex).then(result => {
             const data = result.data;
-            if (data.cultural_notes && data.cultural_notes.notes) {
-                culturalContent.innerHTML = enhanceCulturalNotes(data.cultural_notes.notes);
+            if (data.cultural_notes) {
+                culturalContent.innerHTML = renderCulturalNotes(data.cultural_notes);
             } else {
                 culturalContent.innerHTML = '<div class="no-data">No cultural notes available</div>';
             }
@@ -1009,13 +1018,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     try {
                         const basicSense = JSON.parse(basicSenseJson);
                         senseItem.innerHTML = renderSenseHTML(basicSense, senseIndex, false, '');
-                        senseItem.innerHTML += '<div class="sense-loading-overlay"><i class="fas fa-spinner fa-spin"></i> Loading detailed information...</div>';
+                        const actionsDiv = senseItem.querySelector('.sense-actions');
+                        if (actionsDiv) {
+                            actionsDiv.innerHTML = '<div class="sense-detailed-badge sense-loading-badge"><i class="fas fa-spinner fa-spin"></i> Loading details...</div>';
+                        }
                     } catch (e) {
                         console.warn('Failed to parse basic sense data:', e);
                     }
                 } else {
-                    btn.disabled = true;
-                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+                    const actionsDiv = this.closest('.sense-actions');
+                    if (actionsDiv) {
+                        actionsDiv.innerHTML = '<div class="sense-detailed-badge sense-loading-badge"><i class="fas fa-spinner fa-spin"></i> Loading details...</div>';
+                    }
                 }
                 
                 try {
@@ -1041,11 +1055,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         detailedSense.usage_notes = usageNotesData.usage_notes;
                     }
                     
-                    // Get pronunciation for this entry
                     const entryData = currentWordData.entries[entryIndex];
                     const pronunciationHtml = renderInlinePronunciation(entryData);
                     
                     senseItem.innerHTML = renderSenseHTML(detailedSense, senseIndex, true);
+                    
+                    setTimeout(() => {
+                        const badge = senseItem.querySelector('.sense-detailed-badge');
+                        if (badge) {
+                            badge.remove();
+                        }
+                    }, 3000);
                     
                     const sensesList = senseItem.closest('.senses-list');
                     const allSynonyms = new Set();
@@ -1062,8 +1082,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     updateSynonymsSection(allSynonyms, allAntonyms);
                 } catch (err) {
                     console.error(`Error loading detailed sense ${senseIndex}:`, err);
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Failed - Retry';
+                    const actionsDiv = senseItem.querySelector('.sense-actions');
+                    if (actionsDiv) {
+                        actionsDiv.innerHTML = '<button class="sense-detail-btn" data-sense-index="' + senseIndex + '" title="Load detailed information"><i class="fas fa-exclamation-triangle"></i> Failed - Retry</button>';
+                        attachDetailButtonHandlers();
+                    }
                 }
             });
         });
