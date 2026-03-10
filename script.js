@@ -1,6 +1,75 @@
 // script.js for Advanced English Dictionary
 // Handles search, fetches data from API, and updates UI responsively
 
+// Audio Manager - handles Howler.js playback with one-at-a-time behavior
+const AudioManager = {
+    currentSound: null,
+    currentButton: null,
+    
+    play(audioUrl, buttonElement) {
+        // Stop current sound if playing
+        if (this.currentSound) {
+            this.currentSound.stop();
+            if (this.currentButton) {
+                this.updateButtonState(this.currentButton, false);
+            }
+        }
+        
+        // If clicking the same button, just stop (toggle behavior)
+        if (this.currentButton === buttonElement && this.currentSound) {
+            this.currentSound = null;
+            this.currentButton = null;
+            return;
+        }
+        
+        // Create new Howl instance
+        this.currentSound = new Howl({
+            src: [audioUrl],
+            html5: true, // Use HTML5 Audio for streaming
+            volume: 0.8,
+            onplay: () => {
+                this.updateButtonState(buttonElement, true);
+            },
+            onend: () => {
+                this.updateButtonState(buttonElement, false);
+                this.currentSound = null;
+                this.currentButton = null;
+            },
+            onstop: () => {
+                this.updateButtonState(buttonElement, false);
+            },
+            onloaderror: (id, error) => {
+                console.error('Audio load error:', error);
+                this.updateButtonState(buttonElement, false);
+                this.currentSound = null;
+                this.currentButton = null;
+            },
+            onplayerror: (id, error) => {
+                console.error('Audio play error:', error);
+                this.updateButtonState(buttonElement, false);
+                this.currentSound = null;
+                this.currentButton = null;
+            }
+        });
+        
+        this.currentButton = buttonElement;
+        this.currentSound.play();
+    },
+    
+    updateButtonState(button, isPlaying) {
+        const icon = button.querySelector('i');
+        if (isPlaying) {
+            icon.classList.remove('fa-volume-up');
+            icon.classList.add('fa-stop');
+            button.classList.add('playing');
+        } else {
+            icon.classList.remove('fa-stop');
+            icon.classList.add('fa-volume-up');
+            button.classList.remove('playing');
+        }
+    }
+};
+
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', () => {
     const config = window.config;
@@ -208,6 +277,17 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+    
+    document.addEventListener('click', (e) => {
+        const audioButton = e.target.closest('.audio-play-btn');
+        if (audioButton) {
+            e.preventDefault();
+            const audioUrl = audioButton.dataset.audioUrl;
+            if (audioUrl) {
+                AudioManager.play(audioUrl, audioButton);
+            }
+        }
+    });
 
     function showLoading(show, cacheStatus = null) {
         // If it's a fresh or stale cache hit, we don't need to show the full loading screen
@@ -310,18 +390,11 @@ document.addEventListener('DOMContentLoaded', () => {
         let html = '<div class="sense-pronunciation">';
         
         if (audioUrl && isAudioUrl(audioUrl)) {
-            let audioType = 'audio/mpeg';
-            if (audioUrl.endsWith('.wav')) audioType = 'audio/wav';
-            else if (audioUrl.endsWith('.ogg')) audioType = 'audio/ogg';
-            else if (audioUrl.endsWith('.m4a')) audioType = 'audio/mp4';
-            else if (audioUrl.endsWith('.aac')) audioType = 'audio/aac';
-            else if (audioUrl.endsWith('.flac')) audioType = 'audio/flac';
-            
+            const uniqueId = 'audio-' + Math.random().toString(36).substr(2, 9);
             html += `
-                <audio controls class="pronunciation-audio-small">
-                    <source src="${audioUrl}" type="${audioType}">
-                    Your browser does not support the audio element.
-                </audio>
+                <button class="audio-play-btn" data-audio-url="${audioUrl}" id="${uniqueId}">
+                    <i class="fas fa-volume-up"></i>
+                </button>
             `;
         }
         
