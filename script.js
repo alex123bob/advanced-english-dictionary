@@ -326,15 +326,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 checkExistingVideos(word, phrase)
                     .then(videos => {
+                        console.log('Existing videos:', videos);
                         const video = videos && videos.length > 0 ? videos[0] : null;
                         
                         if (video) {
+                            console.log('Video conversation_script:', video.conversation_script);
+                            const conversationHtml = renderConversationScript(video.conversation_script);
+                            console.log('Existing video conversation HTML length:', conversationHtml.length);
+                            
                             if (video.status === 'completed') {
-                                videoResourcesContent.innerHTML = headerHtml + renderAIVideos([video]);
+                                videoResourcesContent.innerHTML = headerHtml + conversationHtml + renderAIVideos([video]);
                             } else if (video.status === 'processing' || video.status === 'pending') {
-                                videoResourcesContent.innerHTML = headerHtml + renderAIVideos([video]);
+                                videoResourcesContent.innerHTML = headerHtml + conversationHtml + renderAIVideos([video]);
                                 if (video.task_id) {
-                                    pollVideoStatus(video.task_id, phrase, word, headerHtml);
+                                    pollVideoStatus(video.task_id, phrase, word, headerHtml, video.conversation_script);
                                 }
                             } else {
                                 showGenerateButton(headerHtml, phrase, word);
@@ -922,6 +927,71 @@ document.addEventListener('DOMContentLoaded', () => {
         return html;
     }
     
+    function renderConversationScript(conversationScript) {
+        if (!conversationScript) return '';
+        
+        const { scenario, dialogue, phrase_explanation } = conversationScript;
+        
+        if (!scenario && (!dialogue || dialogue.length === 0) && !phrase_explanation) {
+            return '';
+        }
+        
+        let html = '<div class="conversation-script-container">';
+        
+        // Scenario Section
+        if (scenario) {
+            html += `
+                <div class="conversation-section">
+                    <div class="conversation-header">
+                        <i class="fas fa-theater-masks"></i>
+                        <span>Scenario</span>
+                    </div>
+                    <div class="conversation-scenario">
+                        ${scenario}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Dialogue Section
+        if (dialogue && dialogue.length > 0) {
+            html += `
+                <div class="conversation-section">
+                    <div class="conversation-header">
+                        <i class="fas fa-comments"></i>
+                        <span>Dialogue</span>
+                    </div>
+                    <div class="conversation-dialogue">
+                        ${dialogue.map(line => `
+                            <div class="dialogue-line">
+                                <div class="dialogue-character">${line.character}:</div>
+                                <div class="dialogue-text">${line.text}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Phrase Explanation Section
+        if (phrase_explanation) {
+            html += `
+                <div class="conversation-section">
+                    <div class="conversation-header">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Explanation</span>
+                    </div>
+                    <div class="conversation-explanation">
+                        ${phrase_explanation}
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += '</div>';
+        return html;
+    }
+    
     function renderAIVideos(videos) {
         if (!videos || videos.length === 0) {
             return '<div class="ai-videos-container"><div class="no-data">AI-generated videos coming soon...</div></div>';
@@ -1029,8 +1099,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 }]);
                 
                 startAIVideoGeneration(phrase, word)
-                    .then(taskId => {
-                        pollVideoStatus(taskId, phrase, word, headerHtml);
+                    .then(result => {
+                        console.log('API Response:', result);
+                        const { task_id, conversation_script } = result;
+                        console.log('Conversation Script:', conversation_script);
+                        
+                        const conversationHtml = renderConversationScript(conversation_script);
+                        console.log('Conversation HTML length:', conversationHtml.length);
+                        videoResourcesContent.innerHTML = headerHtml + conversationHtml + renderAIVideos([{
+                            status: 'pending',
+                            progress: 5,
+                            message: 'Generating video...'
+                        }]);
+                        
+                        pollVideoStatus(task_id, phrase, word, headerHtml, conversation_script);
                     })
                     .catch(err => {
                         console.error('Error starting AI video generation:', err);
@@ -1042,18 +1124,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function startAIVideoGeneration(phrase, word) {
+    async function startAIVideoGeneration(phrase, word, options = {}) {
         try {
+            const requestBody = {
+                word: word || "placeholder",
+                section: 'ai_generated_phrase_video',
+                phrase: phrase
+            };
+            
+            if (options.style) requestBody.style = options.style;
+            if (options.duration) requestBody.duration = options.duration;
+            if (options.resolution) requestBody.resolution = options.resolution;
+            if (options.ratio) requestBody.ratio = options.ratio;
+            
             const response = await fetch(config.api.getUrl('dictionary'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    word: word || "placeholder", // API requires word, even if placeholder
-                    section: 'ai_generated_phrase_video',
-                    phrase: phrase
-                })
+                body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
@@ -1061,26 +1150,37 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
+            console.log('Full API Response:', JSON.stringify(data, null, 2));
             if (data.error) {
                 throw new Error(data.error);
             }
 
-            // Extract task_id from nested response structure
-            return data.ai_generated_phrase_video.task_id;
+            const videoData = data.ai_generated_phrase_video;
+            console.log('Video Data:', JSON.stringify(videoData, null, 2));
+            return {
+                task_id: videoData.task_id,
+                conversation_script: data.conversation_script || null,
+                style: videoData.style,
+                duration: videoData.duration,
+                resolution: videoData.resolution,
+                ratio: videoData.ratio
+            };
         } catch (error) {
             console.error('Error in startAIVideoGeneration:', error);
             throw error;
         }
     }
 
-    async function pollVideoStatus(taskId, phrase, word, headerHtml) {
-        const pollInterval = 2000; // 2 seconds
+    async function pollVideoStatus(taskId, phrase, word, headerHtml, conversationScript = null) {
+        const pollInterval = 2000;
         let attempts = 0;
-        const maxAttempts = 60; // 2 minutes timeout
+        const maxAttempts = 60;
+        
+        const conversationHtml = renderConversationScript(conversationScript);
 
         const poll = async () => {
             if (attempts >= maxAttempts) {
-                videoResourcesContent.innerHTML = headerHtml + `
+                videoResourcesContent.innerHTML = headerHtml + conversationHtml + `
                     <div class="error-message">Video generation timed out. Please try again later.</div>
                 `;
                 return;
@@ -1102,30 +1202,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
                 
                 if (data.error || !data.success) {
-                    videoResourcesContent.innerHTML = headerHtml + `
+                    videoResourcesContent.innerHTML = headerHtml + conversationHtml + `
                         <div class="error-message">Error getting status: ${data.error || 'Unknown error'}</div>
                     `;
                     return;
                 }
                 
                 if (data.status === 'completed') {
-                    // Update UI with completed video
-                    videoResourcesContent.innerHTML = headerHtml + renderAIVideos([{
+                    videoResourcesContent.innerHTML = headerHtml + conversationHtml + renderAIVideos([{
                         status: 'completed',
                         video_url: data.video_url,
                         phrase: phrase
                     }]);
                 } else if (data.status === 'failed') {
-                     videoResourcesContent.innerHTML = headerHtml + `
+                     videoResourcesContent.innerHTML = headerHtml + conversationHtml + `
                         <div class="error-message">Video generation failed: ${data.error || 'Unknown error'}</div>
                     `;
                 } else {
-                    // Still processing, update progress
-                    // We re-render the status to show progress
                     const progress = data.progress || Math.min((attempts / maxAttempts) * 100, 95);
                     const message = data.message || 'Processing video content...';
                     
-                    videoResourcesContent.innerHTML = headerHtml + renderAIVideos([{
+                    videoResourcesContent.innerHTML = headerHtml + conversationHtml + renderAIVideos([{
                         status: 'pending',
                         progress: progress,
                         message: message
@@ -1137,13 +1234,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             } catch (error) {
                 console.error('Error polling video status:', error);
-                videoResourcesContent.innerHTML = headerHtml + `
+                videoResourcesContent.innerHTML = headerHtml + conversationHtml + `
                     <div class="error-message">Failed to check video status: ${error.message}</div>
                 `;
             }
         };
 
-        // Start polling
         poll();
     }
 
