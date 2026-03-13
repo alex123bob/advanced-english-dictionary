@@ -90,7 +90,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const culturalContent = document.getElementById('culturalContent');
     const usageContent = document.getElementById('usageContent');
     const wordFamilyContent = document.getElementById('wordFamilyContent');
-    const bilibiliContent = document.getElementById('bilibiliContent');
+    const commonPhrasesContent = document.getElementById('commonPhrasesContent');
+    const videoResourcesContent = document.getElementById('videoResourcesContent');
 
     const suggestionsDropdown = document.getElementById('suggestionsDropdown');
     let suggestionDebounceTimer;
@@ -287,6 +288,136 @@ document.addEventListener('DOMContentLoaded', () => {
                 AudioManager.play(audioUrl, audioButton);
             }
         }
+
+        const aiVideoBtn = e.target.closest('.ai-video-btn');
+        if (aiVideoBtn) {
+            e.preventDefault();
+            const phrase = aiVideoBtn.dataset.phrase;
+            const word = aiVideoBtn.dataset.word;
+            
+            if (phrase && word) {
+                const videoSection = document.getElementById('videos-section');
+                if (videoSection && !videoSection.open) {
+                    videoSection.open = true;
+                }
+                
+                videoSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                
+                const headerHtml = `
+                    <div class="selected-phrase-header">
+                        <button class="back-to-phrases-btn" data-word="${word}">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                        <div class="selected-phrase-info">
+                            <i class="fas fa-robot"></i>
+                            <span>AI Video for: <strong>"${phrase}"</strong></span>
+                        </div>
+                    </div>
+                `;
+                
+                videoResourcesContent.innerHTML = headerHtml + `
+                    <div class="ai-videos-container">
+                        <div class="section-loading">
+                            <div class="spinner"></div>
+                            <p>Checking for existing video...</p>
+                        </div>
+                    </div>
+                `;
+                
+                checkExistingVideos(word, phrase)
+                    .then(videos => {
+                        const video = videos && videos.length > 0 ? videos[0] : null;
+                        
+                        if (video) {
+                            if (video.status === 'completed') {
+                                videoResourcesContent.innerHTML = headerHtml + renderAIVideos([video]);
+                            } else if (video.status === 'processing' || video.status === 'pending') {
+                                videoResourcesContent.innerHTML = headerHtml + renderAIVideos([video]);
+                                if (video.task_id) {
+                                    pollVideoStatus(video.task_id, phrase, word, headerHtml);
+                                }
+                            } else {
+                                showGenerateButton(headerHtml, phrase, word);
+                            }
+                        } else {
+                            showGenerateButton(headerHtml, phrase, word);
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error checking for existing videos:', err);
+                        showGenerateButton(headerHtml, phrase, word);
+                    });
+            }
+            return;
+        }
+
+        const phraseChip = e.target.closest('.phrase-chip');
+        if (phraseChip) {
+            e.preventDefault();
+            const phrase = phraseChip.dataset.phrase;
+            const word = phraseChip.dataset.word;
+            
+            if (phrase && word) {
+                const videoSection = document.getElementById('videos-section');
+                if (videoSection && !videoSection.open) {
+                    videoSection.open = true;
+                }
+                
+                videoSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                
+                showSectionLoading(videoResourcesContent);
+                
+                fetchSection(word, 'bilibili_videos', null, null, { phrase })
+                    .then(result => {
+                        const data = result.data;
+                        if (data.bilibili_videos) {
+                            const videoHtml = renderVideoResources([{
+                                type: 'bilibili',
+                                phrase: phrase,
+                                videos: [data.bilibili_videos]
+                            }]);
+                            const headerHtml = `
+                                <div class="selected-phrase-header">
+                                    <button class="back-to-phrases-btn" data-word="${word}">
+                                        <i class="fas fa-arrow-left"></i> Back
+                                    </button>
+                                    <div class="selected-phrase-info">
+                                        <i class="fas fa-quote-left"></i>
+                                        <span>Videos for: <strong>"${phrase}"</strong></span>
+                                    </div>
+                                </div>
+                            `;
+                            videoResourcesContent.innerHTML = headerHtml + videoHtml;
+                        } else {
+                            videoResourcesContent.innerHTML = `
+                                <div class="selected-phrase-header">
+                                    <button class="back-to-phrases-btn" data-word="${word}">
+                                        <i class="fas fa-arrow-left"></i> Back
+                                    </button>
+                                </div>
+                                <div class="no-data">No videos found for "${phrase}"</div>
+                            `;
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error fetching bilibili_videos for phrase:', err);
+                        videoResourcesContent.innerHTML = `
+                            <div class="selected-phrase-header">
+                                <button class="back-to-phrases-btn" data-word="${word}">
+                                    <i class="fas fa-arrow-left"></i> Back
+                                </button>
+                            </div>
+                            <div class="error-message">Failed to load videos for "${phrase}"</div>
+                        `;
+                    });
+            }
+        }
+
+        const backButton = e.target.closest('.back-to-phrases-btn');
+        if (backButton) {
+            e.preventDefault();
+            videoResourcesContent.innerHTML = renderVideoResourcesEmptyState();
+        }
     });
 
     function showLoading(show, cacheStatus = null) {
@@ -413,7 +544,8 @@ document.addEventListener('DOMContentLoaded', () => {
         culturalContent.innerHTML = '';
         usageContent.innerHTML = '';
         wordFamilyContent.innerHTML = '';
-        bilibiliContent.innerHTML = '';
+        commonPhrasesContent.innerHTML = '';
+        videoResourcesContent.innerHTML = '';
     }
     
     function hasSignificantDifference(basicSense, detailedSense) {
@@ -679,7 +811,342 @@ document.addEventListener('DOMContentLoaded', () => {
         return html;
     }
  
+    // Helper function to render phrase chips for video search
+    function renderPhraseChips(phrases, word) {
+        if (!phrases || phrases.length === 0) {
+            return '<div class="no-data">No common phrases available</div>';
+        }
+
+        const phraseButtons = phrases.map(phrase => {
+            return `
+                <div class="phrase-chip-wrapper">
+                    <button class="phrase-chip" data-phrase="${phrase}" data-word="${word}">
+                        <i class="fas fa-comment-dots"></i>
+                        <span>${phrase}</span>
+                    </button>
+                    <button class="ai-video-btn" data-phrase="${phrase}" data-word="${word}" title="Generate AI Video">
+                        <i class="fas fa-robot"></i>
+                    </button>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="phrase-chips-container">
+                <div class="phrase-chips-header">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>Click a phrase to find videos:</span>
+                </div>
+                <div class="phrase-chips-list">
+                    ${phraseButtons}
+                </div>
+                <div class="phrase-chips-hint">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Videos will load based on your selected phrase</span>
+                </div>
+            </div>
+        `;
+    }
+
     // Helper function to render Bilibili videos
+    function renderVideoResourcesEmptyState() {
+        return `
+            <div class="video-resources-empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-video"></i>
+                </div>
+                <div class="empty-state-title">Ready to Watch Videos</div>
+                <div class="empty-state-description">
+                    Select a phrase from the <strong>"Common Phrases"</strong> section above to load related videos
+                </div>
+                <div class="empty-state-features">
+                    <div class="empty-state-feature">
+                        <i class="fab fa-bilibili"></i>
+                        <span>Real-world examples from Bilibili</span>
+                    </div>
+                    <div class="empty-state-feature">
+                        <i class="fas fa-robot"></i>
+                        <span>AI-generated learning content (coming soon)</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderVideoResources(videoGroups) {
+        if (!videoGroups || videoGroups.length === 0) {
+            return '<div class="no-data">No video resources available</div>';
+        }
+
+        let html = '<div class="video-resources-container">';
+        
+        videoGroups.forEach(group => {
+            const { type, phrase, videos } = group;
+            
+            if (type === 'bilibili') {
+                html += `
+                    <div class="video-resource-group bilibili-group">
+                        <div class="video-resource-header">
+                            <div class="video-resource-title">
+                                <i class="fab fa-bilibili bilibili-icon"></i>
+                                <span>Bilibili Videos</span>
+                            </div>
+                            <span class="video-resource-badge">${videos.length} video${videos.length !== 1 ? 's' : ''}</span>
+                        </div>
+                        <div class="video-resource-description">
+                            Watch real-world usage examples from Bilibili content creators
+                        </div>
+                        ${renderBilibiliVideos(videos)}
+                    </div>
+                `;
+            } else if (type === 'ai-generated') {
+                html += `
+                    <div class="video-resource-group ai-group">
+                        <div class="video-resource-header">
+                            <div class="video-resource-title">
+                                <i class="fas fa-robot ai-icon"></i>
+                                <span>AI-Generated Conversation</span>
+                            </div>
+                            <span class="video-resource-badge">AI Generated</span>
+                        </div>
+                        <div class="video-resource-description">
+                            Learn through AI-generated English conversations featuring this phrase
+                        </div>
+                        ${renderAIVideos(videos)}
+                    </div>
+                `;
+            }
+        });
+        
+        html += '</div>';
+        return html;
+    }
+    
+    function renderAIVideos(videos) {
+        if (!videos || videos.length === 0) {
+            return '<div class="ai-videos-container"><div class="no-data">AI-generated videos coming soon...</div></div>';
+        }
+
+        const video = videos[0]; // Assuming one video for now
+
+        if (video.status === 'pending' || video.status === 'processing') {
+            const progress = video.progress || 0;
+            const message = video.message || 'Generating video...';
+            
+            return `
+                <div class="ai-videos-container">
+                    <div class="ai-video-status">
+                        <div class="ai-status-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="ai-status-text">Creating Your Video</div>
+                        <div class="ai-status-subtext">${message}</div>
+                        <div class="ai-progress-container">
+                            <div class="ai-progress-bar" style="width: ${progress}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (video.status === 'completed' && video.video_url) {
+            return `
+                <div class="ai-videos-container">
+                    <div class="ai-video-player-container">
+                        <video class="ai-video-player" controls autoplay playsinline>
+                            <source src="${video.video_url}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="video-info" style="padding: 1rem 0;">
+                        <h4 class="video-title">AI Generated Explanation</h4>
+                        <div class="video-description">
+                            Custom AI-generated video explanation for "${video.phrase || 'this phrase'}"
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        return '<div class="ai-videos-container"><div class="error-message">Unknown video status</div></div>';
+    }
+
+    async function checkExistingVideos(word, phrase) {
+        try {
+            const baseUrl = config.api.host || '';
+            const url = `${baseUrl}/api/ai_phrase_videos?word=${encodeURIComponent(word)}&phrase=${encodeURIComponent(phrase)}`;
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                return [];
+            }
+            
+            const data = await response.json();
+            return data.videos || [];
+        } catch (error) {
+            console.error('Error checking existing videos:', error);
+            return [];
+        }
+    }
+
+    function showGenerateButton(headerHtml, phrase, word) {
+        videoResourcesContent.innerHTML = headerHtml + `
+            <div class="ai-videos-container">
+                <div class="ai-generate-prompt" style="text-align: center; padding: 3rem 1rem;">
+                    <div class="ai-prompt-icon" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1.5rem; opacity: 0.8;">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h3 style="margin-bottom: 0.5rem; color: var(--text-color);">Ready to Generate</h3>
+                    <p style="margin-bottom: 2rem; color: var(--text-light);">Create a custom AI video explanation for "${phrase}"</p>
+                    <button id="start-generation-btn" style="
+                        padding: 0.8rem 1.8rem; 
+                        font-size: 1rem; 
+                        border-radius: 50px; 
+                        background: var(--primary-color); 
+                        color: white; 
+                        border: none; 
+                        cursor: pointer; 
+                        display: inline-flex; 
+                        align-items: center; 
+                        gap: 0.8rem; 
+                        font-weight: 600;
+                        box-shadow: 0 4px 12px rgba(20, 184, 166, 0.2);
+                        transition: all 0.2s ease;
+                    " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(20, 184, 166, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(20, 184, 166, 0.2)'">
+                        <i class="fas fa-magic"></i> Generate AI Video
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        const btn = document.getElementById('start-generation-btn');
+        if (btn) {
+            btn.addEventListener('click', () => {
+                videoResourcesContent.innerHTML = headerHtml + renderAIVideos([{
+                    status: 'pending',
+                    progress: 0,
+                    message: 'Initializing generation...'
+                }]);
+                
+                startAIVideoGeneration(phrase, word)
+                    .then(taskId => {
+                        pollVideoStatus(taskId, phrase, word, headerHtml);
+                    })
+                    .catch(err => {
+                        console.error('Error starting AI video generation:', err);
+                        videoResourcesContent.innerHTML = headerHtml + `
+                            <div class="error-message">Failed to start video generation: ${err.message}</div>
+                        `;
+                    });
+            });
+        }
+    }
+
+    async function startAIVideoGeneration(phrase, word) {
+        try {
+            const response = await fetch(config.api.getUrl('dictionary'), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    word: word || "placeholder", // API requires word, even if placeholder
+                    section: 'ai_generated_phrase_video',
+                    phrase: phrase
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            // Extract task_id from nested response structure
+            return data.ai_generated_phrase_video.task_id;
+        } catch (error) {
+            console.error('Error in startAIVideoGeneration:', error);
+            throw error;
+        }
+    }
+
+    async function pollVideoStatus(taskId, phrase, word, headerHtml) {
+        const pollInterval = 2000; // 2 seconds
+        let attempts = 0;
+        const maxAttempts = 60; // 2 minutes timeout
+
+        const poll = async () => {
+            if (attempts >= maxAttempts) {
+                videoResourcesContent.innerHTML = headerHtml + `
+                    <div class="error-message">Video generation timed out. Please try again later.</div>
+                `;
+                return;
+            }
+
+            try {
+                const response = await fetch(config.api.getUrl('dictionary'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        word: word || "placeholder",
+                        section: 'video_status',
+                        task_id: taskId
+                    })
+                });
+
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const data = await response.json();
+                
+                if (data.error || !data.success) {
+                    videoResourcesContent.innerHTML = headerHtml + `
+                        <div class="error-message">Error getting status: ${data.error || 'Unknown error'}</div>
+                    `;
+                    return;
+                }
+                
+                if (data.status === 'completed') {
+                    // Update UI with completed video
+                    videoResourcesContent.innerHTML = headerHtml + renderAIVideos([{
+                        status: 'completed',
+                        video_url: data.video_url,
+                        phrase: phrase
+                    }]);
+                } else if (data.status === 'failed') {
+                     videoResourcesContent.innerHTML = headerHtml + `
+                        <div class="error-message">Video generation failed: ${data.error || 'Unknown error'}</div>
+                    `;
+                } else {
+                    // Still processing, update progress
+                    // We re-render the status to show progress
+                    const progress = data.progress || Math.min((attempts / maxAttempts) * 100, 95);
+                    const message = data.message || 'Processing video content...';
+                    
+                    videoResourcesContent.innerHTML = headerHtml + renderAIVideos([{
+                        status: 'pending',
+                        progress: progress,
+                        message: message
+                    }]);
+                    
+                    attempts++;
+                    setTimeout(poll, pollInterval);
+                }
+
+            } catch (error) {
+                console.error('Error polling video status:', error);
+                videoResourcesContent.innerHTML = headerHtml + `
+                    <div class="error-message">Failed to check video status: ${error.message}</div>
+                `;
+            }
+        };
+
+        // Start polling
+        poll();
+    }
+
     function renderBilibiliVideos(videos) {
         if (!videos || videos.length === 0) {
             return '<div class="no-data">No Bilibili videos available</div>';
@@ -777,9 +1244,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return num.toString();
     }
 
-    async function fetchSection(word, section, indexOrEntryIndex = null, senseIndex = null) {
+    async function fetchSection(word, section, indexOrEntryIndex = null, senseIndex = null, extraParams = {}) {
         const apiUrl = config.api.getUrl('dictionary');
-        const body = { word, section };
+        const body = { word, section, ...extraParams };
         
         if (section === 'detailed_sense' || section === 'examples' || section === 'usage_notes') {
             if (senseIndex !== null && indexOrEntryIndex !== null) {
@@ -898,7 +1365,8 @@ document.addEventListener('DOMContentLoaded', () => {
             showSectionLoading(culturalContent);
             showSectionLoading(usageContent);
             showSectionLoading(wordFamilyContent);
-            showSectionLoading(bilibiliContent);
+            showSectionLoading(commonPhrasesContent);
+            showSectionLoading(videoResourcesContent);
             
             // Ensure first section is open and active
             if (accordionSections.length > 0) {
@@ -997,17 +1465,29 @@ document.addEventListener('DOMContentLoaded', () => {
             wordFamilyContent.innerHTML = '<div class="error-message">Failed to load word family</div>';
         });
         
-        fetchSection(word, 'bilibili_videos').then(result => {
+        fetchSection(word, 'common_phrases').then(result => {
             const data = result.data;
-            if (data.bilibili_videos && data.bilibili_videos.length) {
-                bilibiliContent.innerHTML = renderBilibiliVideos(data.bilibili_videos);
+            const cacheStatus = result.cacheStatus;
+            
+            if (cacheStatus === 'stale') {
+                console.log('⚠️ Cache hit (stale) for common_phrases');
+            } else if (cacheStatus === 'miss') {
+                console.log('🌐 Cache miss for common_phrases');
             } else {
-                bilibiliContent.innerHTML = '<div class="no-data">No Bilibili videos available</div>';
+                console.log('✅ Cache hit (fresh) for common_phrases');
+            }
+            
+            if (data.common_phrases && data.common_phrases.length) {
+                commonPhrasesContent.innerHTML = renderPhraseChips(data.common_phrases, word);
+            } else {
+                commonPhrasesContent.innerHTML = '<div class="no-data">No common phrases available</div>';
             }
         }).catch(err => {
-            console.error('Error fetching bilibili_videos:', err);
-            bilibiliContent.innerHTML = '<div class="error-message">Failed to load Bilibili videos</div>';
+            console.error('Error fetching common_phrases:', err);
+            commonPhrasesContent.innerHTML = '<div class="error-message">Failed to load common phrases</div>';
         });
+        
+        videoResourcesContent.innerHTML = renderVideoResourcesEmptyState();
         
         loadSensesForEntry(word, entryIndex, entryData);
     }

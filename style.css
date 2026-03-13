@@ -2859,7 +2859,254 @@ h3 { font-size: clamp(1.1rem, 2vw, 1.25rem); }
     font-weight: 500;
 }
 
-/* Bilibili Videos Card */
+/* Common Phrases Section */
+.common-phrases-section .phrase-chips-container {
+    padding: 1.5rem;
+    background: var(--section-bg);
+    border-radius: var(--radius);
+}
+
+.common-phrases-section .phrase-chips-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+}
+
+.common-phrases-section .phrase-chips-header i {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+/* Video Resources Section - Unified Container */
+.video-resources-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.video-resources-empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: var(--section-bg);
+    border-radius: var(--radius);
+    border: 2px dashed var(--border-color);
+}
+
+.empty-state-icon {
+    font-size: 3.5rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    opacity: 0.6;
+}
+
+.empty-state-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.75rem;
+}
+
+.empty-state-description {
+    font-size: 0.95rem;
+    color: var(--text-light);
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.empty-state-features {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.empty-state-feature {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: white;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    color: var(--text-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.empty-state-feature i {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.empty-state-feature i.fa-bilibili {
+    color: #fb7299;
+}
+
+.empty-state-feature i.fa-robot {
+    color: #6366f1;
+}
+
+.video-resource-group {
+    background: white;
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.video-resource-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.video-resource-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.video-resource-title i {
+    font-size: 1.5rem;
+}
+
+.video-resource-title .bilibili-icon {
+    color: #fb7299;
+}
+
+.video-resource-title .ai-icon {
+    color: #6366f1;
+}
+
+.video-resource-badge {
+    padding: 0.35rem 0.75rem;
+    background: var(--section-bg);
+    border-radius: 16px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-light);
+}
+
+.video-resource-description {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+.phrase-chips-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.phrase-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: 24px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.phrase-chip:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.2);
+}
+
+.phrase-chip:active {
+    transform: translateY(0);
+}
+
+.phrase-chip i {
+    font-size: 0.85rem;
+}
+
+.phrase-chips-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: var(--radius-sm);
+}
+
+.phrase-chips-hint i {
+    color: var(--primary-color);
+}
+
+.selected-phrase-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 0;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.back-to-phrases-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.back-to-phrases-btn:hover {
+    background: var(--section-bg);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: translateX(-2px);
+}
+
+.selected-phrase-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    color: var(--text-color);
+}
+
+.selected-phrase-info i {
+    color: var(--primary-color);
+}
+
+.selected-phrase-info strong {
+    color: var(--primary-color);
+}
+
 .bilibili-videos-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -3212,3 +3459,118 @@ h3 { font-size: clamp(1.1rem, 2vw, 1.25rem); }
         padding: 0.3rem 0.6rem;
     }
 }
+
+/* AI Video Generation Styles */
+.phrase-chip-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: 24px;
+    padding: 0.25rem;
+    transition: var(--transition);
+}
+
+.phrase-chip-wrapper:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Override existing phrase-chip styles to fit in wrapper */
+.phrase-chip-wrapper .phrase-chip {
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    padding: 0.5rem 1rem;
+    margin: 0;
+    transform: none !important; /* Disable individual transform on hover */
+}
+
+.phrase-chip-wrapper .phrase-chip:hover {
+    background: rgba(20, 184, 166, 0.1);
+    color: var(--primary-color);
+}
+
+.ai-video-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-right: 0.25rem;
+}
+
+.ai-video-btn:hover {
+    background: #6366f1;
+    color: white;
+    transform: scale(1.1);
+}
+
+/* AI Video Player & Status */
+.ai-video-status {
+    text-align: center;
+    padding: 2rem;
+    background: #f8fafc;
+    border-radius: var(--radius);
+    border: 1px dashed var(--border-color);
+}
+
+.ai-status-icon {
+    font-size: 2.5rem;
+    color: #6366f1;
+    margin-bottom: 1rem;
+    animation: pulse 2s infinite;
+}
+
+.ai-status-text {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.ai-status-subtext {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-bottom: 1.5rem;
+}
+
+.ai-progress-container {
+    width: 100%;
+    max-width: 400px;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    margin: 0 auto;
+    overflow: hidden;
+}
+
+.ai-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #6366f1, #818cf8);
+    width: 0%;
+    transition: width 0.5s ease;
+    border-radius: 4px;
+}
+
+.ai-video-player-container {
+    width: 100%;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: black;
+    box-shadow: var(--shadow);
+}
+
+.ai-video-player {
+    width: 100%;
+    display: block;
+}
+
