@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+  <ShortName>Dict</ShortName>
+  <Description>Search English dictionary for word definitions, etymology, synonyms, and examples</Description>
+  <InputEncoding>UTF-8</InputEncoding>
+  <Image width="16" height="16" type="image/x-icon">http://lijialab/favicon.ico</Image>
+  <Url type="text/html" template="http://lijialab/?q={searchTerms}"/>
+  <LongName>English Dictionary</LongName>
+  <Tags>dictionary english words definitions thesaurus vocabulary etymology</Tags>
+  <Query role="example" searchTerms="serendipity"/>
+  <Language>en-us</Language>
+  <OutputEncoding>UTF-8</OutputEncoding>
+  <SyndicationRight>open</SyndicationRight>
+  <AdultContent>false</AdultContent>
+</OpenSearchDescription>

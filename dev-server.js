@@ -26,6 +26,7 @@ const MIME_TYPES = {
   '.gif': 'image/gif',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
+  '.xml': 'application/opensearchdescription+xml; charset=UTF-8',
   '.txt': 'text/plain'
 };
 

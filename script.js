@@ -111,6 +111,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     applyTheme();
     
+    const urlParams = new URLSearchParams(window.location.search);
+    const queryParam = urlParams.get('q');
+    if (queryParam) {
+        searchInput.value = queryParam;
+        handleSearch();
+    }
+    
     function getSearchHistory() {
         try {
             const history = localStorage.getItem(HISTORY_KEY);

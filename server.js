@@ -17,15 +17,17 @@ const PORT = process.env.PORT || 8080;
 app.use(compression()); // Gzip compression
 app.use(cors()); // Enable CORS
 app.use(express.static(path.join(__dirname, 'dist'), {
-  maxAge: '1y', // Cache static assets for 1 year
+  maxAge: '1y',
   etag: true,
   lastModified: true,
   setHeaders: (res, filePath) => {
-    // Don't cache HTML files
-    if (path.extname(filePath) === '.html') {
+    const ext = path.extname(filePath);
+    if (ext === '.html') {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
+    } else if (ext === '.xml' && filePath.includes('opensearch')) {
+      res.setHeader('Content-Type', 'application/opensearchdescription+xml; charset=UTF-8');
     }
   }
 }));
