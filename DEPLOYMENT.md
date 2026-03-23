@@ -9,7 +9,14 @@ This guide explains how to deploy the Advanced English Dictionary to various clo
    npm run build
    ```
 
-2. **Deploy the `dist/` folder** to your preferred hosting service.
+2. **Update OpenSearch configuration for production:**
+   Edit `dist/opensearch.xml` and replace `localhost:3000` with your production domain:
+   ```xml
+   <Url type="text/html" template="https://yourdomain.com/?q={searchTerms}"/>
+   <Image width="16" height="16" type="image/x-icon">https://yourdomain.com/favicon.ico</Image>
+   ```
+
+3. **Deploy the `dist/` folder** to your preferred hosting service.
 
 ## Deployment Options
 
@@ -110,12 +117,18 @@ The script will:
            try_files $uri $uri/ /index.html;
        }
        
-       # Cache static assets
-       location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
-           expires 1y;
-           add_header Cache-Control "public, immutable";
-       }
-   }
+        # Cache static assets
+        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+        }
+        
+        # OpenSearch descriptor
+        location = /opensearch.xml {
+            add_header Content-Type "application/opensearchdescription+xml; charset=UTF-8";
+            add_header Cache-Control "public, max-age=86400";
+        }
+    }
    ```
 
 4. **Set up SSL (Let's Encrypt):**
@@ -149,14 +162,23 @@ The deployment script automatically creates backups in the `backups/` folder.
 
 ### Common Issues
 
-1. **404 errors after page refresh (SPA routing)**
+1. **Chrome "Tab to Search" not working**
+   - Ensure `opensearch.xml` has correct production domain (not localhost)
+   - Verify `opensearch.xml` is served with MIME type `application/opensearchdescription+xml`
+   - Check that `<link rel="search">` tag is present in `index.html`
+   - Visit your site in Chrome, then check `chrome://settings/searchEngines` → Site search
+   - Users must manually activate the search provider in Chrome settings
+
+2. **404 errors after page refresh (SPA routing)**
+2. **404 errors after page refresh (SPA routing)**
    - Ensure your server is configured to redirect all routes to `index.html`
 
-2. **CORS errors**
+3. **CORS errors**
+3. **CORS errors**
    - Check that your server includes proper CORS headers
    - For development, the dev server includes CORS middleware
 
-3. **Slow loading**
+4. **Slow loading**
    - Enable compression (gzip/brotli)
    - Use CDN for static assets
    - Implement caching headers

@@ -28,7 +28,9 @@ const FILES_TO_PROCESS = [
   'index.html',
   'style.css',
   'script.js',
-  'config.js'
+  'config.js',
+  'opensearch.xml',
+  'favicon.ico'
 ];
 
 // Helper to create a hash from file content and current timestamp
@@ -118,33 +120,41 @@ async function createProductionBundle() {
 
   // Process other files
   for (const fileName of FILES_TO_PROCESS) {
-    if (fileName === 'style.css' || fileName === 'script.js') continue; // Already handled
+    if (fileName === 'style.css' || fileName === 'script.js') continue;
     const sourcePath = path.join(SOURCE_DIR, fileName);
     let distPath = path.join(DIST_DIR, fileName);
 
     try {
       await stat(sourcePath);
-      let content = await readFile(sourcePath, 'utf8');
-      let processedContent = content;
+      const ext = path.extname(fileName);
+      
+      if (ext === '.ico' || ext === '.png' || ext === '.jpg' || ext === '.jpeg' || ext === '.gif') {
+        await copyFile(sourcePath, distPath);
+        console.log(chalk.green(`✅ Copied binary: ${fileName}`));
+      } else {
+        let content = await readFile(sourcePath, 'utf8');
+        let processedContent = content;
 
-      switch (path.extname(fileName)) {
-        case '.html':
-          processedContent = await optimizeHTML(content, cssHashed, jsHashed);
-          break;
-        case '.js':
-          // config.js: copy as-is
-          break;
-        case '.json':
-          try {
-            const jsonData = JSON.parse(content);
-            processedContent = JSON.stringify(jsonData);
-          } catch (err) {
-            console.warn(chalk.yellow(`⚠️  Could not parse JSON ${fileName}, copying as-is`));
-          }
-          break;
+        switch (ext) {
+          case '.html':
+            processedContent = await optimizeHTML(content, cssHashed, jsHashed);
+            break;
+          case '.xml':
+            break;
+          case '.js':
+            break;
+          case '.json':
+            try {
+              const jsonData = JSON.parse(content);
+              processedContent = JSON.stringify(jsonData);
+            } catch (err) {
+              console.warn(chalk.yellow(`⚠️  Could not parse JSON ${fileName}, copying as-is`));
+            }
+            break;
+        }
+        await writeFile(distPath, processedContent, 'utf8');
+        console.log(chalk.green(`✅ Processed: ${fileName}`));
       }
-      await writeFile(distPath, processedContent, 'utf8');
-      console.log(chalk.green(`✅ Processed: ${fileName}`));
     } catch (err) {
       if (err.code === 'ENOENT') {
         console.warn(chalk.yellow(`⚠️  Skipping missing file: ${fileName}`));
@@ -164,6 +174,8 @@ This folder contains the optimized production build of the Advanced English Dict
 - style.css - Minified styles (also inlined in HTML)
 - script.js - Minified JavaScript
 - config.js - API configuration
+- opensearch.xml - OpenSearch descriptor for Chrome "Tab to Search"
+- favicon.ico - Site icon (16x16)
 
 ## Deployment
 Simply upload the contents of this folder to your web server.
