@@ -1853,7 +1853,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showSectionLoading(culturalContent);
         showSectionLoading(usageContent);
         showSectionLoading(wordFamilyContent);
-        showSectionLoading(bilibiliContent);
+        showSectionLoading(videoResourcesContent);
         
         loadEntryContent(currentWord, entryIndex, currentWordData);
     }
