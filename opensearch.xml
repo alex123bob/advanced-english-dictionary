@@ -3,8 +3,8 @@
   <ShortName>Dict</ShortName>
   <Description>Search English dictionary for word definitions, etymology, synonyms, and examples</Description>
   <InputEncoding>UTF-8</InputEncoding>
-  <Image width="16" height="16" type="image/x-icon">http://lijialab/favicon.ico</Image>
-  <Url type="text/html" template="http://lijialab/?q={searchTerms}"/>
+  <Image width="16" height="16" type="image/x-icon">http://lijialab.com/favicon.ico</Image>
+  <Url type="text/html" template="http://lijialab.com/?q={searchTerms}"/>
   <LongName>English Dictionary</LongName>
   <Tags>dictionary english words definitions thesaurus vocabulary etymology</Tags>
   <Query role="example" searchTerms="serendipity"/>
