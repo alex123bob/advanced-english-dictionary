@@ -273,6 +273,20 @@ document.addEventListener('DOMContentLoaded', () => {
         headword.textContent = basicData.headword;
         
         const entryData = basicData.entries ? basicData.entries[entryIndex] : null;
+        
+        const posBadge = document.getElementById('wordPosBadge');
+        if (posBadge && entryData && entryData.meanings_summary && entryData.meanings_summary.length > 0) {
+            const primaryPos = entryData.meanings_summary[0].part_of_speech;
+            if (primaryPos) {
+                posBadge.textContent = primaryPos;
+                posBadge.style.display = 'inline-block';
+            } else {
+                posBadge.style.display = 'none';
+            }
+        } else if (posBadge) {
+            posBadge.style.display = 'none';
+        }
+
         const wordPronunciation = document.getElementById('wordPronunciation');
         
         if (wordPronunciation && entryData) {
@@ -599,8 +613,30 @@ document.addEventListener('DOMContentLoaded', () => {
         return false;
     }
     
-    function showSectionLoading(container) {
-        container.innerHTML = '<div class="section-loading"><div class="spinner"></div><p>Loading...</p></div>';
+    function showSectionLoading(container, type = 'default') {
+        const skeletons = {
+            text: `<div class="skeleton-loading">
+                <div class="skeleton skeleton-line" style="width:92%"></div>
+                <div class="skeleton skeleton-line" style="width:78%"></div>
+                <div class="skeleton skeleton-line" style="width:85%"></div>
+            </div>`,
+            chips: `<div class="skeleton-loading skeleton-chips">
+                <div class="skeleton skeleton-chip"></div>
+                <div class="skeleton skeleton-chip" style="width:90px"></div>
+                <div class="skeleton skeleton-chip" style="width:70px"></div>
+                <div class="skeleton skeleton-chip" style="width:100px"></div>
+            </div>`,
+            cards: `<div class="skeleton-loading">
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card" style="height:60px"></div>
+            </div>`,
+            default: `<div class="skeleton-loading">
+                <div class="skeleton skeleton-line" style="width:85%"></div>
+                <div class="skeleton skeleton-line" style="width:70%"></div>
+                <div class="skeleton skeleton-line" style="width:80%"></div>
+            </div>`
+        };
+        container.innerHTML = skeletons[type] || skeletons.default;
     }
     
     function renderSenseHTML(sense, index, isDetailed = false) {
@@ -624,7 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const examplesSection = hasExamples ? 
             `<div class="sense-examples">
-                ${examplesList.map(ex => `<div class="example-item">${makeWordsClickable(ex)}</div>`).join('')}
+                ${examplesList.map(ex => `<div class="example-item"><span class="example-arrow">→</span><em>${makeWordsClickable(ex)}</em></div>`).join('')}
             </div>` : '';
         
         const collocationsSection = sense.collocations && sense.collocations.length ?
@@ -720,6 +756,39 @@ document.addEventListener('DOMContentLoaded', () => {
         return html;
     }
     
+    // Helper function to highlight language origin terms in etymology
+    function highlightEtymologyTerms(text) {
+        if (!text) return text;
+        const langTerms = [
+            'Old English', 'Middle English', 'Early Modern English',
+            'Latin', 'Classical Latin', 'Medieval Latin', 'Late Latin',
+            'Greek', 'Ancient Greek', 'Proto-Greek',
+            'French', 'Old French', 'Middle French', 'Norman French', 'Anglo-Norman',
+            'Germanic', 'Proto-Germanic', 'West Germanic',
+            'Proto-Indo-European', 'Indo-European',
+            'Norse', 'Old Norse', 'Proto-Norse',
+            'Dutch', 'Middle Dutch', 'Old Dutch',
+            'German', 'Old High German', 'Middle High German',
+            'Italian', 'Spanish', 'Portuguese', 'Romanian',
+            'Sanskrit', 'Arabic', 'Persian', 'Hebrew',
+            'Celtic', 'Old Irish', 'Gaelic', 'Welsh',
+            'Scandinavian', 'Danish', 'Swedish', 'Norwegian'
+        ];
+        // Sort by length descending so longer terms match before shorter ones (e.g. "Old English" before "English")
+        langTerms.sort((a, b) => b.length - a.length);
+        let result = text;
+        const seen = new Set();
+        langTerms.forEach(term => {
+            if (seen.has(term)) return;
+            const regex = new RegExp(`\\b(${term.replace(/[-]/g, '\\-')})\\b`, 'g');
+            result = result.replace(regex, (match) => {
+                seen.add(term);
+                return `<span class="etymology-lang-term">${match}</span>`;
+            });
+        });
+        return result;
+    }
+
     // Helper function to add contextual emojis to text
     function addContextEmoji(text) {
         if (!text) return text;
@@ -886,21 +955,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return `
             <div class="video-resources-empty-state">
                 <div class="empty-state-icon">
-                    <i class="fas fa-video"></i>
+                    <i class="fas fa-play-circle"></i>
                 </div>
-                <div class="empty-state-title">Ready to Watch Videos</div>
+                <div class="empty-state-title">Tap a phrase to load videos</div>
                 <div class="empty-state-description">
-                    Select a phrase from the <strong>"Common Phrases"</strong> section above to load related videos
-                </div>
-                <div class="empty-state-features">
-                    <div class="empty-state-feature">
-                        <i class="fab fa-bilibili"></i>
-                        <span>Real-world examples from Bilibili</span>
-                    </div>
-                    <div class="empty-state-feature">
-                        <i class="fas fa-robot"></i>
-                        <span>AI-generated learning content (coming soon)</span>
-                    </div>
+                    Go to <strong>Phrases</strong> above and tap any phrase to see real-world usage examples
                 </div>
             </div>
         `;
@@ -1483,14 +1542,14 @@ document.addEventListener('DOMContentLoaded', () => {
             renderEntrySelector(basicData);
             
             // Show loading indicators for all sections
-            showSectionLoading(definitionsContent);
-            showSectionLoading(etymologyContent);
-            showSectionLoading(synonymsContent);
-            showSectionLoading(culturalContent);
-            showSectionLoading(usageContent);
-            showSectionLoading(wordFamilyContent);
-            showSectionLoading(commonPhrasesContent);
-            showSectionLoading(videoResourcesContent);
+            showSectionLoading(definitionsContent, 'cards');
+            showSectionLoading(etymologyContent, 'text');
+            showSectionLoading(synonymsContent, 'chips');
+            showSectionLoading(culturalContent, 'text');
+            showSectionLoading(usageContent, 'text');
+            showSectionLoading(wordFamilyContent, 'chips');
+            showSectionLoading(commonPhrasesContent, 'chips');
+            showSectionLoading(videoResourcesContent, 'default');
             
             // Ensure first section is open and active
             if (accordionSections.length > 0) {
@@ -1538,7 +1597,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.etymology) {
                 let etymologyHtml = '';
                 if (data.etymology.etymology) {
-                    etymologyHtml += `<div class="etymology-text">${makeWordsClickable(data.etymology.etymology)}</div>`;
+                    etymologyHtml += `<div class="etymology-text">${highlightEtymologyTerms(data.etymology.etymology)}</div>`;
                 }
                 if (data.etymology.root_analysis) {
                     etymologyHtml += `<div class="root-analysis"><div class="etymology-label">Root Analysis</div><div>${makeWordsClickable(data.etymology.root_analysis)}</div></div>`;
@@ -1875,13 +1934,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         updateHeadwordAndPronunciation(currentWordData, entryIndex);
         
-        showSectionLoading(definitionsContent);
-        showSectionLoading(etymologyContent);
-        showSectionLoading(synonymsContent);
-        showSectionLoading(culturalContent);
-        showSectionLoading(usageContent);
-        showSectionLoading(wordFamilyContent);
-        showSectionLoading(videoResourcesContent);
+        showSectionLoading(definitionsContent, 'cards');
+        showSectionLoading(etymologyContent, 'text');
+        showSectionLoading(synonymsContent, 'chips');
+        showSectionLoading(culturalContent, 'text');
+        showSectionLoading(usageContent, 'text');
+        showSectionLoading(wordFamilyContent, 'chips');
+        showSectionLoading(videoResourcesContent, 'default');
         
         loadEntryContent(currentWord, entryIndex, currentWordData);
     }
@@ -1890,10 +1949,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (allSynonyms.size > 0 || allAntonyms.size > 0) {
             let html = '<div class="synonyms-grid">';
             if (allSynonyms.size > 0) {
-                html += `<div><strong>Synonyms</strong><div class="synonyms-list">${Array.from(allSynonyms).map(s => `<span class="synonym-tag" data-lookup-word="${s}">${s}</span>`).join('')}</div></div>`;
+                html += `<div class="synonym-group">
+                    <div class="synonym-group-header"><i class="fas fa-equals"></i> Synonyms</div>
+                    <div class="synonyms-list">${Array.from(allSynonyms).map(s => `<span class="synonym-tag" data-lookup-word="${s}">${s}</span>`).join('')}</div>
+                </div>`;
             }
             if (allAntonyms.size > 0) {
-                html += `<div><strong>Antonyms</strong><div class="antonyms-list">${Array.from(allAntonyms).map(a => `<span class="antonym-tag" data-lookup-word="${a}">${a}</span>`).join('')}</div></div>`;
+                html += `<div class="synonym-group">
+                    <div class="synonym-group-header antonym-header"><i class="fas fa-not-equal"></i> Antonyms</div>
+                    <div class="antonyms-list">${Array.from(allAntonyms).map(a => `<span class="antonym-tag" data-lookup-word="${a}">${a}</span>`).join('')}</div>
+                </div>`;
             }
             html += '</div>';
             synonymsContent.innerHTML = html;

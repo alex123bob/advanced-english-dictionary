@@ -49,7 +49,7 @@ const config = {
          * 
          * Change the value below to switch themes, then refresh the page.
          */
-        theme: 'indigo-sky'
+        theme: 'professional-blue'
     },
     
 };
