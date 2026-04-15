@@ -549,6 +549,27 @@ document.addEventListener('DOMContentLoaded', () => {
         return html;
     }
 
+    function lookupWord(word) {
+        if (!word || !word.trim()) return;
+        searchInput.value = word.trim();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        handleSearch();
+    }
+
+    // Matches 2+ letter words (including hyphens/apostrophes), skips HTML tags
+    function makeWordsClickable(text) {
+        if (!text) return text;
+        return text.replace(/\b([a-zA-Z][a-zA-Z'-]{1,})\b/g, '<span class="clickable-word" data-lookup-word="$1">$1</span>');
+    }
+
+    resultsContainer.addEventListener('click', (e) => {
+        const lookupTarget = e.target.closest('[data-lookup-word]');
+        if (lookupTarget) {
+            e.preventDefault();
+            lookupWord(lookupTarget.dataset.lookupWord);
+        }
+    });
+
     function clearResults() {
         definitionsContent.innerHTML = '';
         etymologyContent.innerHTML = '';
@@ -603,14 +624,14 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const examplesSection = hasExamples ? 
             `<div class="sense-examples">
-                ${examplesList.map(ex => `<div class="example-item">${ex}</div>`).join('')}
+                ${examplesList.map(ex => `<div class="example-item">${makeWordsClickable(ex)}</div>`).join('')}
             </div>` : '';
         
         const collocationsSection = sense.collocations && sense.collocations.length ?
-            `<div class="sense-collocations"><strong>Common collocations:</strong><div class="collocation-tags">${sense.collocations.map(col => `<span class="collocation-tag">${col}</span>`).join('')}</div></div>` : '';
+            `<div class="sense-collocations"><strong>Common collocations:</strong><div class="collocation-tags">${sense.collocations.map(col => `<span class="collocation-tag" data-lookup-word="${col}">${col}</span>`).join('')}</div></div>` : '';
         
         const usageNotesSection = sense.usage_notes ? 
-            `<div class="usage-notes"><strong>Usage notes:</strong> ${sense.usage_notes}</div>` : '';
+            `<div class="usage-notes"><strong>Usage notes:</strong> ${makeWordsClickable(sense.usage_notes)}</div>` : '';
         
         const detailsButton = !isDetailed ? 
             `<button class="sense-detail-btn" data-sense-index="${index}" title="Load detailed information">
@@ -620,14 +641,14 @@ document.addEventListener('DOMContentLoaded', () => {
         
         return `
             <div class="sense-definition">
-                <strong>${index + 1}.</strong> ${sense.part_of_speech ? `<span class="sense-pos">(${sense.part_of_speech})</span>` : ''} ${sense.definition}
+                <strong>${index + 1}.</strong> ${sense.part_of_speech ? `<span class="sense-pos">(${sense.part_of_speech})</span>` : ''} ${makeWordsClickable(sense.definition)}
             </div>
             ${metaBadges}
             ${examplesSection}
             ${usageNotesSection}
             ${collocationsSection}
-            ${sense.synonyms && sense.synonyms.length ? `<div class="sense-synonyms"><strong>Synonyms:</strong><div class="synonym-tags">${sense.synonyms.map(syn => `<span class="synonym-tag">${syn}</span>`).join('')}</div></div>` : ''}
-            ${sense.antonyms && sense.antonyms.length ? `<div class="sense-antonyms"><strong>Antonyms:</strong><div class="antonym-tags">${sense.antonyms.map(ant => `<span class="antonym-tag">${ant}</span>`).join('')}</div></div>` : ''}
+            ${sense.synonyms && sense.synonyms.length ? `<div class="sense-synonyms"><strong>Synonyms:</strong><div class="synonym-tags">${sense.synonyms.map(syn => `<span class="synonym-tag" data-lookup-word="${syn}">${syn}</span>`).join('')}</div></div>` : ''}
+            ${sense.antonyms && sense.antonyms.length ? `<div class="sense-antonyms"><strong>Antonyms:</strong><div class="antonym-tags">${sense.antonyms.map(ant => `<span class="antonym-tag" data-lookup-word="${ant}">${ant}</span>`).join('')}</div></div>` : ''}
             <div class="sense-actions">${detailsButton}</div>
         `;
     }
@@ -655,7 +676,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span>Historical Context</span>
                     </div>
                     <div class="cultural-section-content">
-                        <p>${historical_context}</p>
+                        <p>${makeWordsClickable(historical_context)}</p>
                     </div>
                 </div>
             `;
@@ -671,7 +692,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div class="cultural-section-content">
                         <ul class="cultural-list">
-                            ${cultural_associations.map(item => `<li>${item}</li>`).join('')}
+                            ${cultural_associations.map(item => `<li>${makeWordsClickable(item)}</li>`).join('')}
                         </ul>
                     </div>
                 </div>
@@ -688,7 +709,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div class="cultural-section-content">
                         <ul class="cultural-list">
-                            ${social_perceptions.map(item => `<li>${item}</li>`).join('')}
+                            ${social_perceptions.map(item => `<li>${makeWordsClickable(item)}</li>`).join('')}
                         </ul>
                     </div>
                 </div>
@@ -740,7 +761,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <i class="fas fa-lightbulb feature-icon"></i>
                         <span class="feature-label">Modern Relevance</span>
                     </div>
-                    <div class="feature-content">${enhancedText}</div>
+                    <div class="feature-content">${makeWordsClickable(enhancedText)}</div>
                 </div>
             `;
         }
@@ -774,7 +795,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="region-card">
                             <div class="region-flag">${region.flag}</div>
                             <div class="region-name">${region.country}</div>
-                            <div class="region-text">${region.text}</div>
+                            <div class="region-text">${makeWordsClickable(region.text)}</div>
                         </div>
                     `;
                 });
@@ -783,7 +804,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // List layout with icons
                 html += '<div class="regional-list">';
                 regions.forEach(region => {
-                    html += `<div class="regional-item"><span class="region-icon">${region.flag}</span> ${region.text}</div>`;
+                    html += `<div class="regional-item"><span class="region-icon">${region.flag}</span> ${makeWordsClickable(region.text)}</div>`;
                 });
                 html += '</div>';
             }
@@ -805,13 +826,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     const explanation = match[2].trim();
                     html += `
                         <div class="confusion-item">
-                            <div class="confusion-word">${word}</div>
+                            <div class="confusion-word" data-lookup-word="${word}">${word}</div>
                             <div class="confusion-arrow">→</div>
-                            <div class="confusion-explanation">${explanation}</div>
+                            <div class="confusion-explanation">${makeWordsClickable(explanation)}</div>
                         </div>
                     `;
                 } else {
-                    html += `<div class="confusion-item"><div class="confusion-text">${confusion}</div></div>`;
+                    html += `<div class="confusion-item"><div class="confusion-text">${makeWordsClickable(confusion)}</div></div>`;
                 }
             });
             
@@ -1517,10 +1538,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.etymology) {
                 let etymologyHtml = '';
                 if (data.etymology.etymology) {
-                    etymologyHtml += `<div class="etymology-text">${data.etymology.etymology}</div>`;
+                    etymologyHtml += `<div class="etymology-text">${makeWordsClickable(data.etymology.etymology)}</div>`;
                 }
                 if (data.etymology.root_analysis) {
-                    etymologyHtml += `<div class="root-analysis"><div class="etymology-label">Root Analysis</div><div>${data.etymology.root_analysis}</div></div>`;
+                    etymologyHtml += `<div class="root-analysis"><div class="etymology-label">Root Analysis</div><div>${makeWordsClickable(data.etymology.root_analysis)}</div></div>`;
                 }
                 etymologyContent.innerHTML = etymologyHtml || '<div class="no-data">No etymology information available</div>';
             } else {
@@ -1559,7 +1580,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = result.data;
             if (data.word_family && data.word_family.word_family && data.word_family.word_family.length) {
                 const displayWords = data.word_family.word_family.slice(0, 20);
-                wordFamilyContent.innerHTML = `<div class="word-family-tags">${displayWords.map(wf => `<span class="word-tag">${wf}</span>`).join('')}</div>`;
+                wordFamilyContent.innerHTML = `<div class="word-family-tags">${displayWords.map(wf => `<span class="word-tag" data-lookup-word="${wf}">${wf}</span>`).join('')}</div>`;
             } else {
                 wordFamilyContent.innerHTML = '<div class="no-data">No word family available</div>';
             }
@@ -1869,10 +1890,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (allSynonyms.size > 0 || allAntonyms.size > 0) {
             let html = '<div class="synonyms-grid">';
             if (allSynonyms.size > 0) {
-                html += `<div><strong>Synonyms</strong><div class="synonyms-list">${Array.from(allSynonyms).map(s => `<span class="synonym-tag">${s}</span>`).join('')}</div></div>`;
+                html += `<div><strong>Synonyms</strong><div class="synonyms-list">${Array.from(allSynonyms).map(s => `<span class="synonym-tag" data-lookup-word="${s}">${s}</span>`).join('')}</div></div>`;
             }
             if (allAntonyms.size > 0) {
-                html += `<div><strong>Antonyms</strong><div class="antonyms-list">${Array.from(allAntonyms).map(a => `<span class="antonym-tag">${a}</span>`).join('')}</div></div>`;
+                html += `<div><strong>Antonyms</strong><div class="antonyms-list">${Array.from(allAntonyms).map(a => `<span class="antonym-tag" data-lookup-word="${a}">${a}</span>`).join('')}</div></div>`;
             }
             html += '</div>';
             synonymsContent.innerHTML = html;
@@ -2005,7 +2026,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (window.innerWidth <= 768) {
             searchInput.placeholder = 'Search a word or phrase';
         } else {
-            searchInput.placeholder = "Enter a word or phrase (e.g., 'pipe down', 'serendipity')";
+            searchInput.placeholder = "Enter a word or phrase (e.g., 'pipe', 'serendipity')";
         }
     }
     

@@ -16,7 +16,7 @@ A modern, responsive web-based English dictionary with detailed word definitions
 
 The dictionary currently includes:
 
-1. **"pipe down"** - Detailed phrasal verb with comprehensive analysis
+1. **"pipe"** - Detailed phrasal verb with comprehensive analysis
 2. **"serendipity"** - Noun describing fortunate discoveries by chance
 3. **"ubiquitous"** - Adjective meaning present everywhere
 4. **"ephemeral"** - Adjective describing short-lived phenomena
@@ -88,7 +88,7 @@ Open http://localhost:8080 in your browser.
 ## How to Use
 
 1. Open the application in a web browser
-2. Type a word in the search box (try "pipe down", "serendipity", "ubiquitous", or "ephemeral")
+2. Type a word in the search box (try "pipe", "serendipity", "ubiquitous", or "ephemeral")
 3. Click "Look Up" or press Enter
 4. View detailed information including:
    - Definitions with usage notes

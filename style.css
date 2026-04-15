@@ -2057,6 +2057,41 @@ h3 { font-size: clamp(1.1rem, 2vw, 1.25rem); }
     transform: translateY(-1px);
 }
 
+/* Clickable word spans (inline text lookups) */
+.clickable-word {
+    cursor: pointer;
+    border-radius: 3px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.clickable-word:hover {
+    background-color: var(--section-bg);
+    color: var(--primary-color);
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
+}
+
+/* Cursor pointer for tag elements with data-lookup-word */
+.synonym-tag[data-lookup-word],
+.antonym-tag[data-lookup-word],
+.word-tag[data-lookup-word],
+.collocation-tag[data-lookup-word],
+.confusion-word[data-lookup-word] {
+    cursor: pointer;
+}
+
+.synonym-tag[data-lookup-word]:hover,
+.antonym-tag[data-lookup-word]:hover,
+.collocation-tag[data-lookup-word]:hover {
+    filter: brightness(0.92);
+    transform: translateY(-1px);
+}
+
+.confusion-word[data-lookup-word]:hover {
+    text-decoration: underline;
+}
+
 /* Empty state */
 .empty-state {
     text-align: center;
