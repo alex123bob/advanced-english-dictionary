@@ -103,13 +103,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const HISTORY_KEY = 'dict_search_history';
     const MAX_HISTORY_ITEMS = 10;
-    
-    function applyTheme() {
-        const theme = config.app.theme || 'teal-emerald';
-        document.documentElement.setAttribute('data-theme', theme);
+    const THEME_KEY = 'dict_theme';
+
+    function applyTheme(theme) {
+        if (theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+        }
+        document.querySelectorAll('.theme-swatch').forEach(swatch => {
+            swatch.classList.toggle('active', (swatch.dataset.theme || '') === (theme || ''));
+        });
     }
-    
-    applyTheme();
+
+    function initTheme() {
+        const saved = sessionStorage.getItem(THEME_KEY);
+        const fallback = config.app.theme || '';
+        applyTheme(saved !== null ? saved : fallback);
+    }
+
+    initTheme();
+
+    const themePickerBtn = document.getElementById('themePickerBtn');
+    const themePickerPanel = document.getElementById('themePickerPanel');
+
+    themePickerBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        const isOpen = themePickerPanel.classList.toggle('open');
+        themePickerBtn.classList.toggle('active', isOpen);
+        themePickerBtn.setAttribute('aria-expanded', String(isOpen));
+    });
+
+    document.addEventListener('click', e => {
+        if (!themePickerPanel.contains(e.target) && e.target !== themePickerBtn) {
+            themePickerPanel.classList.remove('open');
+            themePickerBtn.classList.remove('active');
+            themePickerBtn.setAttribute('aria-expanded', 'false');
+        }
+    });
+
+    themePickerPanel.addEventListener('click', e => {
+        const swatch = e.target.closest('.theme-swatch');
+        if (!swatch) return;
+        const theme = swatch.dataset.theme || '';
+        sessionStorage.setItem(THEME_KEY, theme);
+        applyTheme(theme);
+        themePickerPanel.classList.remove('open');
+        themePickerBtn.classList.remove('active');
+        themePickerBtn.setAttribute('aria-expanded', 'false');
+    });
     
     const urlParams = new URLSearchParams(window.location.search);
     const queryParam = urlParams.get('q');
@@ -421,19 +463,37 @@ document.addEventListener('DOMContentLoaded', () => {
                                         <i class="fas fa-arrow-left"></i> Back
                                     </button>
                                 </div>
-                                <div class="no-data">No videos found for "${phrase}"</div>
+                                <div class="bilibili-empty-state">
+                                    <div class="bilibili-empty-state-icon">
+                                        <i class="fab fa-bilibili"></i>
+                                    </div>
+                                    <div class="bilibili-empty-state-title">No videos this time</div>
+                                    <div class="bilibili-empty-state-desc">Couldn't find anything for <strong>"${phrase}"</strong> — maybe give another phrase a go 🌸</div>
+                                </div>
                             `;
                         }
                     })
                     .catch(err => {
                         console.error('Error fetching bilibili_videos for phrase:', err);
+                        const isNoResults = err.message && /no video|not found|no result/i.test(err.message);
+                        const stateHtml = isNoResults
+                            ? `<div class="bilibili-empty-state">
+                                    <div class="bilibili-empty-state-icon"><i class="fab fa-bilibili"></i></div>
+                                    <div class="bilibili-empty-state-title">No videos this time</div>
+                                    <div class="bilibili-empty-state-desc">Couldn't find anything for <strong>"${phrase}"</strong> — maybe give another phrase a go 🌸</div>
+                                </div>`
+                            : `<div class="bilibili-error-state">
+                                    <div class="bilibili-error-state-icon"><i class="fas fa-circle-exclamation"></i></div>
+                                    <div class="bilibili-error-state-title">Couldn't load videos</div>
+                                    <div class="bilibili-error-state-desc">Something went wrong while searching for <strong>"${phrase}"</strong>. Please try again.</div>
+                                </div>`;
                         videoResourcesContent.innerHTML = `
                             <div class="selected-phrase-header">
                                 <button class="back-to-phrases-btn" data-word="${word}">
                                     <i class="fas fa-arrow-left"></i> Back
                                 </button>
                             </div>
-                            <div class="error-message">Failed to load videos for "${phrase}"</div>
+                            ${stateHtml}
                         `;
                     });
             }
@@ -1332,7 +1392,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderBilibiliVideos(videos) {
         if (!videos || videos.length === 0) {
-            return '<div class="no-data">No Bilibili videos available</div>';
+            return `<div class="bilibili-empty-state">
+                <div class="bilibili-empty-state-icon"><i class="fab fa-bilibili"></i></div>
+                <div class="bilibili-empty-state-title">No videos this time</div>
+                <div class="bilibili-empty-state-desc">Nothing came up for this phrase — try another one 🌸</div>
+            </div>`;
         }
 
         const videoCards = videos.map(video => {
