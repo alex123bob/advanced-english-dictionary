@@ -117,28 +117,56 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function initTheme() {
+        const validThemes = new Set(
+            Array.from(document.querySelectorAll('.theme-swatch')).map(s => s.dataset.theme || '')
+        );
+        const configTheme = config.app.theme || '';
         const saved = sessionStorage.getItem(THEME_KEY);
-        const fallback = config.app.theme || '';
-        applyTheme(saved !== null ? saved : fallback);
+        const savedIsValid = saved !== null && validThemes.has(saved);
+        const resolvedTheme = savedIsValid ? saved : configTheme;
+        if (!savedIsValid && saved !== null) {
+            sessionStorage.setItem(THEME_KEY, resolvedTheme);
+        }
+        applyTheme(resolvedTheme);
     }
 
     initTheme();
 
+    const speedDial = document.getElementById('speedDial');
+    const speedDialBtn = document.getElementById('speedDialBtn');
     const themePickerBtn = document.getElementById('themePickerBtn');
     const themePickerPanel = document.getElementById('themePickerPanel');
+
+    function openSpeedDial() {
+        speedDial.classList.add('open');
+        speedDialBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeSpeedDial() {
+        speedDial.classList.remove('open');
+        speedDialBtn.setAttribute('aria-expanded', 'false');
+        themePickerPanel.classList.remove('open');
+        themePickerBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    speedDialBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (speedDial.classList.contains('open')) {
+            closeSpeedDial();
+        } else {
+            openSpeedDial();
+        }
+    });
 
     themePickerBtn.addEventListener('click', e => {
         e.stopPropagation();
         const isOpen = themePickerPanel.classList.toggle('open');
-        themePickerBtn.classList.toggle('active', isOpen);
         themePickerBtn.setAttribute('aria-expanded', String(isOpen));
     });
 
     document.addEventListener('click', e => {
-        if (!themePickerPanel.contains(e.target) && e.target !== themePickerBtn) {
-            themePickerPanel.classList.remove('open');
-            themePickerBtn.classList.remove('active');
-            themePickerBtn.setAttribute('aria-expanded', 'false');
+        if (!speedDial.contains(e.target) && !themePickerPanel.contains(e.target)) {
+            closeSpeedDial();
         }
     });
 
@@ -149,8 +177,8 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionStorage.setItem(THEME_KEY, theme);
         applyTheme(theme);
         themePickerPanel.classList.remove('open');
-        themePickerBtn.classList.remove('active');
         themePickerBtn.setAttribute('aria-expanded', 'false');
+        closeSpeedDial();
     });
     
     const urlParams = new URLSearchParams(window.location.search);
@@ -292,11 +320,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function openHistoryPanel() {
         const panel = document.getElementById('historyPanel');
         const overlay = document.getElementById('historyOverlay');
-        
+        const dial = document.getElementById('speedDial');
         if (panel && overlay) {
             panel.classList.add('active');
             overlay.classList.add('active');
             document.body.style.overflow = 'hidden';
+        }
+        if (dial) {
+            dial.classList.remove('open');
+            document.getElementById('speedDialBtn').setAttribute('aria-expanded', 'false');
         }
     }
     

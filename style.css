@@ -629,11 +629,19 @@ h3 { font-size: clamp(1.1rem, 2vw, 1.25rem); }
     flex-wrap: wrap;
 }
 
-/* Floating History Button */
-.history-toggle-btn {
+/* Speed-dial FAB */
+.speed-dial {
     position: fixed;
     right: 2rem;
     bottom: 2rem;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+}
+
+.speed-dial-main-btn {
     width: 60px;
     height: 60px;
     border-radius: 50%;
@@ -641,22 +649,101 @@ h3 { font-size: clamp(1.1rem, 2vw, 1.25rem); }
     color: white;
     border: none;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
-    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 999;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    z-index: 1;
 }
 
-.history-toggle-btn:hover {
+.speed-dial-main-btn:hover {
     transform: scale(1.1) translateY(-2px);
-    box-shadow: 0 6px 16px rgba(20, 184, 166, 0.4);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 }
 
-.history-toggle-btn:active {
+.speed-dial-main-btn:active {
     transform: scale(0.95);
+}
+
+.speed-dial-icon {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.speed-dial.open .speed-dial-icon {
+    transform: rotate(45deg);
+}
+
+.speed-dial-items {
+    position: absolute;
+    bottom: calc(100% + 0.75rem);
+    right: 0;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-end;
+    gap: 0.65rem;
+    pointer-events: none;
+}
+
+.speed-dial-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    opacity: 0;
+    transform: translateY(16px) scale(0.85);
+    transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition-delay: calc(var(--i) * 0.06s);
+    pointer-events: none;
+}
+
+.speed-dial.open .speed-dial-item {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+    transition-delay: calc(var(--i) * 0.07s);
+}
+
+.speed-dial-child-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.speed-dial-child-btn:hover {
+    transform: scale(1.12);
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.22);
+    filter: brightness(1.1);
+}
+
+.speed-dial-child-btn:active {
+    transform: scale(0.95);
+}
+
+.speed-dial-label {
+    background: rgba(30, 30, 30, 0.78);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.3rem 0.65rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    backdrop-filter: blur(4px);
+    pointer-events: none;
+    letter-spacing: 0.02em;
 }
 
 .history-badge {
@@ -2662,14 +2749,23 @@ h3 { font-size: clamp(1.1rem, 2vw, 1.25rem); }
         top: 10px;
     }
     
-    .history-toggle-btn {
+    .speed-dial {
         right: 1rem;
         bottom: 1rem;
+    }
+
+    .speed-dial-main-btn {
         width: 56px;
         height: 56px;
         font-size: 1.3rem;
     }
-    
+
+    .speed-dial-child-btn {
+        width: 46px;
+        height: 46px;
+        font-size: 1.1rem;
+    }
+
     .history-badge {
         font-size: 0.7rem;
         padding: 0.1rem 0.35rem;
@@ -2680,27 +2776,21 @@ h3 { font-size: clamp(1.1rem, 2vw, 1.25rem); }
     .history-panel-header {
         padding: 1rem;
     }
-    
+
     .history-panel-header h3 {
         font-size: 1.1rem;
     }
-    
+
     .history-panel-content {
         padding: 0.75rem;
     }
-    
+
     .history-item {
         padding: 0.75rem;
     }
-    
+
     .history-item-word {
         font-size: 0.95rem;
-    }
-    
-    .history-toggle-btn {
-        width: 52px;
-        height: 52px;
-        font-size: 1.2rem;
     }
 }
 
@@ -4130,54 +4220,20 @@ h3 { font-size: clamp(1.1rem, 2vw, 1.25rem); }
     line-height: 1.6;
 }
 
-.theme-picker-wrap {
-    position: absolute;
-    top: 1rem;
-    right: 1.5rem;
-    z-index: 200;
-}
-
-.theme-picker-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.45);
-    background: rgba(255, 255, 255, 0.18);
-    color: white;
-    font-size: 1rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: var(--transition);
-    backdrop-filter: blur(4px);
-}
-
-.theme-picker-btn:hover {
-    background: rgba(255, 255, 255, 0.30);
-    border-color: rgba(255, 255, 255, 0.70);
-    transform: rotate(18deg) scale(1.08);
-}
-
-.theme-picker-btn.active {
-    background: rgba(255, 255, 255, 0.35);
-    border-color: white;
-    transform: rotate(18deg) scale(1.08);
-}
-
 .theme-picker-panel {
-    position: absolute;
-    top: calc(100% + 10px);
-    right: 0;
+    position: fixed;
+    bottom: calc(2rem + 60px + 0.75rem + 50px + 0.75rem);
+    right: 2rem;
     background: white;
     border-radius: var(--radius);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.08);
     padding: 1rem;
     width: 210px;
     opacity: 0;
-    transform: translateY(-6px) scale(0.97);
+    transform: translateY(8px) scale(0.97);
     pointer-events: none;
     transition: opacity 0.18s ease, transform 0.18s ease;
+    z-index: 1000;
 }
 
 .theme-picker-panel.open {
@@ -4231,14 +4287,10 @@ h3 { font-size: clamp(1.1rem, 2vw, 1.25rem); }
     border: 2px solid white;
 }
 
-@media (max-width: 480px) {
-    .theme-picker-wrap {
-        top: 0.75rem;
-        right: 1rem;
-    }
-
+@media (max-width: 768px) {
     .theme-picker-panel {
-        right: -0.5rem;
+        right: 1rem;
+        bottom: calc(1rem + 56px + 0.75rem + 46px + 0.75rem);
         width: 190px;
     }
 }
