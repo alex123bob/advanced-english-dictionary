@@ -373,7 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
-    
+
     document.addEventListener('click', (e) => {
         const audioButton = e.target.closest('.audio-play-btn');
         if (audioButton) {
@@ -550,7 +550,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const container = document.querySelector('.confusion-detail-container');
             if (!container) return;
 
-            container.innerHTML = renderConfusionScaffold(currentWord, confusedWord);
+            container.innerHTML = ConfusionUI.renderScaffold(currentWord, confusedWord);
 
             const metaSlot     = container.querySelector('.wcd-slot-meta');
             const cardASlot    = container.querySelector('.wcd-slot-card-a');
@@ -562,8 +562,8 @@ document.addEventListener('DOMContentLoaded', () => {
             function tryFillCards() {
                 if (!profilesData) return;
                 const posMatch = profilesData.searched_word.part_of_speech === profilesData.confused_word.part_of_speech;
-                cardASlot.innerHTML = renderWordCard(profilesData.searched_word, examplesData ? examplesData.searched_word : null, currentWord, 'a', posMatch);
-                cardBSlot.innerHTML = renderWordCard(profilesData.confused_word, examplesData ? examplesData.confused_word : null, confusedWord, 'b', posMatch);
+                cardASlot.innerHTML = ConfusionUI.renderCard(profilesData.searched_word, examplesData ? examplesData.searched_word : null, currentWord, 'a', posMatch);
+                cardBSlot.innerHTML = ConfusionUI.renderCard(profilesData.confused_word, examplesData ? examplesData.confused_word : null, confusedWord, 'b', posMatch);
             }
 
             function renderSectionError(slot, label, retryFn) {
@@ -585,7 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     .then(result => {
                         const meta = result.data.confusion_meta;
                         if (meta) {
-                            metaSlot.innerHTML = renderConfusionMeta(meta, currentWord, confusedWord);
+                            metaSlot.innerHTML = ConfusionUI.renderMeta(meta, currentWord, confusedWord);
                         } else {
                             metaSlot.innerHTML = '';
                         }
