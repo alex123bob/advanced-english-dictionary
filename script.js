@@ -536,6 +536,109 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             videoResourcesContent.innerHTML = renderVideoResourcesEmptyState();
         }
+        
+        const confusionChip = e.target.closest('.confusion-chip');
+        if (confusionChip) {
+            e.preventDefault();
+            const confusedWord = confusionChip.dataset.confusedWord;
+            if (!confusedWord || !currentWord) return;
+
+            const allChips = document.querySelectorAll('.confusion-chip');
+            allChips.forEach(c => c.classList.remove('active'));
+            confusionChip.classList.add('active');
+
+            const container = document.querySelector('.confusion-detail-container');
+            if (!container) return;
+
+            container.innerHTML = renderConfusionScaffold(currentWord, confusedWord);
+
+            const metaSlot     = container.querySelector('.wcd-slot-meta');
+            const cardASlot    = container.querySelector('.wcd-slot-card-a');
+            const cardBSlot    = container.querySelector('.wcd-slot-card-b');
+
+            let profilesData = null;
+            let examplesData = null;
+
+            function tryFillCards() {
+                if (!profilesData) return;
+                const posMatch = profilesData.searched_word.part_of_speech === profilesData.confused_word.part_of_speech;
+                cardASlot.innerHTML = renderWordCard(profilesData.searched_word, examplesData ? examplesData.searched_word : null, currentWord, 'a', posMatch);
+                cardBSlot.innerHTML = renderWordCard(profilesData.confused_word, examplesData ? examplesData.confused_word : null, confusedWord, 'b', posMatch);
+            }
+
+            function renderSectionError(slot, label, retryFn) {
+                slot.innerHTML = `
+                    <div class="wcd-section-error">
+                        <i class="fas fa-circle-exclamation"></i>
+                        <span>${label} failed to load</span>
+                        <button class="wcd-retry-btn"><i class="fas fa-rotate-right"></i> Retry</button>
+                    </div>
+                `;
+                slot.querySelector('.wcd-retry-btn').addEventListener('click', () => {
+                    slot.innerHTML = '<div class="wcd-skeleton wcd-skeleton-card"></div>';
+                    retryFn();
+                });
+            }
+
+            function loadMeta() {
+                fetchSection(currentWord, 'confusion_meta', null, null, { confused_word: confusedWord })
+                    .then(result => {
+                        const meta = result.data.confusion_meta;
+                        if (meta) {
+                            metaSlot.innerHTML = renderConfusionMeta(meta, currentWord, confusedWord);
+                        } else {
+                            metaSlot.innerHTML = '';
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error fetching confusion_meta:', err);
+                        renderSectionError(metaSlot, 'Overview', loadMeta);
+                    });
+            }
+
+            function loadProfiles() {
+                fetchSection(currentWord, 'confusion_profiles', null, null, { confused_word: confusedWord })
+                    .then(result => {
+                        profilesData = result.data.confusion_profiles;
+                        if (profilesData) tryFillCards();
+                        else { cardASlot.innerHTML = ''; cardBSlot.innerHTML = ''; }
+                    })
+                    .catch(err => {
+                        console.error('Error fetching confusion_profiles:', err);
+                        renderSectionError(cardASlot, 'Word profiles', loadProfiles);
+                        cardBSlot.innerHTML = '';
+                    });
+            }
+
+            function loadExamples() {
+                fetchSection(currentWord, 'confusion_examples', null, null, { confused_word: confusedWord })
+                    .then(result => {
+                        examplesData = result.data.confusion_examples;
+                        if (examplesData) tryFillCards();
+                    })
+                    .catch(err => {
+                        console.error('Error fetching confusion_examples:', err);
+                        if (profilesData) {
+                            const examplesRetryBtnA = cardASlot.querySelector('.wcd-examples-retry-wrap');
+                            const examplesRetryBtnB = cardBSlot.querySelector('.wcd-examples-retry-wrap');
+                            if (!examplesRetryBtnA) {
+                                const retryHtml = `<div class="wcd-examples-retry-wrap"><button class="wcd-retry-btn wcd-examples-retry"><i class="fas fa-rotate-right"></i> Retry examples</button></div>`;
+                                cardASlot.insertAdjacentHTML('beforeend', retryHtml);
+                                cardBSlot.insertAdjacentHTML('beforeend', retryHtml);
+                                cardASlot.querySelector('.wcd-examples-retry').addEventListener('click', () => {
+                                    cardASlot.querySelector('.wcd-examples-retry-wrap').remove();
+                                    cardBSlot.querySelector('.wcd-examples-retry-wrap').remove();
+                                    loadExamples();
+                                });
+                            }
+                        }
+                    });
+            }
+
+            loadMeta();
+            loadProfiles();
+            loadExamples();
+        }
     });
 
     function showLoading(show, cacheStatus = null) {
@@ -928,79 +1031,199 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Regional Variations
-        if (usageContext.regional_variations && usageContext.regional_variations.length) {
-            html += '<div class="regional-section">';
-            html += '<div class="section-header"><i class="fas fa-globe"></i> Regional Variations</div>';
-            
-            const flagMap = {
-                'UK': '🇬🇧', 'US': '🇺🇸', 'USA': '🇺🇸', 'United States': '🇺🇸',
-                'Australia': '🇦🇺', 'Canada': '🇨🇦', 'India': '🇮🇳', 'Ireland': '🇮🇪',
-                'New Zealand': '🇳🇿', 'South Africa': '🇿🇦'
-            };
-            
-            // Try to parse into cards
-            const regions = usageContext.regional_variations.map(text => {
-                const countryMatch = text.match(/in the (\w+),/i);
-                const country = countryMatch ? countryMatch[1] : null;
-                const flag = country && flagMap[country] ? flagMap[country] : '🌐';
-                return { country, flag, text };
-            });
-            
-            const allHaveCountries = regions.every(r => r.country);
-            
-            if (allHaveCountries) {
-                // Card layout
+        if (usageContext.regional_variations && typeof usageContext.regional_variations === 'object' && !Array.isArray(usageContext.regional_variations)) {
+            const regionEntries = Object.entries(usageContext.regional_variations);
+            if (regionEntries.length > 0) {
+                html += '<div class="regional-section">';
+                html += '<div class="section-header"><i class="fas fa-globe"></i> Regional Variations</div>';
+                
+                const flagMap = {
+                    'UK': '🇬🇧', 'US': '🇺🇸', 'USA': '🇺🇸', 'United States': '🇺🇸',
+                    'Australia': '🇦🇺', 'AU': '🇦🇺', 'Canada': '🇨🇦', 'CA': '🇨🇦',
+                    'India': '🇮🇳', 'IN': '🇮🇳', 'Ireland': '🇮🇪', 'IE': '🇮🇪',
+                    'New Zealand': '🇳🇿', 'NZ': '🇳🇿', 'South Africa': '🇿🇦', 'ZA': '🇿🇦'
+                };
+                
                 html += '<div class="regional-cards">';
-                regions.forEach(region => {
+                regionEntries.forEach(([region, description]) => {
+                    const flag = flagMap[region] || '🌐';
                     html += `
                         <div class="region-card">
-                            <div class="region-flag">${region.flag}</div>
-                            <div class="region-name">${region.country}</div>
-                            <div class="region-text">${makeWordsClickable(region.text)}</div>
+                            <div class="region-flag">${flag}</div>
+                            <div class="region-name">${region}</div>
+                            <div class="region-text">${makeWordsClickable(description)}</div>
                         </div>
                     `;
                 });
                 html += '</div>';
-            } else {
-                // List layout with icons
-                html += '<div class="regional-list">';
-                regions.forEach(region => {
-                    html += `<div class="regional-item"><span class="region-icon">${region.flag}</span> ${makeWordsClickable(region.text)}</div>`;
-                });
+                
                 html += '</div>';
             }
-            
-            html += '</div>';
         }
         
         // Common Confusions
         if (usageContext.common_confusions && usageContext.common_confusions.length) {
             html += '<div class="confusion-section">';
             html += '<div class="section-header"><i class="fas fa-exclamation-triangle"></i> Commonly Confused With</div>';
-            html += '<div class="confusion-list">';
+            html += '<div class="confusion-chips">';
             
-            usageContext.common_confusions.forEach(confusion => {
-                // Try to extract word and explanation
-                const match = confusion.match(/^([^(]+)\s*\((.+)\)$/);
-                if (match) {
-                    const word = match[1].trim();
-                    const explanation = match[2].trim();
-                    html += `
-                        <div class="confusion-item">
-                            <div class="confusion-word" data-lookup-word="${word}">${word}</div>
-                            <div class="confusion-arrow">→</div>
-                            <div class="confusion-explanation">${makeWordsClickable(explanation)}</div>
-                        </div>
-                    `;
-                } else {
-                    html += `<div class="confusion-item"><div class="confusion-text">${makeWordsClickable(confusion)}</div></div>`;
-                }
+            usageContext.common_confusions.forEach(word => {
+                html += `<button class="confusion-chip" data-confused-word="${word}"><span class="confusion-chip-text">${word}</span><i class="fas fa-arrows-alt-h confusion-chip-icon"></i></button>`;
             });
             
             html += '</div>';
+            html += '<div class="confusion-detail-container"></div>';
             html += '</div>';
         }
         
+        html += '</div>';
+        return html;
+    }
+
+    function renderConfusionScaffold(searchedWord, confusedWord) {
+        return `
+            <div class="wcd-wrap">
+                <div class="wcd-slot-meta">
+                    <div class="wcd-skeleton wcd-skeleton-meta"></div>
+                </div>
+                <div class="wcd-slot-card-a">
+                    <div class="wcd-skeleton wcd-skeleton-card"></div>
+                </div>
+                <div class="wcd-bridge">
+                    <div class="wcd-bridge-line"></div>
+                    <div class="wcd-bridge-badge">
+                        <span class="wcd-bridge-word-a">${searchedWord}</span>
+                        <span class="wcd-bridge-vs">VS</span>
+                        <span class="wcd-bridge-word-b">${confusedWord}</span>
+                    </div>
+                    <div class="wcd-bridge-line"></div>
+                </div>
+                <div class="wcd-slot-card-b">
+                    <div class="wcd-skeleton wcd-skeleton-card"></div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderConfusionMeta(meta, searchedWord, confusedWord) {
+        const { confusion_type, quick_rule, key_differentiator, difficulty } = meta;
+
+        const difficultyConfig = {
+            low:    { color: '#10b981', label: 'Easy to tell apart', icon: 'fa-check-circle' },
+            medium: { color: '#f59e0b', label: 'Often confused',     icon: 'fa-exclamation-circle' },
+            high:   { color: '#ef4444', label: 'Very easily mixed',  icon: 'fa-times-circle' }
+        };
+        const diff = difficultyConfig[difficulty] || { color: '#94a3b8', label: difficulty || 'Unknown', icon: 'fa-circle' };
+
+        const typeIcons = {
+            'near_homophone':     'fa-volume-up',
+            'semantic_overlap':   'fa-project-diagram',
+            'spelling_similarity':'fa-spell-check',
+            'false_friend':       'fa-mask',
+            'register_mismatch':  'fa-sliders-h'
+        };
+        const typeLabels = {
+            'near_homophone':     'Sounds alike',
+            'semantic_overlap':   'Meaning overlap',
+            'spelling_similarity':'Similar spelling',
+            'false_friend':       'False friend',
+            'register_mismatch':  'Register mismatch'
+        };
+        const typeIcon  = typeIcons[confusion_type]  || 'fa-question-circle';
+        const typeLabel = typeLabels[confusion_type] || confusion_type;
+
+        let html = `
+            <div class="wcd-meta-bar">
+                <span class="wcd-type-pill"><i class="fas ${typeIcon}"></i> ${typeLabel}</span>
+                <span class="wcd-diff-pill" style="background:${diff.color}18;color:${diff.color};border-color:${diff.color}40">
+                    <i class="fas ${diff.icon}"></i> ${diff.label}
+                </span>
+            </div>
+        `;
+
+        html += '<div class="wcd-insights">';
+        if (quick_rule) {
+            html += `<div class="wcd-insight wcd-insight-rule"><i class="fas fa-bolt wcd-insight-icon"></i><div class="wcd-insight-body"><span class="wcd-insight-label">Quick Rule</span><span class="wcd-insight-text">${makeWordsClickable(quick_rule)}</span></div></div>`;
+        }
+        if (key_differentiator) {
+            html += `<div class="wcd-insight wcd-insight-diff"><i class="fas fa-not-equal wcd-insight-icon"></i><div class="wcd-insight-body"><span class="wcd-insight-label">Key Difference</span><span class="wcd-insight-text">${makeWordsClickable(key_differentiator)}</span></div></div>`;
+        }
+        html += '</div>';
+
+        return html;
+    }
+
+    function renderWordCard(profileData, examplesData, wordLabel, side, posMatch, formalityMatch) {
+        const posHighlight = !posMatch ? 'wcd-attr-diff' : 'wcd-attr-same';
+
+        const posIcons = { verb: 'fa-running', noun: 'fa-cube', adjective: 'fa-paint-brush', adverb: 'fa-tachometer-alt', preposition: 'fa-arrows-alt', conjunction: 'fa-link', interjection: 'fa-comment-dots' };
+        const posIcon  = posIcons[profileData.part_of_speech] || 'fa-tag';
+
+        let html = `<div class="wcd-word-card wcd-card-${side}">`;
+
+        html += `
+            <div class="wcd-card-header">
+                <span class="wcd-card-word">${wordLabel}</span>
+                <div class="wcd-card-attrs">
+                    <span class="wcd-attr-pill ${posHighlight}"><i class="fas ${posIcon}"></i> ${profileData.part_of_speech}</span>
+                </div>
+            </div>
+        `;
+
+        html += `
+            <div class="wcd-card-meaning">
+                <i class="fas fa-book-open wcd-field-icon"></i>
+                <span>${makeWordsClickable(profileData.core_meaning)}</span>
+            </div>
+        `;
+
+        if (examplesData && examplesData.example_sentences && examplesData.example_sentences.length) {
+            html += `
+                <div class="wcd-card-example">
+                    <i class="fas fa-quote-left wcd-field-icon"></i>
+                    <em>${makeWordsClickable(examplesData.example_sentences[0])}</em>
+                </div>
+            `;
+        } else if (!examplesData) {
+            html += `<div class="wcd-card-example-skeleton wcd-skeleton"></div>`;
+        }
+
+        if (examplesData && examplesData.usage_note) {
+            html += `
+                <div class="wcd-card-usage-note">
+                    <i class="fas fa-lightbulb wcd-field-icon"></i>
+                    <span>${makeWordsClickable(examplesData.usage_note)}</span>
+                </div>
+            `;
+        }
+
+        if (profileData.collocations && profileData.collocations.length) {
+            html += `
+                <div class="wcd-card-section">
+                    <div class="wcd-card-section-label"><i class="fas fa-link"></i> Goes with</div>
+                    <div class="wcd-card-chips">${profileData.collocations.map(c => `<span class="wcd-colloc-chip">${c}</span>`).join('')}</div>
+                </div>
+            `;
+        }
+
+        if (profileData.typical_domains && profileData.typical_domains.length) {
+            html += `
+                <div class="wcd-card-section">
+                    <div class="wcd-card-section-label"><i class="fas fa-layer-group"></i> Used in</div>
+                    <div class="wcd-card-chips">${profileData.typical_domains.map(d => `<span class="wcd-domain-chip">${d}</span>`).join('')}</div>
+                </div>
+            `;
+        }
+
+        if (profileData.grammar_note) {
+            html += `
+                <div class="wcd-card-grammar">
+                    <i class="fas fa-cogs wcd-field-icon"></i>
+                    <span>${makeWordsClickable(profileData.grammar_note)}</span>
+                </div>
+            `;
+        }
+
         html += '</div>';
         return html;
     }

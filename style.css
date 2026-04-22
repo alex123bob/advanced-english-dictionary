@@ -4649,3 +4649,653 @@ h3 { font-size: clamp(1.1rem, 2vw, 1.25rem); }
     }
 }
 
+.confusion-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.confusion-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.5rem 1rem;
+    background: var(--card-bg);
+    border: 1.5px solid var(--border-color);
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.confusion-chip:hover {
+    border-color: #f59e0b;
+    color: #d97706;
+    background: #fffbf0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+}
+
+.confusion-chip.active {
+    background: #f59e0b;
+    border-color: #f59e0b;
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+    transform: translateY(-1px);
+}
+
+.confusion-chip-icon {
+    font-size: 0.65rem;
+    opacity: 0.6;
+    transition: var(--transition);
+}
+
+.confusion-chip.active .confusion-chip-icon,
+.confusion-chip:hover .confusion-chip-icon {
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+.confusion-detail-container {
+    margin-top: 1.25rem;
+}
+
+.wcd-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2.5rem 1rem;
+    background: var(--section-bg);
+    border-radius: var(--radius);
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+@keyframes wcdSlideIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.wcd-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.wcd-meta-bar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.wcd-type-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    background: var(--section-bg);
+    color: var(--text-light);
+    letter-spacing: 0.01em;
+}
+
+.wcd-diff-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    border: 1.5px solid;
+}
+
+.wcd-word-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border-color);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    animation: wcdSlideIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.wcd-card-a {
+    border-top: 4px solid var(--primary-color);
+    animation-delay: 0.05s;
+}
+
+.wcd-card-b {
+    border-top: 4px solid var(--secondary-color);
+    animation-delay: 0.15s;
+}
+
+.wcd-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    padding: 1.1rem 1.25rem 0.9rem;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--section-bg);
+}
+
+.wcd-card-a .wcd-card-header {
+    background: color-mix(in srgb, var(--primary-color) 6%, var(--card-bg));
+}
+
+.wcd-card-b .wcd-card-header {
+    background: color-mix(in srgb, var(--secondary-color) 6%, var(--card-bg));
+}
+
+.wcd-card-word {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text-color);
+}
+
+.wcd-card-a .wcd-card-word {
+    color: var(--primary-dark);
+}
+
+.wcd-card-b .wcd-card-word {
+    color: var(--secondary-color);
+}
+
+.wcd-card-attrs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.wcd-attr-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.28rem 0.65rem;
+    border-radius: 10px;
+    text-transform: lowercase;
+    letter-spacing: 0.01em;
+}
+
+.wcd-attr-same {
+    background: var(--section-bg);
+    color: var(--text-lighter);
+}
+
+.wcd-attr-diff {
+    background: color-mix(in srgb, var(--primary-color) 15%, transparent);
+    color: var(--primary-dark);
+    box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--primary-color) 30%, transparent);
+}
+
+.wcd-card-b .wcd-attr-diff {
+    background: color-mix(in srgb, var(--secondary-color) 15%, transparent);
+    color: var(--secondary-color);
+    box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--secondary-color) 30%, transparent);
+}
+
+.wcd-card-meaning {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1.1rem 1.25rem 0.85rem;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.6;
+    color: var(--text-color);
+}
+
+.wcd-field-icon {
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+    font-size: 0.85rem;
+    color: var(--text-lighter);
+    width: 1rem;
+    text-align: center;
+}
+
+.wcd-card-example {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.9rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.95rem;
+    line-height: 1.65;
+    color: var(--text-light);
+    font-style: italic;
+}
+
+.wcd-card-a .wcd-card-example {
+    background: color-mix(in srgb, var(--primary-color) 4%, var(--card-bg));
+}
+
+.wcd-card-b .wcd-card-example {
+    background: color-mix(in srgb, var(--secondary-color) 4%, var(--card-bg));
+}
+
+.wcd-card-a .wcd-card-example .wcd-field-icon {
+    color: var(--primary-color);
+}
+
+.wcd-card-b .wcd-card-example .wcd-field-icon {
+    color: var(--secondary-color);
+}
+
+.wcd-card-section {
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.wcd-card-section:last-child {
+    border-bottom: none;
+}
+
+.wcd-card-section-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-lighter);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.wcd-card-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.wcd-colloc-chip {
+    font-size: 0.83rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 8px;
+    background: var(--section-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    font-style: italic;
+}
+
+.wcd-domain-chip {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    background: var(--section-bg);
+    color: var(--text-light);
+    text-transform: capitalize;
+}
+
+.wcd-card-grammar {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.85rem 1.25rem;
+    font-size: 0.83rem;
+    color: var(--text-lighter);
+    line-height: 1.55;
+    background: var(--section-bg);
+    border-top: 1px solid var(--border-color);
+}
+
+.wcd-bridge {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    animation: wcdSlideIn 0.35s ease both;
+    animation-delay: 0.1s;
+}
+
+.wcd-bridge-line {
+    flex: 1;
+    height: 1.5px;
+    background: linear-gradient(90deg, transparent, var(--border-color));
+}
+
+.wcd-bridge:nth-child(2) .wcd-bridge-line:last-child {
+    background: linear-gradient(90deg, var(--border-color), transparent);
+}
+
+.wcd-bridge-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.4rem 0.9rem;
+    background: var(--card-bg);
+    border: 1.5px solid var(--border-color);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    white-space: nowrap;
+}
+
+.wcd-bridge-word-a {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.wcd-bridge-word-b {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--secondary-color);
+}
+
+.wcd-bridge-vs {
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: var(--text-lighter);
+    background: var(--section-bg);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+}
+
+.wcd-insights {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.wcd-insight {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.9rem;
+    padding: 0.9rem 1.1rem;
+    border-radius: var(--radius-sm);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    animation: wcdSlideIn 0.4s ease both;
+}
+
+.wcd-insight-rule    { animation-delay: 0.2s; }
+.wcd-insight-diff    { animation-delay: 0.25s; }
+.wcd-insight-overlap { animation-delay: 0.3s; }
+.wcd-insight-reason  { animation-delay: 0.35s; }
+
+.wcd-insight-icon {
+    flex-shrink: 0;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    margin-top: 0.05rem;
+}
+
+.wcd-insight-rule .wcd-insight-icon {
+    background: color-mix(in srgb, var(--primary-color) 14%, transparent);
+    color: var(--primary-color);
+}
+
+.wcd-insight-diff .wcd-insight-icon {
+    background: color-mix(in srgb, #ef4444 12%, transparent);
+    color: #ef4444;
+}
+
+.wcd-insight-overlap .wcd-insight-icon {
+    background: color-mix(in srgb, var(--secondary-color) 14%, transparent);
+    color: var(--secondary-color);
+}
+
+.wcd-insight-reason .wcd-insight-icon {
+    background: color-mix(in srgb, #f59e0b 12%, transparent);
+    color: #d97706;
+}
+
+.wcd-insight-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    flex: 1;
+}
+
+.wcd-insight-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-lighter);
+}
+
+.wcd-insight-text {
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--text-color);
+}
+
+.wcd-mnemonic {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.1rem 1.25rem;
+    margin-top: 1rem;
+    background: color-mix(in srgb, var(--primary-color) 8%, var(--card-bg));
+    border: 1.5px solid color-mix(in srgb, var(--primary-color) 25%, transparent);
+    border-radius: var(--radius);
+    animation: wcdSlideIn 0.4s ease both;
+    animation-delay: 0.4s;
+}
+
+.wcd-mnemonic-icon-wrap {
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--primary-color) 18%, transparent);
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.wcd-mnemonic-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.wcd-mnemonic-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--primary-color);
+    opacity: 0.7;
+}
+
+.wcd-mnemonic-text {
+    font-size: 0.95rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--primary-dark);
+}
+
+.wcd-regional {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.75rem 1rem;
+    margin-top: 0.5rem;
+    background: var(--section-bg);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    color: var(--text-light);
+    line-height: 1.5;
+    animation: wcdSlideIn 0.4s ease both;
+    animation-delay: 0.45s;
+}
+
+.wcd-regional i {
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+    color: var(--text-lighter);
+}
+
+@keyframes wcdShimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.wcd-skeleton {
+    background: linear-gradient(90deg, var(--section-bg) 25%, var(--border-color) 50%, var(--section-bg) 75%);
+    background-size: 200% 100%;
+    animation: wcdShimmer 1.4s ease infinite;
+    border-radius: var(--radius-sm);
+}
+
+.wcd-skeleton-meta {
+    height: 2.5rem;
+    margin-bottom: 1rem;
+    border-radius: 20px;
+    width: 60%;
+}
+
+.wcd-skeleton-card {
+    height: 10rem;
+    border-radius: var(--radius);
+}
+
+.wcd-card-example-skeleton {
+    height: 3.5rem;
+    margin: 0 1.25rem 0.85rem;
+}
+
+.wcd-card-usage-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: var(--text-light);
+    background: var(--section-bg);
+}
+
+.wcd-card-a .wcd-card-usage-note .wcd-field-icon {
+    color: var(--primary-color);
+}
+
+.wcd-card-b .wcd-card-usage-note .wcd-field-icon {
+    color: var(--secondary-color);
+}
+
+.wcd-slot-meta,
+.wcd-slot-card-a,
+.wcd-slot-card-b {
+    animation: wcdSlideIn 0.35s ease both;
+}
+
+.wcd-section-error {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.85rem 1.1rem;
+    background: var(--section-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 0.88rem;
+    color: var(--text-light);
+}
+
+.wcd-section-error i {
+    flex-shrink: 0;
+    color: #ef4444;
+}
+
+.wcd-retry-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: auto;
+    padding: 0.35rem 0.75rem;
+    background: var(--card-bg);
+    border: 1.5px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.wcd-retry-btn:hover {
+    background: color-mix(in srgb, var(--primary-color) 8%, var(--card-bg));
+    border-color: var(--primary-color);
+}
+
+.wcd-examples-retry-wrap {
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: center;
+}
+
+.wcd-examples-retry {
+    margin-left: 0;
+}
+
+@media (max-width: 480px) {
+    .confusion-chips {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 0.25rem;
+    }
+
+    .confusion-chips::-webkit-scrollbar {
+        display: none;
+    }
+
+    .confusion-chip {
+        flex-shrink: 0;
+    }
+
+    .wcd-card-header {
+        padding: 1rem;
+    }
+
+    .wcd-card-word {
+        font-size: 1.2rem;
+    }
+
+    .wcd-card-meaning,
+    .wcd-card-example,
+    .wcd-card-section,
+    .wcd-card-grammar {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .wcd-insight {
+        padding: 0.8rem 0.9rem;
+    }
+
+    .wcd-mnemonic {
+        padding: 1rem;
+    }
+}
+
