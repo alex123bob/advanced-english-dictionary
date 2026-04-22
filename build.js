@@ -51,10 +51,9 @@ async function minifyCSS(css) {
 
 // Optimize HTML and update references to hashed files
 async function optimizeHTML(html, cssHashed, jsHashed) {
-  // Replace style.css reference with hashed version
   html = html.replace(/href="style\.css"/g, `href="${cssHashed}"`);
-  // Replace script.js reference with hashed version
   html = html.replace(/src="script\.js"/g, `src="${jsHashed}"`);
+  html = html.replace(/<script\s+src="confusion-ui\.js"><\/script>/g, '');
   // Remove live reload script if present
   html = html.replace(/<script>[^<]*live reload[^<]*<\/script>/gi, '');
   // Basic HTML minification
@@ -104,7 +103,8 @@ async function createProductionBundle() {
   const cssPath = path.join(SOURCE_DIR, 'style.css');
   const jsPath = path.join(SOURCE_DIR, 'script.js');
   const cssContent = await readFile(cssPath, 'utf8');
-  const jsContent = await readFile(jsPath, 'utf8');
+  const confusionUIContent = await readFile(path.join(SOURCE_DIR, 'confusion-ui.js'), 'utf8');
+  const jsContent = confusionUIContent + '\n' + await readFile(jsPath, 'utf8');
   const minifiedCSS = await minifyCSS(cssContent);
   const minifiedJS = (await minify(jsContent)).code;
   const cssHash = getHash(minifiedCSS);

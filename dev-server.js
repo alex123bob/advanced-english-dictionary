@@ -11,7 +11,7 @@ const http = require('http');
 const url = require('url');
 const chalk = require('chalk');
 
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 3000;
 const HOST = '0.0.0.0'; // Bind to all network interfaces
 
 // MIME types
