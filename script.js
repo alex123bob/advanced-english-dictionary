@@ -2367,8 +2367,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Open accordion if closed
                     targetSection.open = true;
                     
-                    // Scroll with offset
-                    const headerOffset = 140; // Approx header + sticky tabs height
+                    const stickyTabsHeight = stickyTabs ? stickyTabs.offsetHeight : 0;
+                    const headerOffset = stickyTabsHeight + 48;
                     const elementPosition = targetSection.getBoundingClientRect().top;
                     const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
                 
