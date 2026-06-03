@@ -1879,11 +1879,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
-                        'Accept': 'application/json, application/pdf, image/png, image/svg+xml, text/html',
+                        'Accept': 'application/json, application/pdf, image/png, image/svg+xml',
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(payload),
-                    signal: controller ? controller.signal : undefined
+                    signal: controller ? controller.signal : undefined,
+                    redirect: 'follow'
                 });
 
                 if (timeout) clearTimeout(timeout);
@@ -1901,6 +1902,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const disposition = response.headers.get('Content-Disposition') || '';
                 const filenameMatch = disposition.match(/filename="?([^"]+)"?/i);
                 const filename = filenameMatch ? filenameMatch[1] : getExportFilename(payload, format);
+                const expectedBinaryType = contentTypeForFormat(format).split(';')[0];
+
+                if (response.redirected || contentType.includes('text/html')) {
+                    lastError = new Error(`No export file returned from ${endpoint}`);
+                    continue;
+                }
 
                 if (contentType.includes('application/json')) {
                     const result = await response.json();
@@ -1927,6 +1934,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         throw new Error(result.error || 'Backend export failed');
                     }
                 } else {
+                    if (!contentType.includes(expectedBinaryType)) {
+                        lastError = new Error(`Unexpected export content type: ${contentType || 'unknown'}`);
+                        continue;
+                    }
+
                     const blob = await response.blob();
                     if (blob.size > 0) {
                         downloadBlob(blob, filename);
