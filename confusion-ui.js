@@ -117,27 +117,62 @@
 
         html += '<div class="wcd-b-card-body">';
 
-        html += '<div class="wcd-b-card-meaning">' + enhanceText(profileData.core_meaning) + '</div>';
+        html += '<div class="wcd-b-card-meaning">' +
+            '<div class="wcd-b-card-kicker">Core sense</div>' +
+            '<div class="wcd-b-card-meaning-text">' + enhanceText(profileData.core_meaning) + '</div>' +
+        '</div>';
 
-        if (examplesData && examplesData.example_sentences && examplesData.example_sentences.length) {
-            html += '<div class="wcd-b-card-example"><em>' + enhanceText(examplesData.example_sentences[0]) + '</em></div>';
+        var hasExampleSentence = examplesData && examplesData.example_sentences && examplesData.example_sentences.length;
+        var hasUsageNote = examplesData && examplesData.usage_note;
+        var hasGrammarNote = profileData.grammar_note;
+        var shouldRenderInsightPanel = hasExampleSentence || hasUsageNote || hasGrammarNote || !examplesData;
+        var shouldRenderNoteStack = hasUsageNote || hasGrammarNote;
+
+        if (shouldRenderInsightPanel) {
+            html += '<div class="wcd-b-insight-panel">';
+        }
+
+        if (hasExampleSentence) {
+            html += '<div class="wcd-b-card-example">' +
+                '<i class="fas fa-quote-left wcd-b-quote-icon"></i>' +
+                '<em>' + enhanceText(examplesData.example_sentences[0]) + '</em>' +
+            '</div>';
         } else if (!examplesData) {
             html += '<div class="wcd-b-card-example-skeleton wcd-skeleton"></div>';
         }
 
-        if (examplesData && examplesData.usage_note) {
-            html += '<div class="wcd-b-card-usage-note"><i class="fas fa-lightbulb wcd-field-icon"></i><span>' + enhanceText(examplesData.usage_note) + '</span></div>';
+        if (shouldRenderNoteStack) {
+            html += '<div class="wcd-b-note-stack">';
+            if (hasUsageNote) {
+                html += '<div class="wcd-b-card-note wcd-b-card-usage-note">' +
+                    '<div class="wcd-b-note-icon"><i class="fas fa-lightbulb"></i></div>' +
+                    '<div class="wcd-b-note-copy">' +
+                        '<div class="wcd-b-note-label">Use when</div>' +
+                        '<div class="wcd-b-note-text">' + enhanceText(examplesData.usage_note) + '</div>' +
+                    '</div>' +
+                '</div>';
+            }
+            if (hasGrammarNote) {
+                html += '<div class="wcd-b-card-note wcd-b-card-grammar">' +
+                    '<div class="wcd-b-note-icon"><i class="fas fa-cogs"></i></div>' +
+                    '<div class="wcd-b-note-copy">' +
+                        '<div class="wcd-b-note-label">Grammar</div>' +
+                        '<div class="wcd-b-note-text">' + enhanceText(profileData.grammar_note) + '</div>' +
+                    '</div>' +
+                '</div>';
+            }
+            html += '</div>';
+        }
+
+        if (shouldRenderInsightPanel) {
+            html += '</div>';
         }
 
         if (profileData.collocations && profileData.collocations.length) {
             html += '<div class="wcd-b-card-section">' +
-                '<div class="wcd-b-card-section-label"><i class="fas fa-link"></i> Goes with</div>' +
+                '<div class="wcd-b-card-section-label"><i class="fas fa-link"></i> Explore with</div>' +
                 '<div class="wcd-b-card-chips">' + profileData.collocations.map(function (c) { return '<span class="wcd-b-colloc-chip">' + escapeHtml(c) + '</span>'; }).join('') + '</div>' +
             '</div>';
-        }
-
-        if (profileData.grammar_note) {
-            html += '<div class="wcd-b-card-grammar"><i class="fas fa-cogs wcd-field-icon"></i><span>' + enhanceText(profileData.grammar_note) + '</span></div>';
         }
 
         html += '</div></div>';

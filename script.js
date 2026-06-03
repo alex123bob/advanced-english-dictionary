@@ -1999,15 +1999,43 @@ document.addEventListener('DOMContentLoaded', () => {
                 border-bottom: 0;
                 cursor: default;
             }
+            .wcd-export-icon-fallback {
+                font-family: Inter, Arial, sans-serif !important;
+                font-style: normal !important;
+                font-weight: 800 !important;
+                line-height: 1 !important;
+            }
+            .wcd-export-icon-fallback::before {
+                content: none !important;
+            }
         `;
 
         return css;
+    }
+
+    function iconExportFallback(icon) {
+        const classList = icon.classList;
+        if (classList.contains('fa-quote-left')) return '"';
+        if (classList.contains('fa-lightbulb')) return '!';
+        if (classList.contains('fa-cogs')) return '*';
+        if (classList.contains('fa-cube')) return '□';
+        if (classList.contains('fa-link')) return '~';
+        if (classList.contains('fa-file-pdf')) return 'PDF';
+        if (classList.contains('fa-file-image')) return 'PNG';
+        if (classList.contains('fa-vector-square')) return 'SVG';
+        if (classList.contains('fa-bolt')) return '!';
+        if (classList.contains('fa-not-equal')) return '≠';
+        return '•';
     }
 
     function cloneExportSurface(surface) {
         const clone = surface.cloneNode(true);
         clone.querySelectorAll('[data-lookup-word]').forEach(el => {
             el.removeAttribute('data-lookup-word');
+        });
+        clone.querySelectorAll('i.fas').forEach(icon => {
+            icon.textContent = iconExportFallback(icon);
+            icon.classList.add('wcd-export-icon-fallback');
         });
         return clone;
     }
@@ -2217,23 +2245,185 @@ document.addEventListener('DOMContentLoaded', () => {
         return height;
     }
 
+    function drawCanvasCircleIcon(ctx, symbol, x, y, size, fill, stroke, color) {
+        drawRoundedRect(ctx, x, y, size, size, size / 2);
+        ctx.fillStyle = fill;
+        ctx.fill();
+        if (stroke) {
+            ctx.strokeStyle = stroke;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+        ctx.font = '800 18px Arial, sans-serif';
+        ctx.fillStyle = color;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(symbol, x + (size / 2), y + (size / 2) + 1);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+    }
+
+    function getCanvasTextHeight(ctx, text, maxWidth, lineHeight) {
+        return wrapCanvasLines(ctx, text, maxWidth).length * lineHeight;
+    }
+
+    function getCanvasNoteHeight(ctx, text, maxWidth) {
+        ctx.font = '400 21px Arial, sans-serif';
+        return Math.max(84, getCanvasTextHeight(ctx, text, maxWidth - 86, 29) + 52);
+    }
+
+    function drawCanvasNote(ctx, label, text, symbol, x, y, width, palette, accent, accentSoft) {
+        const height = getCanvasNoteHeight(ctx, text, width);
+        drawRoundedRect(ctx, x, y, width, height, 16);
+        ctx.fillStyle = mixWithWhite(accent, 0.94);
+        ctx.fill();
+        ctx.strokeStyle = mixWithWhite(accent, 0.72);
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        drawCanvasCircleIcon(ctx, symbol, x + 22, y + 22, 34, accentSoft, mixWithWhite(accent, 0.68), accent);
+
+        ctx.font = '800 18px Arial, sans-serif';
+        ctx.fillStyle = palette.textLighter;
+        ctx.fillText(label.toUpperCase(), x + 72, y + 34);
+
+        ctx.font = '400 21px Arial, sans-serif';
+        ctx.fillStyle = palette.textLight;
+        drawWrappedCanvasText(ctx, text, x + 72, y + 62, width - 96, 29);
+        return height;
+    }
+
+    function getCanvasInsightPanelHeight(ctx, example, usage, grammar, width) {
+        const padding = 18;
+        const gap = 16;
+        let height = padding * 2;
+
+        if (example) {
+            ctx.font = 'italic 22px Arial, sans-serif';
+            height += Math.max(84, getCanvasTextHeight(ctx, example, width - 116, 32) + 42);
+        }
+        if (usage) {
+            if (height > padding * 2) height += gap;
+            height += getCanvasNoteHeight(ctx, usage, width - (padding * 2));
+        }
+        if (grammar) {
+            if (height > padding * 2) height += gap;
+            height += getCanvasNoteHeight(ctx, grammar, width - (padding * 2));
+        }
+
+        return height;
+    }
+
+    function drawCanvasInsightPanel(ctx, example, usage, grammar, x, y, width, palette, accent, accentSoft) {
+        const padding = 18;
+        const gap = 16;
+        const height = getCanvasInsightPanelHeight(ctx, example, usage, grammar, width);
+
+        drawRoundedRect(ctx, x, y, width, height, 18);
+        const gradient = ctx.createLinearGradient(x, y, x + width, y + height);
+        gradient.addColorStop(0, mixWithWhite(accent, 0.86));
+        gradient.addColorStop(0.48, palette.card);
+        gradient.addColorStop(1, mixWithWhite(accent, 0.91));
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        ctx.strokeStyle = mixWithWhite(accent, 0.68);
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        let cursorY = y + padding;
+
+        if (example) {
+            ctx.font = 'italic 22px Arial, sans-serif';
+            const quoteHeight = Math.max(84, getCanvasTextHeight(ctx, example, width - 116, 32) + 42);
+            drawRoundedRect(ctx, x + padding, cursorY, width - (padding * 2), quoteHeight, 16);
+            const quoteGradient = ctx.createLinearGradient(x + padding, cursorY, x + width, cursorY + quoteHeight);
+            quoteGradient.addColorStop(0, mixWithWhite(accent, 0.93));
+            quoteGradient.addColorStop(1, palette.card);
+            ctx.fillStyle = quoteGradient;
+            ctx.fill();
+            ctx.strokeStyle = mixWithWhite(accent, 0.7);
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            drawCanvasCircleIcon(ctx, '"', x + padding + 24, cursorY + 26, 36, accentSoft, null, accent);
+
+            ctx.fillStyle = palette.textLight;
+            ctx.font = 'italic 22px Arial, sans-serif';
+            drawWrappedCanvasText(ctx, example, x + padding + 78, cursorY + 43, width - 120, 32);
+            cursorY += quoteHeight + gap;
+        }
+
+        if (usage) {
+            const noteHeight = drawCanvasNote(ctx, 'Use when', usage, '!', x + padding, cursorY, width - (padding * 2), palette, accent, accentSoft);
+            cursorY += noteHeight + gap;
+        }
+
+        if (grammar) {
+            drawCanvasNote(ctx, 'Grammar', grammar, '*', x + padding, cursorY, width - (padding * 2), palette, accent, accentSoft);
+        }
+
+        return height;
+    }
+
+    function getCanvasChipsHeight(ctx, chips, maxWidth) {
+        if (!chips.length) return 0;
+        ctx.font = 'italic 20px Arial, sans-serif';
+        let rowWidth = 0;
+        let rows = 1;
+        chips.forEach(chip => {
+            const chipWidth = ctx.measureText(chip).width + 38;
+            if (rowWidth && rowWidth + chipWidth + 12 > maxWidth) {
+                rows += 1;
+                rowWidth = 0;
+            }
+            rowWidth += chipWidth + 12;
+        });
+        return 34 + (rows * 38) + ((rows - 1) * 10);
+    }
+
+    function drawCanvasChips(ctx, chips, x, y, maxWidth, palette, accent) {
+        if (!chips.length) return 0;
+        ctx.font = '800 17px Arial, sans-serif';
+        ctx.fillStyle = palette.textLighter;
+        ctx.fillText('EXPLORE WITH', x, y + 18);
+
+        ctx.font = 'italic 20px Arial, sans-serif';
+        let chipX = x;
+        let chipY = y + 34;
+        chips.forEach(chip => {
+            const chipWidth = ctx.measureText(chip).width + 38;
+            if (chipX > x && chipX + chipWidth > x + maxWidth) {
+                chipX = x;
+                chipY += 48;
+            }
+            drawRoundedRect(ctx, chipX, chipY, chipWidth, 38, 19);
+            ctx.fillStyle = mixWithWhite(accent, 0.9);
+            ctx.fill();
+            ctx.strokeStyle = mixWithWhite(accent, 0.58);
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = palette.text;
+            ctx.fillText(chip, chipX + 19, chipY + 25);
+            chipX += chipWidth + 12;
+        });
+
+        return (chipY - y) + 44;
+    }
+
     function drawCanvasCard(ctx, word, profile, examples, x, y, width, color, softColor, palette) {
         const padding = 26;
         const bodyWidth = width - (padding * 2);
         const meaning = profile && profile.core_meaning ? profile.core_meaning : '';
         const example = examples && examples.example_sentences && examples.example_sentences.length ? examples.example_sentences[0] : '';
         const usage = examples && examples.usage_note ? examples.usage_note : '';
-        const collocations = profile && profile.collocations ? profile.collocations.slice(0, 4).join(', ') : '';
+        const collocations = profile && profile.collocations ? profile.collocations.slice(0, 4) : [];
         const grammar = profile && profile.grammar_note ? profile.grammar_note : '';
 
         ctx.font = '700 25px Arial, sans-serif';
         const meaningHeight = getCanvasBlockHeight(ctx, meaning, bodyWidth, 34, 0);
-        ctx.font = '400 22px Arial, sans-serif';
-        const exampleHeight = example ? getCanvasBlockHeight(ctx, example, bodyWidth - 28, 31, 18) : 0;
-        const usageHeight = usage ? getCanvasBlockHeight(ctx, usage, bodyWidth, 29, 0) : 0;
-        const collocHeight = collocations ? 62 : 0;
-        const grammarHeight = grammar ? getCanvasBlockHeight(ctx, grammar, bodyWidth, 27, 0) : 0;
-        const height = 104 + padding + meaningHeight + (example ? exampleHeight + 18 : 0) + usageHeight + collocHeight + grammarHeight + 24;
+        const insightHeight = (example || usage || grammar) ? getCanvasInsightPanelHeight(ctx, example, usage, grammar, bodyWidth) : 0;
+        const collocHeight = getCanvasChipsHeight(ctx, collocations, bodyWidth);
+        const height = 104 + padding + 28 + meaningHeight + (insightHeight ? insightHeight + 22 : 0) + collocHeight + 28;
 
         drawRoundedRect(ctx, x, y, width, height, 16);
         ctx.fillStyle = palette.card;
@@ -2258,39 +2448,21 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.fillText((profile && profile.part_of_speech) || 'word', x + width - padding - 95, y + 58);
 
         let cursorY = y + 126;
+        ctx.font = '800 17px Arial, sans-serif';
+        ctx.fillStyle = palette.textLighter;
+        ctx.fillText('CORE SENSE', x + padding, cursorY);
+        cursorY += 36;
+
         ctx.font = '700 25px Arial, sans-serif';
         ctx.fillStyle = palette.text;
-        cursorY = drawWrappedCanvasText(ctx, meaning, x + padding, cursorY, bodyWidth, 34) + 18;
+        cursorY = drawWrappedCanvasText(ctx, meaning, x + padding, cursorY, bodyWidth, 34) + 24;
 
-        if (example) {
-            drawRoundedRect(ctx, x + padding, cursorY, bodyWidth, exampleHeight, 12);
-            ctx.fillStyle = softColor;
-            ctx.fill();
-            ctx.fillStyle = palette.textLight;
-            ctx.font = 'italic 22px Arial, sans-serif';
-            cursorY = drawWrappedCanvasText(ctx, example, x + padding + 18, cursorY + 29, bodyWidth - 36, 31) + 18;
+        if (insightHeight) {
+            cursorY += drawCanvasInsightPanel(ctx, example, usage, grammar, x + padding, cursorY, bodyWidth, palette, color, softColor) + 22;
         }
 
-        if (usage) {
-            ctx.font = '400 21px Arial, sans-serif';
-            ctx.fillStyle = palette.textLight;
-            cursorY = drawWrappedCanvasText(ctx, usage, x + padding, cursorY, bodyWidth, 29) + 18;
-        }
-
-        if (collocations) {
-            ctx.font = '800 17px Arial, sans-serif';
-            ctx.fillStyle = palette.textLighter;
-            ctx.fillText('GOES WITH', x + padding, cursorY + 18);
-            ctx.font = 'italic 21px Arial, sans-serif';
-            ctx.fillStyle = palette.text;
-            ctx.fillText(collocations, x + padding, cursorY + 50);
-            cursorY += collocHeight;
-        }
-
-        if (grammar) {
-            ctx.font = '400 20px Arial, sans-serif';
-            ctx.fillStyle = palette.textLight;
-            cursorY = drawWrappedCanvasText(ctx, grammar, x + padding, cursorY, bodyWidth, 27) + 10;
+        if (collocations.length) {
+            drawCanvasChips(ctx, collocations, x + padding, cursorY, bodyWidth, palette, color);
         }
 
         return height;
