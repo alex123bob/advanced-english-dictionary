@@ -7,6 +7,11 @@ const AudioManager = {
     currentButton: null,
     
     play(audioUrl, buttonElement) {
+        if (typeof Howl === 'undefined') {
+            console.warn('Audio library is still loading.');
+            return;
+        }
+
         // Stop current sound if playing
         if (this.currentSound) {
             this.currentSound.stop();
@@ -536,6 +541,13 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             videoResourcesContent.innerHTML = renderVideoResourcesEmptyState();
         }
+
+        const exportButton = e.target.closest('.wcd-b-export-btn');
+        if (exportButton) {
+            e.preventDefault();
+            handleComparisonExport(exportButton);
+            return;
+        }
         
         const confusionChip = e.target.closest('.confusion-chip');
         if (confusionChip) {
@@ -558,12 +570,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let profilesData = null;
             let examplesData = null;
+            let metaData = null;
+
+            container.__comparisonExportData = {
+                word: currentWord,
+                confusedWord,
+                meta: null,
+                profiles: null,
+                examples: null
+            };
 
             function tryFillCards() {
                 if (!profilesData) return;
                 const posMatch = profilesData.searched_word.part_of_speech === profilesData.confused_word.part_of_speech;
                 cardASlot.innerHTML = ConfusionUI.renderCard(profilesData.searched_word, examplesData ? examplesData.searched_word : null, currentWord, 'a', posMatch);
                 cardBSlot.innerHTML = ConfusionUI.renderCard(profilesData.confused_word, examplesData ? examplesData.confused_word : null, confusedWord, 'b', posMatch);
+                updateComparisonExportState(container, true);
+            }
+
+            function updateExportData() {
+                container.__comparisonExportData = {
+                    word: currentWord,
+                    confusedWord,
+                    meta: metaData,
+                    profiles: profilesData,
+                    examples: examplesData
+                };
             }
 
             function renderSectionError(slot, label, retryFn) {
@@ -585,6 +617,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     .then(result => {
                         const meta = result.data.confusion_meta;
                         if (meta) {
+                            metaData = meta;
+                            updateExportData();
                             metaSlot.innerHTML = ConfusionUI.renderMeta(meta, currentWord, confusedWord);
                         } else {
                             metaSlot.innerHTML = '';
@@ -600,6 +634,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetchSection(currentWord, 'confusion_profiles', null, null, { confused_word: confusedWord })
                     .then(result => {
                         profilesData = result.data.confusion_profiles;
+                        updateExportData();
                         if (profilesData) tryFillCards();
                         else { cardASlot.innerHTML = ''; cardBSlot.innerHTML = ''; }
                     })
@@ -614,6 +649,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetchSection(currentWord, 'confusion_examples', null, null, { confused_word: confusedWord })
                     .then(result => {
                         examplesData = result.data.confusion_examples;
+                        updateExportData();
                         if (examplesData) tryFillCards();
                     })
                     .catch(err => {
@@ -1744,6 +1780,575 @@ document.addEventListener('DOMContentLoaded', () => {
             return (num / 1000).toFixed(1) + 'K';
         }
         return num.toString();
+    }
+
+    function updateComparisonExportState(container, isReady) {
+        const wrap = container.querySelector('.wcd-b-wrap');
+        if (!wrap) return;
+
+        wrap.querySelectorAll('.wcd-b-export-btn').forEach(button => {
+            button.disabled = !isReady;
+            button.title = isReady
+                ? `Export as ${button.dataset.exportFormat.toUpperCase()}`
+                : 'Export available after the comparison loads';
+        });
+    }
+
+    function setComparisonExportStatus(wrap, message, state = '') {
+        const status = wrap ? wrap.querySelector('.wcd-b-export-status') : null;
+        if (!status) return;
+
+        status.textContent = message || '';
+        status.className = `wcd-b-export-status${state ? ` ${state}` : ''}`;
+    }
+
+    function getComparisonExportData(wrap, format) {
+        const container = wrap.closest('.confusion-detail-container');
+        const data = (container && container.__comparisonExportData) || {};
+        const surface = wrap.querySelector('.wcd-b-export-surface');
+
+        return {
+            type: 'word_comparison',
+            format,
+            word: data.word || currentWord || '',
+            confused_word: data.confusedWord || '',
+            comparison: {
+                meta: data.meta || null,
+                profiles: data.profiles || null,
+                examples: data.examples || null
+            },
+            html: surface ? surface.outerHTML : wrap.outerHTML,
+            theme: document.documentElement.getAttribute('data-theme') || '',
+            created_at: new Date().toISOString()
+        };
+    }
+
+    function getExportFilename(payload, format) {
+        const base = `${payload.word || 'word'}-vs-${payload.confused_word || 'comparison'}`
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '') || 'word-comparison';
+        return `${base}.${format}`;
+    }
+
+    function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function base64ToBlob(base64, contentType) {
+        const byteCharacters = atob(base64);
+        const byteArrays = [];
+
+        for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+            const slice = byteCharacters.slice(offset, offset + 512);
+            const byteNumbers = new Array(slice.length);
+            for (let i = 0; i < slice.length; i++) {
+                byteNumbers[i] = slice.charCodeAt(i);
+            }
+            byteArrays.push(new Uint8Array(byteNumbers));
+        }
+
+        return new Blob(byteArrays, { type: contentType });
+    }
+
+    function getExportEndpointCandidates() {
+        const host = config.api.host || '';
+        return [
+            `${host}/api/dictionary/export`,
+            `${host}/api/export/word-comparison`,
+            `${host}/api/export/confusion`
+        ];
+    }
+
+    async function requestBackendComparisonExport(payload, format) {
+        const endpoints = getExportEndpointCandidates();
+        let lastError = null;
+
+        for (const endpoint of endpoints) {
+            const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            const timeout = controller ? setTimeout(() => controller.abort(), 20000) : null;
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json, application/pdf, image/png, image/svg+xml, text/html',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload),
+                    signal: controller ? controller.signal : undefined
+                });
+
+                if (timeout) clearTimeout(timeout);
+
+                if (response.status === 404 || response.status === 405) {
+                    lastError = new Error(`No export route at ${endpoint}`);
+                    continue;
+                }
+
+                if (!response.ok) {
+                    throw new Error(`Export failed with ${response.status}`);
+                }
+
+                const contentType = response.headers.get('Content-Type') || '';
+                const disposition = response.headers.get('Content-Disposition') || '';
+                const filenameMatch = disposition.match(/filename="?([^"]+)"?/i);
+                const filename = filenameMatch ? filenameMatch[1] : getExportFilename(payload, format);
+
+                if (contentType.includes('application/json')) {
+                    const result = await response.json();
+                    if (result.url || result.download_url || result.file_url) {
+                        const fileUrl = result.url || result.download_url || result.file_url;
+                        const link = document.createElement('a');
+                        link.href = fileUrl;
+                        link.download = result.filename || filename;
+                        link.rel = 'noopener';
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                        return true;
+                    }
+
+                    if (result.content || result.data || result.base64) {
+                        const base64 = result.content || result.data || result.base64;
+                        const blob = base64ToBlob(base64, result.content_type || contentTypeForFormat(format));
+                        downloadBlob(blob, result.filename || filename);
+                        return true;
+                    }
+
+                    if (result.success === false) {
+                        throw new Error(result.error || 'Backend export failed');
+                    }
+                } else {
+                    const blob = await response.blob();
+                    if (blob.size > 0) {
+                        downloadBlob(blob, filename);
+                        return true;
+                    }
+                }
+            } catch (err) {
+                if (timeout) clearTimeout(timeout);
+                lastError = err;
+            }
+        }
+
+        throw lastError || new Error('No backend export endpoint responded');
+    }
+
+    function contentTypeForFormat(format) {
+        if (format === 'pdf') return 'application/pdf';
+        if (format === 'png') return 'image/png';
+        if (format === 'svg') return 'image/svg+xml;charset=utf-8';
+        return 'text/html;charset=utf-8';
+    }
+
+    function collectExportCss() {
+        let css = '';
+        Array.from(document.styleSheets).forEach(sheet => {
+            try {
+                if (!sheet.href || sheet.href.startsWith(window.location.origin)) {
+                    Array.from(sheet.cssRules || []).forEach(rule => {
+                        css += `${rule.cssText}\n`;
+                    });
+                }
+            } catch (err) {
+                // Cross-origin stylesheets such as icon fonts are skipped by browser security.
+            }
+        });
+
+        css += `
+            * { box-sizing: border-box; }
+            body, .wcd-export-foreign {
+                margin: 0;
+                background: #ffffff;
+                color: var(--text-color);
+                font-family: Inter, Arial, sans-serif;
+            }
+            .wcd-export-page {
+                width: 100%;
+                padding: 24px;
+                background: #ffffff;
+            }
+            .wcd-b-export-surface {
+                animation: none !important;
+            }
+            .wcd-b-export-surface * {
+                animation: none !important;
+                transition: none !important;
+            }
+            .clickable-word {
+                color: inherit;
+                text-decoration: none;
+                border-bottom: 0;
+                cursor: default;
+            }
+        `;
+
+        return css;
+    }
+
+    function cloneExportSurface(surface) {
+        const clone = surface.cloneNode(true);
+        clone.querySelectorAll('[data-lookup-word]').forEach(el => {
+            el.removeAttribute('data-lookup-word');
+        });
+        return clone;
+    }
+
+    function buildExportHtml(surface) {
+        const theme = document.documentElement.getAttribute('data-theme') || '';
+        const clone = cloneExportSurface(surface);
+
+        return `<!doctype html>
+            <html lang="en" data-theme="${theme}">
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>Word comparison export</title>
+                <style>${collectExportCss()}</style>
+            </head>
+            <body>
+                <main class="wcd-export-page">${clone.outerHTML}</main>
+            </body>
+            </html>`;
+    }
+
+    function buildExportSvg(surface) {
+        const rect = surface.getBoundingClientRect();
+        const width = Math.max(360, Math.ceil(rect.width));
+        const height = Math.max(260, Math.ceil(rect.height));
+        const theme = document.documentElement.getAttribute('data-theme') || '';
+        const clone = cloneExportSurface(surface);
+        const css = collectExportCss().replace(/<\/style/gi, '<\\/style');
+
+        const foreignObject = `
+            <div xmlns="http://www.w3.org/1999/xhtml" class="wcd-export-foreign" data-theme="${theme}">
+                <style>${css}</style>
+                <main class="wcd-export-page" style="width:${width}px;padding:0;">${clone.outerHTML}</main>
+            </div>
+        `;
+
+        return {
+            svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><foreignObject width="100%" height="100%">${foreignObject}</foreignObject></svg>`,
+            width,
+            height
+        };
+    }
+
+    function dataUrlToBlob(dataUrl) {
+        const parts = dataUrl.split(',');
+        const contentType = parts[0].match(/:(.*?);/)[1];
+        return base64ToBlob(parts[1], contentType);
+    }
+
+    function canvasToBlob(canvas, contentType) {
+        return new Promise(resolve => {
+            if (canvas.toBlob) {
+                canvas.toBlob(resolve, contentType);
+            } else {
+                resolve(dataUrlToBlob(canvas.toDataURL(contentType)));
+            }
+        });
+    }
+
+    function exportComparisonSvg(surface, filename) {
+        const { svg } = buildExportSvg(surface);
+        downloadBlob(new Blob([svg], { type: contentTypeForFormat('svg') }), filename);
+    }
+
+    function drawRoundedRect(ctx, x, y, width, height, radius) {
+        const r = Math.min(radius, width / 2, height / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + width, y, x + width, y + height, r);
+        ctx.arcTo(x + width, y + height, x, y + height, r);
+        ctx.arcTo(x, y + height, x, y, r);
+        ctx.arcTo(x, y, x + width, y, r);
+        ctx.closePath();
+    }
+
+    function wrapCanvasLines(ctx, text, maxWidth) {
+        const words = String(text || '').replace(/\s+/g, ' ').trim().split(' ');
+        const lines = [];
+        let line = '';
+
+        words.forEach(word => {
+            const testLine = line ? `${line} ${word}` : word;
+            if (ctx.measureText(testLine).width > maxWidth && line) {
+                lines.push(line);
+                line = word;
+            } else {
+                line = testLine;
+            }
+        });
+
+        if (line) lines.push(line);
+        return lines.length ? lines : [''];
+    }
+
+    function drawWrappedCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
+        const lines = wrapCanvasLines(ctx, text, maxWidth);
+        lines.forEach((line, index) => {
+            ctx.fillText(line, x, y + (index * lineHeight));
+        });
+        return y + (lines.length * lineHeight);
+    }
+
+    function getCanvasBlockHeight(ctx, text, maxWidth, lineHeight, paddingY) {
+        return (wrapCanvasLines(ctx, text, maxWidth).length * lineHeight) + (paddingY * 2);
+    }
+
+    function drawCanvasPill(ctx, text, x, y, fill, stroke, color) {
+        ctx.font = '700 22px Arial, sans-serif';
+        const width = ctx.measureText(text).width + 34;
+        drawRoundedRect(ctx, x, y, width, 38, 19);
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = color;
+        ctx.fillText(text, x + 17, y + 26);
+        return width;
+    }
+
+    function drawCanvasInfoBlock(ctx, label, text, x, y, width, fill, stroke, labelColor, textColor) {
+        const padding = 24;
+        ctx.font = '700 18px Arial, sans-serif';
+        const textMaxWidth = width - (padding * 2);
+        ctx.font = '400 24px Arial, sans-serif';
+        const height = getCanvasBlockHeight(ctx, text, textMaxWidth, 34, padding) + 34;
+
+        drawRoundedRect(ctx, x, y, width, height, 14);
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.font = '800 18px Arial, sans-serif';
+        ctx.fillStyle = labelColor;
+        ctx.fillText(label.toUpperCase(), x + padding, y + padding + 4);
+
+        ctx.font = '400 24px Arial, sans-serif';
+        ctx.fillStyle = textColor;
+        drawWrappedCanvasText(ctx, text, x + padding, y + padding + 42, textMaxWidth, 34);
+        return height;
+    }
+
+    function drawCanvasCard(ctx, word, profile, examples, x, y, width, color, softColor) {
+        const padding = 26;
+        const bodyWidth = width - (padding * 2);
+        const meaning = profile && profile.core_meaning ? profile.core_meaning : '';
+        const example = examples && examples.example_sentences && examples.example_sentences.length ? examples.example_sentences[0] : '';
+        const usage = examples && examples.usage_note ? examples.usage_note : '';
+        const collocations = profile && profile.collocations ? profile.collocations.slice(0, 4).join(', ') : '';
+        const grammar = profile && profile.grammar_note ? profile.grammar_note : '';
+
+        ctx.font = '700 25px Arial, sans-serif';
+        const meaningHeight = getCanvasBlockHeight(ctx, meaning, bodyWidth, 34, 0);
+        ctx.font = '400 22px Arial, sans-serif';
+        const exampleHeight = example ? getCanvasBlockHeight(ctx, example, bodyWidth - 28, 31, 18) : 0;
+        const usageHeight = usage ? getCanvasBlockHeight(ctx, usage, bodyWidth, 29, 0) : 0;
+        const collocHeight = collocations ? 62 : 0;
+        const grammarHeight = grammar ? getCanvasBlockHeight(ctx, grammar, bodyWidth, 27, 0) : 0;
+        const height = 104 + padding + meaningHeight + (example ? exampleHeight + 18 : 0) + usageHeight + collocHeight + grammarHeight + 24;
+
+        drawRoundedRect(ctx, x, y, width, height, 16);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.strokeStyle = '#e5e7eb';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, width, 8);
+        drawRoundedRect(ctx, x, y, width, 96, 16);
+        ctx.fillStyle = softColor;
+        ctx.fill();
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, width, 8);
+
+        ctx.font = '800 34px Arial, sans-serif';
+        ctx.fillStyle = color;
+        ctx.fillText(word, x + padding, y + 60);
+        ctx.font = '700 20px Arial, sans-serif';
+        ctx.fillStyle = '#64748b';
+        ctx.fillText((profile && profile.part_of_speech) || 'word', x + width - padding - 95, y + 58);
+
+        let cursorY = y + 126;
+        ctx.font = '700 25px Arial, sans-serif';
+        ctx.fillStyle = '#111827';
+        cursorY = drawWrappedCanvasText(ctx, meaning, x + padding, cursorY, bodyWidth, 34) + 18;
+
+        if (example) {
+            drawRoundedRect(ctx, x + padding, cursorY, bodyWidth, exampleHeight, 12);
+            ctx.fillStyle = softColor;
+            ctx.fill();
+            ctx.fillStyle = '#475569';
+            ctx.font = 'italic 22px Arial, sans-serif';
+            cursorY = drawWrappedCanvasText(ctx, example, x + padding + 18, cursorY + 29, bodyWidth - 36, 31) + 18;
+        }
+
+        if (usage) {
+            ctx.font = '400 21px Arial, sans-serif';
+            ctx.fillStyle = '#64748b';
+            cursorY = drawWrappedCanvasText(ctx, usage, x + padding, cursorY, bodyWidth, 29) + 18;
+        }
+
+        if (collocations) {
+            ctx.font = '800 17px Arial, sans-serif';
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText('GOES WITH', x + padding, cursorY + 18);
+            ctx.font = 'italic 21px Arial, sans-serif';
+            ctx.fillStyle = '#334155';
+            ctx.fillText(collocations, x + padding, cursorY + 50);
+            cursorY += collocHeight;
+        }
+
+        if (grammar) {
+            ctx.font = '400 20px Arial, sans-serif';
+            ctx.fillStyle = '#64748b';
+            cursorY = drawWrappedCanvasText(ctx, grammar, x + padding, cursorY, bodyWidth, 27) + 10;
+        }
+
+        return height;
+    }
+
+    async function exportComparisonPng(payload, filename) {
+        const data = payload.comparison || {};
+        const profiles = data.profiles || {};
+        if (!profiles.searched_word || !profiles.confused_word) {
+            throw new Error('Comparison data is not ready for PNG export');
+        }
+
+        const canvas = document.createElement('canvas');
+        const width = 1200;
+        const scale = 2;
+        canvas.width = width * scale;
+        canvas.height = 1800 * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(scale, scale);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, 1800);
+
+        const margin = 54;
+        let y = 56;
+        const primary = '#7c3aed';
+        const secondary = '#10b981';
+
+        ctx.font = '800 36px Arial, sans-serif';
+        ctx.fillStyle = '#111827';
+        ctx.fillText(payload.word || 'word', margin, y);
+        ctx.fillStyle = '#7c3aed';
+        ctx.fillText('vs', margin + ctx.measureText(payload.word || 'word').width + 18, y);
+        ctx.fillStyle = '#111827';
+        ctx.fillText(payload.confused_word || 'comparison', margin + ctx.measureText(`${payload.word || 'word'} vs `).width + 26, y);
+        y += 52;
+
+        const meta = data.meta || {};
+        let pillX = margin;
+        if (meta.confusion_type) {
+            pillX += drawCanvasPill(ctx, String(meta.confusion_type).replace(/_/g, ' '), pillX, y, '#f3e8ff', '#ddd6fe', '#6d28d9') + 14;
+        }
+        if (meta.difficulty) {
+            drawCanvasPill(ctx, String(meta.difficulty), pillX, y, '#fff7ed', '#fed7aa', '#c2410c');
+        }
+        y += 62;
+
+        if (meta.quick_rule) {
+            y += drawCanvasInfoBlock(ctx, 'Rule', meta.quick_rule, margin, y, width - (margin * 2), '#fffbeb', '#fde68a', '#92400e', '#78350f') + 18;
+        }
+        if (meta.key_differentiator) {
+            y += drawCanvasInfoBlock(ctx, 'Difference', meta.key_differentiator, margin, y, width - (margin * 2), '#fff7f7', '#fecaca', '#b91c1c', '#334155') + 26;
+        }
+
+        const cardGap = 28;
+        const cardWidth = (width - (margin * 2) - cardGap) / 2;
+        const examples = data.examples || {};
+        const cardAHeight = drawCanvasCard(ctx, payload.word, profiles.searched_word, examples.searched_word, margin, y, cardWidth, primary, '#f5f3ff');
+        const cardBHeight = drawCanvasCard(ctx, payload.confused_word, profiles.confused_word, examples.confused_word, margin + cardWidth + cardGap, y, cardWidth, secondary, '#ecfdf5');
+        y += Math.max(cardAHeight, cardBHeight) + 56;
+
+        const output = document.createElement('canvas');
+        output.width = width * scale;
+        output.height = Math.ceil(y) * scale;
+        const outputCtx = output.getContext('2d');
+        outputCtx.drawImage(canvas, 0, 0);
+        const blob = await canvasToBlob(output, 'image/png');
+        if (!blob) throw new Error('PNG rendering failed');
+        downloadBlob(blob, filename);
+    }
+
+    function exportComparisonPdf(surface) {
+        const iframe = document.createElement('iframe');
+        iframe.className = 'wcd-print-frame';
+        iframe.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentWindow.document;
+        doc.open();
+        doc.write(buildExportHtml(surface));
+        doc.close();
+
+        setTimeout(() => {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+            setTimeout(() => iframe.remove(), 1000);
+        }, 250);
+    }
+
+    async function handleComparisonExport(button) {
+        const wrap = button.closest('.wcd-b-wrap');
+        const surface = wrap ? wrap.querySelector('.wcd-b-export-surface') : null;
+        const format = button.dataset.exportFormat;
+
+        if (!wrap || !surface || !format || button.disabled) return;
+
+        const payload = getComparisonExportData(wrap, format);
+        const filename = getExportFilename(payload, format);
+        button.disabled = true;
+        setComparisonExportStatus(wrap, `Preparing ${format.toUpperCase()}...`, 'is-loading');
+
+        try {
+            await requestBackendComparisonExport(payload, format);
+            setComparisonExportStatus(wrap, `${format.toUpperCase()} export ready.`, 'is-success');
+        } catch (backendErr) {
+            try {
+                if (format === 'pdf') {
+                    exportComparisonPdf(surface);
+                    setComparisonExportStatus(wrap, 'Print dialog opened. Choose Save as PDF.', 'is-success');
+                } else if (format === 'png') {
+                    await exportComparisonPng(payload, filename);
+                    setComparisonExportStatus(wrap, 'PNG downloaded.', 'is-success');
+                } else {
+                    exportComparisonSvg(surface, filename);
+                    setComparisonExportStatus(wrap, 'SVG downloaded.', 'is-success');
+                }
+            } catch (fallbackErr) {
+                if (format === 'png') {
+                    exportComparisonSvg(surface, getExportFilename(payload, 'svg'));
+                    setComparisonExportStatus(wrap, 'PNG was not supported here, so SVG was downloaded.', 'is-success');
+                } else {
+                    console.error('Comparison export failed:', backendErr, fallbackErr);
+                    setComparisonExportStatus(wrap, `Could not export ${format.toUpperCase()}.`, 'is-error');
+                }
+            }
+        } finally {
+            button.disabled = false;
+            setTimeout(() => {
+                if (wrap && !wrap.querySelector('.wcd-b-export-status.is-loading')) {
+                    setComparisonExportStatus(wrap, '');
+                }
+            }, 5000);
+        }
     }
 
     async function fetchSection(word, section, indexOrEntryIndex = null, senseIndex = null, extraParams = {}) {
