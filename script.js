@@ -178,12 +178,10 @@ document.addEventListener('DOMContentLoaded', () => {
     themePickerPanel.addEventListener('click', e => {
         const swatch = e.target.closest('.theme-swatch');
         if (!swatch) return;
+        e.stopPropagation();
         const theme = swatch.dataset.theme || '';
         sessionStorage.setItem(THEME_KEY, theme);
         applyTheme(theme);
-        themePickerPanel.classList.remove('open');
-        themePickerBtn.setAttribute('aria-expanded', 'false');
-        closeSpeedDial();
     });
     
     const urlParams = new URLSearchParams(window.location.search);
@@ -2075,6 +2073,70 @@ document.addEventListener('DOMContentLoaded', () => {
         downloadBlob(new Blob([svg], { type: contentTypeForFormat('svg') }), filename);
     }
 
+    function getThemeColor(name, fallback) {
+        const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        return value || fallback;
+    }
+
+    function hexToRgb(color) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1;
+        canvas.height = 1;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#000000';
+        ctx.fillStyle = color;
+        const normalized = ctx.fillStyle;
+        const match = normalized.match(/^#([0-9a-f]{6})$/i);
+        if (!match) return { r: 0, g: 0, b: 0 };
+
+        const value = parseInt(match[1], 16);
+        return {
+            r: (value >> 16) & 255,
+            g: (value >> 8) & 255,
+            b: value & 255
+        };
+    }
+
+    function mixWithWhite(color, amount) {
+        const rgb = hexToRgb(color);
+        const mix = channel => Math.round(channel + ((255 - channel) * amount));
+        return `rgb(${mix(rgb.r)}, ${mix(rgb.g)}, ${mix(rgb.b)})`;
+    }
+
+    function themeExportPalette() {
+        const primary = getThemeColor('--primary-color', '#7c3aed');
+        const primaryDark = getThemeColor('--primary-dark', primary);
+        const secondary = getThemeColor('--secondary-color', '#10b981');
+        const text = getThemeColor('--text-color', '#111827');
+        const textLight = getThemeColor('--text-light', '#64748b');
+        const textLighter = getThemeColor('--text-lighter', '#94a3b8');
+        const border = getThemeColor('--border-color', '#e5e7eb');
+        const card = getThemeColor('--card-bg', '#ffffff');
+        const section = getThemeColor('--section-bg', mixWithWhite(primary, 0.92));
+
+        return {
+            primary,
+            primaryDark,
+            secondary,
+            text,
+            textLight,
+            textLighter,
+            border,
+            card,
+            section,
+            primarySoft: mixWithWhite(primary, 0.9),
+            primarySofter: mixWithWhite(primary, 0.95),
+            secondarySoft: mixWithWhite(secondary, 0.9),
+            secondarySofter: mixWithWhite(secondary, 0.95),
+            warning: '#d97706',
+            warningSoft: '#fffbeb',
+            warningBorder: '#fde68a',
+            danger: '#dc2626',
+            dangerSoft: '#fff7f7',
+            dangerBorder: '#fecaca'
+        };
+    }
+
     function drawRoundedRect(ctx, x, y, width, height, radius) {
         const r = Math.min(radius, width / 2, height / 2);
         ctx.beginPath();
@@ -2155,7 +2217,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return height;
     }
 
-    function drawCanvasCard(ctx, word, profile, examples, x, y, width, color, softColor) {
+    function drawCanvasCard(ctx, word, profile, examples, x, y, width, color, softColor, palette) {
         const padding = 26;
         const bodyWidth = width - (padding * 2);
         const meaning = profile && profile.core_meaning ? profile.core_meaning : '';
@@ -2174,9 +2236,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const height = 104 + padding + meaningHeight + (example ? exampleHeight + 18 : 0) + usageHeight + collocHeight + grammarHeight + 24;
 
         drawRoundedRect(ctx, x, y, width, height, 16);
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = palette.card;
         ctx.fill();
-        ctx.strokeStyle = '#e5e7eb';
+        ctx.strokeStyle = palette.border;
         ctx.lineWidth = 2;
         ctx.stroke();
 
@@ -2192,42 +2254,42 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.fillStyle = color;
         ctx.fillText(word, x + padding, y + 60);
         ctx.font = '700 20px Arial, sans-serif';
-        ctx.fillStyle = '#64748b';
+        ctx.fillStyle = palette.textLight;
         ctx.fillText((profile && profile.part_of_speech) || 'word', x + width - padding - 95, y + 58);
 
         let cursorY = y + 126;
         ctx.font = '700 25px Arial, sans-serif';
-        ctx.fillStyle = '#111827';
+        ctx.fillStyle = palette.text;
         cursorY = drawWrappedCanvasText(ctx, meaning, x + padding, cursorY, bodyWidth, 34) + 18;
 
         if (example) {
             drawRoundedRect(ctx, x + padding, cursorY, bodyWidth, exampleHeight, 12);
             ctx.fillStyle = softColor;
             ctx.fill();
-            ctx.fillStyle = '#475569';
+            ctx.fillStyle = palette.textLight;
             ctx.font = 'italic 22px Arial, sans-serif';
             cursorY = drawWrappedCanvasText(ctx, example, x + padding + 18, cursorY + 29, bodyWidth - 36, 31) + 18;
         }
 
         if (usage) {
             ctx.font = '400 21px Arial, sans-serif';
-            ctx.fillStyle = '#64748b';
+            ctx.fillStyle = palette.textLight;
             cursorY = drawWrappedCanvasText(ctx, usage, x + padding, cursorY, bodyWidth, 29) + 18;
         }
 
         if (collocations) {
             ctx.font = '800 17px Arial, sans-serif';
-            ctx.fillStyle = '#94a3b8';
+            ctx.fillStyle = palette.textLighter;
             ctx.fillText('GOES WITH', x + padding, cursorY + 18);
             ctx.font = 'italic 21px Arial, sans-serif';
-            ctx.fillStyle = '#334155';
+            ctx.fillStyle = palette.text;
             ctx.fillText(collocations, x + padding, cursorY + 50);
             cursorY += collocHeight;
         }
 
         if (grammar) {
             ctx.font = '400 20px Arial, sans-serif';
-            ctx.fillStyle = '#64748b';
+            ctx.fillStyle = palette.textLight;
             cursorY = drawWrappedCanvasText(ctx, grammar, x + padding, cursorY, bodyWidth, 27) + 10;
         }
 
@@ -2248,45 +2310,47 @@ document.addEventListener('DOMContentLoaded', () => {
         canvas.height = 1800 * scale;
         const ctx = canvas.getContext('2d');
         ctx.scale(scale, scale);
-        ctx.fillStyle = '#ffffff';
+        const palette = themeExportPalette();
+
+        ctx.fillStyle = palette.card;
         ctx.fillRect(0, 0, width, 1800);
 
         const margin = 54;
         let y = 56;
-        const primary = '#7c3aed';
-        const secondary = '#10b981';
+        const primary = palette.primaryDark || palette.primary;
+        const secondary = palette.secondary;
 
         ctx.font = '800 36px Arial, sans-serif';
-        ctx.fillStyle = '#111827';
+        ctx.fillStyle = palette.text;
         ctx.fillText(payload.word || 'word', margin, y);
-        ctx.fillStyle = '#7c3aed';
+        ctx.fillStyle = palette.primary;
         ctx.fillText('vs', margin + ctx.measureText(payload.word || 'word').width + 18, y);
-        ctx.fillStyle = '#111827';
+        ctx.fillStyle = palette.text;
         ctx.fillText(payload.confused_word || 'comparison', margin + ctx.measureText(`${payload.word || 'word'} vs `).width + 26, y);
         y += 52;
 
         const meta = data.meta || {};
         let pillX = margin;
         if (meta.confusion_type) {
-            pillX += drawCanvasPill(ctx, String(meta.confusion_type).replace(/_/g, ' '), pillX, y, '#f3e8ff', '#ddd6fe', '#6d28d9') + 14;
+            pillX += drawCanvasPill(ctx, String(meta.confusion_type).replace(/_/g, ' '), pillX, y, palette.primarySoft, mixWithWhite(palette.primary, 0.74), primary) + 14;
         }
         if (meta.difficulty) {
-            drawCanvasPill(ctx, String(meta.difficulty), pillX, y, '#fff7ed', '#fed7aa', '#c2410c');
+            drawCanvasPill(ctx, String(meta.difficulty), pillX, y, palette.warningSoft, palette.warningBorder, palette.warning);
         }
         y += 62;
 
         if (meta.quick_rule) {
-            y += drawCanvasInfoBlock(ctx, 'Rule', meta.quick_rule, margin, y, width - (margin * 2), '#fffbeb', '#fde68a', '#92400e', '#78350f') + 18;
+            y += drawCanvasInfoBlock(ctx, 'Rule', meta.quick_rule, margin, y, width - (margin * 2), palette.warningSoft, palette.warningBorder, '#92400e', '#78350f') + 18;
         }
         if (meta.key_differentiator) {
-            y += drawCanvasInfoBlock(ctx, 'Difference', meta.key_differentiator, margin, y, width - (margin * 2), '#fff7f7', '#fecaca', '#b91c1c', '#334155') + 26;
+            y += drawCanvasInfoBlock(ctx, 'Difference', meta.key_differentiator, margin, y, width - (margin * 2), palette.dangerSoft, palette.dangerBorder, '#b91c1c', palette.text) + 26;
         }
 
         const cardGap = 28;
         const cardWidth = (width - (margin * 2) - cardGap) / 2;
         const examples = data.examples || {};
-        const cardAHeight = drawCanvasCard(ctx, payload.word, profiles.searched_word, examples.searched_word, margin, y, cardWidth, primary, '#f5f3ff');
-        const cardBHeight = drawCanvasCard(ctx, payload.confused_word, profiles.confused_word, examples.confused_word, margin + cardWidth + cardGap, y, cardWidth, secondary, '#ecfdf5');
+        const cardAHeight = drawCanvasCard(ctx, payload.word, profiles.searched_word, examples.searched_word, margin, y, cardWidth, primary, palette.primarySofter, palette);
+        const cardBHeight = drawCanvasCard(ctx, payload.confused_word, profiles.confused_word, examples.confused_word, margin + cardWidth + cardGap, y, cardWidth, secondary, palette.secondarySofter, palette);
         y += Math.max(cardAHeight, cardBHeight) + 56;
 
         const output = document.createElement('canvas');
