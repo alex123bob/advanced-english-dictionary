@@ -33,6 +33,25 @@ const FILES_TO_PROCESS = [
   'favicon.ico'
 ];
 
+const SCRIPT_MODULES = [
+  'confusion-ui.js',
+  'ui-controls.js',
+  'comparison-export.js',
+  'comparison-controller.js',
+  'script.js'
+];
+
+const STYLE_MODULES = [
+  'styles/01-tokens-base.css',
+  'styles/02-shell-search.css',
+  'styles/03-floating-panels.css',
+  'styles/04-results-definitions.css',
+  'styles/05-usage-family.css',
+  'styles/06-video-ai.css',
+  'styles/07-polish-theme.css',
+  'styles/08-comparison.css'
+];
+
 // Helper to create a hash from file content and current timestamp
 function getHash(content) {
   const now = Date.now().toString();
@@ -53,7 +72,12 @@ async function minifyCSS(css) {
 async function optimizeHTML(html, cssHashed, jsHashed) {
   html = html.replace(/href="style\.css"/g, `href="${cssHashed}"`);
   html = html.replace(/src="script\.js"/g, `src="${jsHashed}"`);
-  html = html.replace(/<script\s+src="confusion-ui\.js"><\/script>/g, '');
+  SCRIPT_MODULES
+    .filter(fileName => fileName !== 'script.js')
+    .forEach(fileName => {
+      const escaped = fileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      html = html.replace(new RegExp(`<script\\s+src="${escaped}"><\\/script>`, 'g'), '');
+    });
   // Remove live reload script if present
   html = html.replace(/<script>[^<]*live reload[^<]*<\/script>/gi, '');
   // Basic HTML minification
@@ -100,11 +124,12 @@ async function createProductionBundle() {
   }
 
   // Read and hash CSS and JS
-  const cssPath = path.join(SOURCE_DIR, 'style.css');
-  const jsPath = path.join(SOURCE_DIR, 'script.js');
-  const cssContent = await readFile(cssPath, 'utf8');
-  const confusionUIContent = await readFile(path.join(SOURCE_DIR, 'confusion-ui.js'), 'utf8');
-  const jsContent = confusionUIContent + '\n' + await readFile(jsPath, 'utf8');
+  const cssContent = (await Promise.all(
+    STYLE_MODULES.map(fileName => readFile(path.join(SOURCE_DIR, fileName), 'utf8'))
+  )).join('\n');
+  const jsContent = (await Promise.all(
+    SCRIPT_MODULES.map(fileName => readFile(path.join(SOURCE_DIR, fileName), 'utf8'))
+  )).join('\n');
   const minifiedCSS = await minifyCSS(cssContent);
   const minifiedJS = (await minify(jsContent)).code;
   const cssHash = getHash(minifiedCSS);

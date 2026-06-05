@@ -1,0 +1,342 @@
+
+/* Speed-dial FAB */
+.speed-dial {
+    position: fixed;
+    right: 2rem;
+    bottom: 2rem;
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+}
+
+.speed-dial-main-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    z-index: 1;
+}
+
+.speed-dial-main-btn:hover {
+    transform: scale(1.1) translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.speed-dial-main-btn:active {
+    transform: scale(0.95);
+}
+
+.speed-dial-icon {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.speed-dial.open .speed-dial-icon {
+    transform: rotate(45deg);
+}
+
+.speed-dial-items {
+    position: absolute;
+    bottom: calc(100% + 0.75rem);
+    right: 0;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: flex-end;
+    gap: 0.65rem;
+    pointer-events: none;
+}
+
+.speed-dial-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    opacity: 0;
+    transform: translateY(16px) scale(0.85);
+    transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition-delay: calc(var(--i) * 0.06s);
+    pointer-events: none;
+}
+
+.speed-dial.open .speed-dial-item {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+    transition-delay: calc(var(--i) * 0.07s);
+}
+
+.speed-dial-child-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.speed-dial-child-btn:hover {
+    transform: scale(1.12);
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.22);
+    filter: brightness(1.1);
+}
+
+.speed-dial-child-btn:active {
+    transform: scale(0.95);
+}
+
+.speed-dial-label {
+    background: rgba(30, 30, 30, 0.78);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.3rem 0.65rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    backdrop-filter: blur(4px);
+    pointer-events: none;
+    letter-spacing: 0.02em;
+}
+
+.history-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #f72585;
+    color: white;
+    border-radius: 12px;
+    padding: 0.15rem 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 20px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(247, 37, 133, 0.4);
+}
+
+/* Floating History Panel */
+.history-panel {
+    position: fixed;
+    right: -400px;
+    top: 0;
+    width: 400px;
+    height: 100vh;
+    background: white;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+    z-index: 1001;
+    display: flex;
+    flex-direction: column;
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.history-panel.active {
+    right: 0;
+}
+
+.history-panel-header {
+    padding: 1.5rem;
+    background: var(--primary-color);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.history-panel-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.close-history-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.close-history-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.history-panel-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+.empty-history {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    color: var(--text-light);
+    text-align: center;
+}
+
+.empty-history i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+}
+
+.history-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.history-item {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.history-item:hover {
+    border-color: var(--primary-color);
+    background: var(--section-bg);
+    transform: translateX(-4px);
+    box-shadow: 0 2px 8px rgba(20, 184, 166, 0.12);
+}
+
+.history-item-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.history-item-content i {
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.history-item-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.history-item-word {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.history-item-time {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-top: 0.2rem;
+}
+
+.history-item-delete {
+    background: transparent;
+    border: none;
+    color: var(--text-light);
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.history-item-delete:hover {
+    background: #fee;
+    color: #e53e3e;
+}
+
+.history-panel-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e0e0e0;
+    flex-shrink: 0;
+}
+
+.clear-all-history-btn {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: #ff8fa3;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.clear-all-history-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 143, 163, 0.3);
+}
+
+.clear-all-history-btn:active {
+    transform: translateY(0);
+}
+
+/* History Overlay */
+.history-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.history-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
