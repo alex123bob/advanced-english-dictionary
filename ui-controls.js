@@ -21,11 +21,11 @@
             Array.from(document.querySelectorAll('.theme-swatch')).map(s => s.dataset.theme || '')
         );
         const configTheme = config && config.app ? (config.app.theme || '') : '';
-        const saved = sessionStorage.getItem(THEME_KEY);
+        const saved = localStorage.getItem(THEME_KEY);
         const savedIsValid = saved !== null && validThemes.has(saved);
         const resolvedTheme = savedIsValid ? saved : configTheme;
         if (!savedIsValid && saved !== null) {
-            sessionStorage.setItem(THEME_KEY, resolvedTheme);
+            localStorage.setItem(THEME_KEY, resolvedTheme);
         }
         applyTheme(resolvedTheme);
     }
@@ -76,7 +76,7 @@
             if (!swatch) return;
             e.stopPropagation();
             const theme = swatch.dataset.theme || '';
-            sessionStorage.setItem(THEME_KEY, theme);
+            localStorage.setItem(THEME_KEY, theme);
             applyTheme(theme);
         });
     }

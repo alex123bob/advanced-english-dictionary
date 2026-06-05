@@ -113,15 +113,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const urlParams = new URLSearchParams(window.location.search);
     const queryParam = urlParams.get('q');
+    
+    // Set initial browser history state so Back can return here
+    window.history.replaceState({ word: queryParam || null }, '');
+    
     if (queryParam) {
         searchInput.value = queryParam;
-        handleSearch();
+        handleSearch({ skipBrowserHistory: true });
     }
+    
+    // Browser navigation: handle Back/Forward
+    window.addEventListener('popstate', (e) => {
+        const state = e.state;
+        if (state && state.word) {
+            searchInput.value = state.word;
+            handleSearch({ skipBrowserHistory: true, skipSearchHistory: true });
+        } else {
+            // Restore empty state
+            searchInput.value = '';
+            showResults(false);
+            showLoading(false);
+            showEmptyState(true);
+            clearResults();
+        }
+    });
     
     function getSearchHistory() {
         try {
-            const history = localStorage.getItem(HISTORY_KEY);
-            return history ? JSON.parse(history) : [];
+            const historyList = localStorage.getItem(HISTORY_KEY);
+            return historyList ? JSON.parse(historyList) : [];
         } catch (err) {
             console.error('Error reading search history:', err);
             return [];
@@ -130,21 +150,21 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function addToSearchHistory(word) {
         try {
-            let history = getSearchHistory();
+            let historyList = getSearchHistory();
             
             // Remove if already exists (we'll add it to the front)
-            history = history.filter(item => item.word.toLowerCase() !== word.toLowerCase());
+            historyList = historyList.filter(item => item.word.toLowerCase() !== word.toLowerCase());
             
             // Add to front with lowercased word
-            history.unshift({
+            historyList.unshift({
                 word: word.toLowerCase(),
                 timestamp: Date.now()
             });
             
             // Keep only MAX_HISTORY_ITEMS
-            history = history.slice(0, MAX_HISTORY_ITEMS);
+            historyList = historyList.slice(0, MAX_HISTORY_ITEMS);
             
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(historyList));
             
             updateSearchHistoryUI();
         } catch (err) {
@@ -153,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function updateSearchHistoryUI() {
-        const history = getSearchHistory();
+        const historyList = getSearchHistory();
         const panelContent = document.getElementById('historyPanelContent');
         const badge = document.getElementById('historyBadge');
         
@@ -161,15 +181,15 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Update badge
         if (badge) {
-            if (history.length > 0) {
-                badge.textContent = history.length;
+            if (historyList.length > 0) {
+                badge.textContent = historyList.length;
                 badge.style.display = 'block';
             } else {
                 badge.style.display = 'none';
             }
         }
         
-        if (history.length === 0) {
+        if (historyList.length === 0) {
             panelContent.innerHTML = `
                 <div class="empty-history">
                     <i class="fas fa-clock"></i>
@@ -181,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         panelContent.innerHTML = `
             <div class="history-items">
-                ${history.map((item, index) => {
+                ${historyList.map((item, index) => {
                     const timeAgo = getTimeAgo(item.timestamp);
                     return `
                         <div class="history-item" data-word="${item.word}">
@@ -235,11 +255,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function removeFromSearchHistory(index) {
         try {
-            let history = getSearchHistory();
+            let historyList = getSearchHistory();
             
             // Remove from history
-            history.splice(index, 1);
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+            historyList.splice(index, 1);
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(historyList));
             
             updateSearchHistoryUI();
         } catch (err) {
@@ -1647,10 +1667,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentWord = null;
     let currentSelectedEntry = 0;
 
-    async function handleSearch() {
+    async function handleSearch({ skipBrowserHistory = false, skipSearchHistory = false } = {}) {
         const query = searchInput.value.trim();
         if (!query) {
-            // Show a brief visual feedback that input is required
             searchInput.focus();
             searchInput.classList.add('shake');
             setTimeout(() => searchInput.classList.remove('shake'), 500);
@@ -1665,8 +1684,6 @@ document.addEventListener('DOMContentLoaded', () => {
         clearResults();
         
         try {
-            // Step 1: Fetch basic info first (fast ~0.5s)
-
             const basicResult = await fetchSection(query, 'basic');
             const basicData = basicResult.data;
             const cacheStatus = basicResult.cacheStatus;
@@ -1686,24 +1703,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
-            // Store current word data for entry switching
             currentWordData = basicData;
             currentWord = query;
             currentSelectedEntry = 0;
             
-            // Add to search history
-            addToSearchHistory(query);
+            if (!skipSearchHistory) {
+                addToSearchHistory(query);
+            }
             
-            // Show results container immediately
+            if (!skipBrowserHistory) {
+                const currentQ = new URLSearchParams(window.location.search).get('q');
+                if (currentQ && currentQ.toLowerCase() === query.toLowerCase()) {
+                    window.history.replaceState({ word: query }, '', `?q=${encodeURIComponent(query)}`);
+                } else {
+                    window.history.pushState({ word: query }, '', `?q=${encodeURIComponent(query)}`);
+                }
+            }
+            
             showResults(true);
             
-            // Populate basic info
             updateHeadwordAndPronunciation(basicData, 0);
             
-            // Render entry selector if multiple entries
             renderEntrySelector(basicData);
             
-            // Show loading indicators for all sections
             showSectionLoading(definitionsContent, 'cards');
             showSectionLoading(etymologyContent, 'text');
             showSectionLoading(synonymsContent, 'chips');
@@ -1713,18 +1735,16 @@ document.addEventListener('DOMContentLoaded', () => {
             showSectionLoading(commonPhrasesContent, 'chips');
             showSectionLoading(videoResourcesContent, 'default');
             
-            // Ensure first section is open and active
             if (accordionSections.length > 0) {
                 accordionSections.forEach(section => section.open = false);
                 accordionSections[0].open = true;
             }
             if (tabLinks.length > 0) {
-                activateTab('definitions-section'); // Assumes the first section ID
+                activateTab('definitions-section');
             }
 
             loadEntryContent(query, 0, basicData);
             
-            // Blur the search input to prevent mobile zoom persistence
             searchInput.blur();
             
         } catch (error) {

@@ -77,7 +77,7 @@ const config = {
          *   'ruby-deep'         - Deep crimson, bold and editorial (Ruby #be123c + Red #e11d48)
          *   'amethyst'          - Rich violet-purple jewel tone (Violet #7c3aed + Purple #9333ea)
          *
-         * Change the value below to switch the default theme (overridden by sessionStorage).
+         * Change the value below to switch the default theme (overridden by localStorage).
          */
         theme: 'amethyst',
     },
