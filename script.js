@@ -1667,6 +1667,65 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentWord = null;
     let currentSelectedEntry = 0;
 
+    class AnimationOrchestrator {
+        static SECTION_STAGGER = 40;
+
+        static HEADER_SEQUENCE = [
+            ['h2.word-headword',                     'anim-slide-up',    0],
+            ['.word-pos-badge, .word-pronunciation', 'anim-fade-in',    40],
+            ['.word-frequency, #entryTabsContainer', 'anim-fade-in',    80],
+            ['nav.sticky-tabs',                      'anim-slide-down', 120],
+        ];
+
+        playSearchReveal() {
+            this._crossFade();
+            AnimationOrchestrator.HEADER_SEQUENCE.forEach(([sel, cls, delay]) => {
+                this._animateEl(document.querySelector(sel), cls, delay);
+            });
+            const sections = document.querySelectorAll('.accordion-section');
+            sections.forEach((el, i) => {
+                this._animateEl(el, 'anim-slide-up', 160 + i * AnimationOrchestrator.SECTION_STAGGER);
+            });
+        }
+
+        playHeadwordReveal() {
+            this._animateEl(document.querySelector('h2.word-headword'), 'anim-slide-up', 0);
+            this._animateEl(document.querySelector('.word-pos-badge, .word-pronunciation'), 'anim-fade-in', 40);
+        }
+
+        _animateEl(el, cls, delayMs) {
+            if (!el) return;
+            el.style.animationDelay = `${delayMs}ms`;
+            el.classList.remove(cls);
+            void el.offsetWidth; // forces reflow — required to restart CSS animation on re-search
+            el.classList.add(cls);
+            el.addEventListener('animationend', () => {
+                el.classList.remove(cls);
+                el.style.animationDelay = '';
+            }, { once: true });
+        }
+
+        _crossFade() {
+            const loading = document.getElementById('loadingContainer');
+            const results = document.getElementById('resultsContainer');
+
+            if (loading && loading.style.display !== 'none') {
+                loading.classList.add('anim-fade-out');
+                loading.addEventListener('animationend', () => {
+                    loading.style.display = 'none';
+                    loading.classList.remove('anim-fade-out');
+                }, { once: true });
+            }
+
+            if (results) {
+                results.style.display = 'block';
+                this._animateEl(results, 'anim-fade-in', 0);
+            }
+        }
+    }
+
+    const orchestrator = new AnimationOrchestrator();
+
     async function handleSearch({ skipBrowserHistory = false, skipSearchHistory = false } = {}) {
         const query = searchInput.value.trim();
         if (!query) {
@@ -1720,11 +1779,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
-            showResults(true);
-            
             updateHeadwordAndPronunciation(basicData, 0);
-            
             renderEntrySelector(basicData);
+            orchestrator.playSearchReveal();
             
             showSectionLoading(definitionsContent, 'cards');
             showSectionLoading(etymologyContent, 'text');
@@ -2115,6 +2172,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         updateHeadwordAndPronunciation(currentWordData, entryIndex);
+        orchestrator.playHeadwordReveal();
         
         showSectionLoading(definitionsContent, 'cards');
         showSectionLoading(etymologyContent, 'text');
