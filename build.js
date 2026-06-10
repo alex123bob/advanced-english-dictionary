@@ -41,21 +41,47 @@ const SCRIPT_MODULES = [
   'script.js'
 ];
 
-const STYLE_MODULES = [
-  'styles/01-tokens-base.css',
-  'styles/02-shell-search.css',
-  'styles/03-floating-panels.css',
-  'styles/04-results-definitions.css',
-  'styles/05-usage-family.css',
-  'styles/06-video-ai.css',
-  'styles/07-polish-theme.css',
-  'styles/08-comparison.css'
-];
-
 // Helper to create a hash from file content and current timestamp
 function getHash(content) {
   const now = Date.now().toString();
   return crypto.createHash('md5').update(content + now).digest('hex').slice(0, 8);
+}
+
+function isExternalCSSImport(importPath) {
+  return /^(?:https?:)?\/\//.test(importPath);
+}
+
+async function bundleCSS(entryFile, seen = new Set()) {
+  const absolutePath = path.resolve(SOURCE_DIR, entryFile);
+  if (seen.has(absolutePath)) {
+    throw new Error(`Circular CSS import detected: ${entryFile}`);
+  }
+
+  seen.add(absolutePath);
+  const css = await readFile(absolutePath, 'utf8');
+  const importRegex = /@import\s+(?:url\(\s*)?["']?([^"')\s;]+)["']?\s*\)?\s*;/g;
+  let output = '';
+  let cursor = 0;
+  let match;
+
+  while ((match = importRegex.exec(css)) !== null) {
+    output += css.slice(cursor, match.index);
+    const importPath = match[1];
+
+    if (isExternalCSSImport(importPath)) {
+      output += match[0];
+    } else {
+      const resolvedPath = path.resolve(path.dirname(absolutePath), importPath);
+      const relativePath = path.relative(SOURCE_DIR, resolvedPath);
+      output += await bundleCSS(relativePath, seen);
+    }
+
+    cursor = importRegex.lastIndex;
+  }
+
+  output += css.slice(cursor);
+  seen.delete(absolutePath);
+  return output;
 }
 
 // Minify CSS
@@ -124,9 +150,7 @@ async function createProductionBundle() {
   }
 
   // Read and hash CSS and JS
-  const cssContent = (await Promise.all(
-    STYLE_MODULES.map(fileName => readFile(path.join(SOURCE_DIR, fileName), 'utf8'))
-  )).join('\n');
+  const cssContent = await bundleCSS('style.css');
   const jsContent = (await Promise.all(
     SCRIPT_MODULES.map(fileName => readFile(path.join(SOURCE_DIR, fileName), 'utf8'))
   )).join('\n');
