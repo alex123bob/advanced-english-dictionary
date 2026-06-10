@@ -100,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const suggestionsDropdown = document.getElementById('suggestionsDropdown');
     let suggestionDebounceTimer;
+    let suggestionRequestToken = 0;
     let currentFocus = -1;
 
     const stickyTabs = document.getElementById('stickyTabs');
@@ -554,7 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     function showResults(show) {
-        resultsContainer.style.display = show ? 'block' : 'none';
+        resultsContainer.style.display = show ? '' : 'none';
     }
     function showEmptyState(show) {
         emptyState.style.display = show ? 'block' : 'none';
@@ -1718,7 +1719,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (results) {
-                results.style.display = 'block';
+                results.style.display = '';
                 this._animateEl(results, 'anim-fade-in', 0);
             }
         }
@@ -2366,6 +2367,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function closeSuggestions() {
+        suggestionRequestToken++;
+        clearTimeout(suggestionDebounceTimer);
         if (suggestionsDropdown) {
             suggestionsDropdown.classList.remove('active');
             suggestionsDropdown.innerHTML = '';
@@ -2380,6 +2383,8 @@ document.addEventListener('DOMContentLoaded', () => {
             closeSuggestions();
             return;
         }
+
+        const requestToken = ++suggestionRequestToken;
 
         try {
             if (!suggestionsDropdown.classList.contains('active') || suggestionsDropdown.querySelector('.suggestions-error')) {
@@ -2399,6 +2404,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error('Network response was not ok');
             
             const data = await response.json();
+
+            if (requestToken !== suggestionRequestToken || searchInput.value.trim() !== query) {
+                return;
+            }
             
             if (data.success && data.suggestions && data.suggestions.length > 0) {
                 renderSuggestions(data.suggestions, query);
@@ -2406,6 +2415,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderNoSuggestions();
             }
         } catch (error) {
+            if (requestToken !== suggestionRequestToken) return;
             console.error('Error fetching suggestions:', error);
             closeSuggestions();
         }

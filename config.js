@@ -79,7 +79,7 @@ const config = {
          *
          * Change the value below to switch the default theme (overridden by localStorage).
          */
-        theme: 'amethyst',
+        theme: '',
     },
     
 };

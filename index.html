@@ -6,10 +6,10 @@
     <title>Advanced English Dictionary</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     </noscript>
     
     <!-- OpenSearch autodiscovery for Chrome "Tab to Search" -->
@@ -26,11 +26,12 @@
                     <i class="fas fa-book-open"></i>
                     <span>English Dictionary</span>
                 </div>
+                <h1 class="header-title">Advanced English Dictionary</h1>
                 <div class="search-container">
                     <div class="search-box">
                         <i class="fas fa-search search-icon"></i>
                         <input type="text" id="searchInput" placeholder="Enter a word or phrase (e.g., 'pipe', 'serendipity')" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-autocomplete="list" aria-controls="suggestionsDropdown" aria-expanded="false" role="combobox" autofocus>
-                        <button id="searchButton" class="search-btn">
+                        <button id="searchButton" class="search-btn" aria-label="Look up word">
                             <i class="fas fa-search"></i> Look Up
                         </button>
                         <div id="suggestionsDropdown" class="suggestions-dropdown" role="listbox"></div>
@@ -210,7 +211,7 @@
             </div>
             <div class="speed-dial-item" style="--i:1">
                 <span class="speed-dial-label">History</span>
-                <button id="historyToggleBtn" class="speed-dial-child-btn" title="Search History">
+                <button id="historyToggleBtn" class="speed-dial-child-btn" title="Search History" aria-label="Open search history">
                     <i class="fas fa-history"></i>
                     <span class="history-badge" id="historyBadge" style="display: none;">0</span>
                 </button>
@@ -272,7 +273,7 @@
     <div id="historyPanel" class="history-panel">
         <div class="history-panel-header">
             <h3><i class="fas fa-history"></i> Search History</h3>
-            <button id="closeHistoryBtn" class="close-history-btn">
+            <button id="closeHistoryBtn" class="close-history-btn" aria-label="Close search history">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -283,7 +284,7 @@
             </div>
         </div>
         <div class="history-panel-footer">
-            <button id="clearAllHistoryBtn" class="clear-all-history-btn">
+            <button id="clearAllHistoryBtn" class="clear-all-history-btn" aria-label="Clear all search history">
                 <i class="fas fa-trash-alt"></i> Clear All History
             </button>
         </div>
