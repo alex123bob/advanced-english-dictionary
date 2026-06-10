@@ -107,7 +107,7 @@
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
-                        'Accept': 'application/json, application/pdf, image/png, image/svg+xml',
+                        'Accept': 'application/json, application/pdf, image/png',
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(payload),
@@ -185,7 +185,6 @@
     function contentTypeForFormat(format) {
         if (format === 'pdf') return 'application/pdf';
         if (format === 'png') return 'image/png';
-        if (format === 'svg') return 'image/svg+xml;charset=utf-8';
         return 'text/html;charset=utf-8';
     }
 
@@ -272,7 +271,6 @@
         if (classList.contains('fa-link')) return '~';
         if (classList.contains('fa-file-pdf')) return 'PDF';
         if (classList.contains('fa-file-image')) return 'PNG';
-        if (classList.contains('fa-vector-square')) return 'SVG';
         if (classList.contains('fa-bolt')) return '!';
         if (classList.contains('fa-not-equal')) return '≠';
         return '•';
@@ -308,28 +306,6 @@
             </html>`;
     }
     
-    function buildExportSvg(surface) {
-        const rect = surface.getBoundingClientRect();
-        const width = Math.max(360, Math.ceil(rect.width));
-        const height = Math.max(260, Math.ceil(rect.height));
-        const theme = document.documentElement.getAttribute('data-theme') || '';
-        const clone = cloneExportSurface(surface);
-        const css = collectExportCss().replace(/<\/style/gi, '<\\/style');
-    
-        const foreignObject = `
-            <div xmlns="http://www.w3.org/1999/xhtml" class="wcd-export-foreign" data-theme="${theme}">
-                <style>${css}</style>
-                <main class="wcd-export-page" style="width:${width}px;padding:0;">${clone.outerHTML}</main>
-            </div>
-        `;
-    
-        return {
-            svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><foreignObject width="100%" height="100%">${foreignObject}</foreignObject></svg>`,
-            width,
-            height
-        };
-    }
-    
     function dataUrlToBlob(dataUrl) {
         const parts = dataUrl.split(',');
         const contentType = parts[0].match(/:(.*?);/)[1];
@@ -344,11 +320,6 @@
                 resolve(dataUrlToBlob(canvas.toDataURL(contentType)));
             }
         });
-    }
-    
-    function exportComparisonSvg(surface, filename) {
-        const { svg } = buildExportSvg(surface);
-        downloadBlob(new Blob([svg], { type: contentTypeForFormat('svg') }), filename);
     }
     
     function getThemeColor(name, fallback) {
@@ -493,6 +464,99 @@
         ctx.fillStyle = textColor;
         drawWrappedCanvasText(ctx, text, x + padding, y + padding + 42, textMaxWidth, 34);
         return height;
+    }
+
+    function drawCanvasLabBackdrop(ctx, width, height, palette) {
+        const bg = ctx.createLinearGradient(0, 0, width, height);
+        bg.addColorStop(0, '#101322');
+        bg.addColorStop(0.48, mixWithWhite(palette.primaryDark || palette.primary, 0.08));
+        bg.addColorStop(1, '#0f172a');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, width, height);
+
+        const glowA = ctx.createRadialGradient(170, 120, 10, 170, 120, 360);
+        glowA.addColorStop(0, mixWithWhite(palette.primary, 0.28));
+        glowA.addColorStop(1, 'rgba(16, 19, 34, 0)');
+        ctx.fillStyle = glowA;
+        ctx.fillRect(0, 0, width, 520);
+
+        const glowB = ctx.createRadialGradient(width - 130, 150, 10, width - 130, 150, 380);
+        glowB.addColorStop(0, mixWithWhite(palette.secondary, 0.24));
+        glowB.addColorStop(1, 'rgba(16, 19, 34, 0)');
+        ctx.fillStyle = glowB;
+        ctx.fillRect(0, 0, width, 560);
+    }
+
+    function drawCanvasLabPill(ctx, text, x, y, fill, stroke, color) {
+        ctx.font = '800 18px Arial, sans-serif';
+        const width = ctx.measureText(text).width + 34;
+        drawRoundedRect(ctx, x, y, width, 36, 18);
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = color;
+        ctx.fillText(text, x + 17, y + 24);
+        return width;
+    }
+
+    function getCanvasMetaTileHeight(ctx, label, text, width) {
+        const padding = 22;
+        ctx.font = '400 22px Arial, sans-serif';
+        return Math.max(132, getCanvasTextHeight(ctx, text, width - (padding * 2), 31) + 76);
+    }
+
+    function drawCanvasMetaTile(ctx, label, text, x, y, width, fill, stroke, accent) {
+        const height = getCanvasMetaTileHeight(ctx, label, text, width);
+        const padding = 22;
+
+        drawRoundedRect(ctx, x, y, width, height, 18);
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = accent;
+        ctx.fillRect(x + padding, y + padding, 34, 4);
+
+        ctx.font = '800 17px Arial, sans-serif';
+        ctx.fillStyle = 'rgba(248, 250, 252, 0.64)';
+        ctx.fillText(label.toUpperCase(), x + padding, y + padding + 30);
+
+        ctx.font = '400 22px Arial, sans-serif';
+        ctx.fillStyle = '#f8fafc';
+        drawWrappedCanvasText(ctx, text, x + padding, y + padding + 66, width - (padding * 2), 31);
+        return height;
+    }
+
+    function drawCanvasVsMedallion(ctx, x, y) {
+        const radius = 39;
+        const halo = ctx.createRadialGradient(x, y, 4, x, y, radius + 24);
+        halo.addColorStop(0, 'rgba(254, 243, 199, 0.9)');
+        halo.addColorStop(0.42, 'rgba(254, 243, 199, 0.2)');
+        halo.addColorStop(1, 'rgba(254, 243, 199, 0)');
+        ctx.fillStyle = halo;
+        ctx.beginPath();
+        ctx.arc(x, y, radius + 24, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#101322';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.32)';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.font = '900 24px Arial, sans-serif';
+        ctx.fillStyle = '#fef3c7';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('VS', x, y + 1);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
     }
     
     function drawCanvasCircleIcon(ctx, symbol, x, y, size, fill, stroke, color) {
@@ -660,7 +724,7 @@
         return (chipY - y) + 44;
     }
     
-    function drawCanvasCard(ctx, word, profile, examples, x, y, width, color, softColor, palette) {
+    function drawCanvasCard(ctx, word, profile, examples, x, y, width, color, softColor, palette, marker) {
         const padding = 26;
         const bodyWidth = width - (padding * 2);
         const meaning = profile && profile.core_meaning ? profile.core_meaning : '';
@@ -675,27 +739,52 @@
         const collocHeight = getCanvasChipsHeight(ctx, collocations, bodyWidth);
         const height = 104 + padding + 28 + meaningHeight + (insightHeight ? insightHeight + 22 : 0) + collocHeight + 28;
     
-        drawRoundedRect(ctx, x, y, width, height, 16);
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.24)';
+        ctx.shadowBlur = 32;
+        ctx.shadowOffsetY = 18;
+        drawRoundedRect(ctx, x, y, width, height, 18);
         ctx.fillStyle = palette.card;
         ctx.fill();
-        ctx.strokeStyle = palette.border;
+        ctx.restore();
+
+        drawRoundedRect(ctx, x, y, width, height, 18);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.24)';
         ctx.lineWidth = 2;
         ctx.stroke();
     
-        ctx.fillStyle = color;
-        ctx.fillRect(x, y, width, 8);
         drawRoundedRect(ctx, x, y, width, 96, 16);
-        ctx.fillStyle = softColor;
+        const headGradient = ctx.createLinearGradient(x, y, x + width, y + 96);
+        headGradient.addColorStop(0, softColor);
+        headGradient.addColorStop(1, palette.card);
+        ctx.fillStyle = headGradient;
         ctx.fill();
         ctx.fillStyle = color;
         ctx.fillRect(x, y, width, 8);
-    
+
+        drawRoundedRect(ctx, x + padding, y + 25, 46, 46, 14);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.font = '900 22px Arial, sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(marker || '', x + padding + 23, y + 49);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+
         ctx.font = '800 34px Arial, sans-serif';
         ctx.fillStyle = color;
-        ctx.fillText(word, x + padding, y + 60);
+        ctx.fillText(word, x + padding + 64, y + 60);
+
         ctx.font = '700 20px Arial, sans-serif';
-        ctx.fillStyle = palette.textLight;
-        ctx.fillText((profile && profile.part_of_speech) || 'word', x + width - padding - 95, y + 58);
+        const pos = (profile && profile.part_of_speech) || 'word';
+        const posWidth = Math.min(150, ctx.measureText(pos).width + 34);
+        drawRoundedRect(ctx, x + width - padding - posWidth, y + 32, posWidth, 34, 17);
+        ctx.fillStyle = mixWithWhite(color, 0.9);
+        ctx.fill();
+        ctx.fillStyle = color;
+        ctx.fillText(pos, x + width - padding - posWidth + 17, y + 55);
     
         let cursorY = y + 126;
         ctx.font = '800 17px Arial, sans-serif';
@@ -727,53 +816,75 @@
     
         const canvas = document.createElement('canvas');
         const width = 1200;
+        const workHeight = 2600;
         const scale = 2;
         canvas.width = width * scale;
-        canvas.height = 1800 * scale;
+        canvas.height = workHeight * scale;
         const ctx = canvas.getContext('2d');
         ctx.scale(scale, scale);
         const palette = themeExportPalette();
     
-        ctx.fillStyle = palette.card;
-        ctx.fillRect(0, 0, width, 1800);
+        drawCanvasLabBackdrop(ctx, width, workHeight, palette);
     
         const margin = 54;
-        let y = 56;
+        let y = 54;
         const primary = palette.primaryDark || palette.primary;
         const secondary = palette.secondary;
+
+        drawCanvasLabPill(ctx, 'WORD LAB', margin, y, 'rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.2)', 'rgba(248, 250, 252, 0.78)');
+        y += 78;
     
-        ctx.font = '800 36px Arial, sans-serif';
-        ctx.fillStyle = palette.text;
-        ctx.fillText(payload.word || 'word', margin, y);
-        ctx.fillStyle = palette.primary;
-        ctx.fillText('vs', margin + ctx.measureText(payload.word || 'word').width + 18, y);
-        ctx.fillStyle = palette.text;
-        ctx.fillText(payload.confused_word || 'comparison', margin + ctx.measureText(`${payload.word || 'word'} vs `).width + 26, y);
-        y += 52;
+        const wordA = payload.word || 'word';
+        const wordB = payload.confused_word || 'comparison';
+        ctx.font = '900 50px Arial, sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(wordA, margin, y);
+        const wordWidth = ctx.measureText(wordA).width;
+        ctx.font = '900 25px Arial, sans-serif';
+        const vsX = margin + wordWidth + 24;
+        drawRoundedRect(ctx, vsX, y - 38, 58, 38, 19);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = '#fef3c7';
+        ctx.fillText('vs', vsX + 17, y - 11);
+        ctx.font = '900 50px Arial, sans-serif';
+        ctx.fillStyle = mixWithWhite(secondary, 0.5);
+        ctx.fillText(wordB, vsX + 82, y);
+        y += 58;
+
+        ctx.font = '400 22px Arial, sans-serif';
+        ctx.fillStyle = 'rgba(248, 250, 252, 0.66)';
+        ctx.fillText('A focused comparison card for choosing the right word in context.', margin, y);
+        y += 50;
     
         const meta = data.meta || {};
-        let pillX = margin;
-        if (meta.confusion_type) {
-            pillX += drawCanvasPill(ctx, String(meta.confusion_type).replace(/_/g, ' '), pillX, y, palette.primarySoft, mixWithWhite(palette.primary, 0.74), primary) + 14;
-        }
-        if (meta.difficulty) {
-            drawCanvasPill(ctx, String(meta.difficulty), pillX, y, palette.warningSoft, palette.warningBorder, palette.warning);
-        }
-        y += 62;
-    
-        if (meta.quick_rule) {
-            y += drawCanvasInfoBlock(ctx, 'Rule', meta.quick_rule, margin, y, width - (margin * 2), palette.warningSoft, palette.warningBorder, '#92400e', '#78350f') + 18;
-        }
-        if (meta.key_differentiator) {
-            y += drawCanvasInfoBlock(ctx, 'Difference', meta.key_differentiator, margin, y, width - (margin * 2), palette.dangerSoft, palette.dangerBorder, '#b91c1c', palette.text) + 26;
-        }
+        const tileGap = 18;
+        const tileWidth = (width - (margin * 2) - (tileGap * 2)) / 3;
+        const typeText = meta.confusion_type ? String(meta.confusion_type).replace(/_/g, ' ') : 'word choice';
+        const difficultyText = meta.difficulty ? String(meta.difficulty) : 'context check';
+        const tagText = `${typeText} • ${difficultyText}`;
+        const ruleText = meta.quick_rule || 'Choose by the job the word performs in the sentence.';
+        const diffText = meta.key_differentiator || 'Compare the core sense, grammar pattern, and natural collocations.';
+        const tagHeight = drawCanvasMetaTile(ctx, 'Signal', tagText, margin, y, tileWidth, 'rgba(255,255,255,0.1)', 'rgba(255,255,255,0.2)', mixWithWhite(primary, 0.52));
+        const ruleHeight = drawCanvasMetaTile(ctx, 'Rule', ruleText, margin + tileWidth + tileGap, y, tileWidth, 'rgba(250,204,21,0.16)', 'rgba(250,204,21,0.25)', '#facc15');
+        const diffHeight = drawCanvasMetaTile(ctx, 'Difference', diffText, margin + ((tileWidth + tileGap) * 2), y, tileWidth, 'rgba(244,63,94,0.16)', 'rgba(244,63,94,0.25)', '#fb7185');
+        y += Math.max(tagHeight, ruleHeight, diffHeight) + 42;
     
         const cardGap = 28;
         const cardWidth = (width - (margin * 2) - cardGap) / 2;
         const examples = data.examples || {};
-        const cardAHeight = drawCanvasCard(ctx, payload.word, profiles.searched_word, examples.searched_word, margin, y, cardWidth, primary, palette.primarySofter, palette);
-        const cardBHeight = drawCanvasCard(ctx, payload.confused_word, profiles.confused_word, examples.confused_word, margin + cardWidth + cardGap, y, cardWidth, secondary, palette.secondarySofter, palette);
-        y += Math.max(cardAHeight, cardBHeight) + 56;
+        const cardAHeight = drawCanvasCard(ctx, wordA, profiles.searched_word, examples.searched_word, margin, y, cardWidth, primary, palette.primarySofter, palette, 'A');
+        const cardBHeight = drawCanvasCard(ctx, wordB, profiles.confused_word, examples.confused_word, margin + cardWidth + cardGap, y, cardWidth, secondary, palette.secondarySofter, palette, 'B');
+        drawCanvasVsMedallion(ctx, width / 2, y + 82);
+        y += Math.max(cardAHeight, cardBHeight) + 54;
+
+        ctx.font = '800 15px Arial, sans-serif';
+        ctx.fillStyle = 'rgba(248, 250, 252, 0.52)';
+        ctx.fillText('Advanced English Dictionary • Word Lab export', margin, y);
+        y += 36;
     
         const output = document.createElement('canvas');
         output.width = width * scale;
@@ -826,18 +937,10 @@
                 } else if (format === 'png') {
                     await exportComparisonPng(payload, filename);
                     setComparisonExportStatus(wrap, 'PNG downloaded.', 'is-success');
-                } else {
-                    exportComparisonSvg(surface, filename);
-                    setComparisonExportStatus(wrap, 'SVG downloaded.', 'is-success');
                 }
             } catch (fallbackErr) {
-                if (format === 'png') {
-                    exportComparisonSvg(surface, getExportFilename(payload, 'svg'));
-                    setComparisonExportStatus(wrap, 'PNG was not supported here, so SVG was downloaded.', 'is-success');
-                } else {
-                    console.error('Comparison export failed:', backendErr, fallbackErr);
-                    setComparisonExportStatus(wrap, `Could not export ${format.toUpperCase()}.`, 'is-error');
-                }
+                console.error('Comparison export failed:', backendErr, fallbackErr);
+                setComparisonExportStatus(wrap, `Could not export ${format.toUpperCase()}.`, 'is-error');
             }
         } finally {
             button.disabled = false;

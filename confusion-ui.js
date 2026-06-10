@@ -26,14 +26,16 @@
         return '<div class="wcd-b-wrap">' +
             '<div class="wcd-b-toolbar">' +
                 '<div class="wcd-b-title">' +
+                    '<span class="wcd-b-title-kicker"><i class="fas fa-microscope"></i> Word Lab</span>' +
+                    '<span class="wcd-b-title-main">' +
                     '<span class="wcd-b-title-word wcd-b-title-word-a">' + safeSearchedWord + '</span>' +
                     '<span class="wcd-b-title-vs">vs</span>' +
                     '<span class="wcd-b-title-word wcd-b-title-word-b">' + safeConfusedWord + '</span>' +
+                    '</span>' +
                 '</div>' +
                 '<div class="wcd-b-export-actions" aria-label="Export comparison">' +
                     '<button type="button" class="wcd-b-export-btn" data-export-format="pdf" title="Export as PDF" aria-label="Export comparison as PDF" disabled><i class="fas fa-file-pdf"></i></button>' +
                     '<button type="button" class="wcd-b-export-btn" data-export-format="png" title="Export as PNG" aria-label="Export comparison as PNG" disabled><i class="fas fa-file-image"></i></button>' +
-                    '<button type="button" class="wcd-b-export-btn" data-export-format="svg" title="Export as SVG" aria-label="Export comparison as SVG" disabled><i class="fas fa-vector-square"></i></button>' +
                 '</div>' +
             '</div>' +
             '<div class="wcd-b-export-status" aria-live="polite"></div>' +
@@ -74,6 +76,7 @@
 
         var html = '';
 
+        html += '<div class="wcd-b-meta-panel">';
         html += '<div class="wcd-b-tags">' +
             '<span class="wcd-b-type-pill"><i class="fas ' + typeIcon + '"></i> ' + escapeHtml(typeLabel) + '</span>' +
             '<span class="wcd-b-diff-pill" style="background:' + diff.color + '18;color:' + diff.color + ';border-color:' + diff.color + '40">' +
@@ -100,6 +103,7 @@
                 '</div>' +
             '</div>';
         }
+        html += '</div>';
 
         return html;
     }
@@ -111,6 +115,7 @@
         var html = '<div class="wcd-b-card wcd-b-card-' + side + '">';
 
         html += '<div class="wcd-b-card-head">' +
+            '<span class="wcd-b-card-marker">' + (side === 'a' ? 'A' : 'B') + '</span>' +
             '<span class="wcd-b-card-word">' + escapeHtml(wordLabel) + '</span>' +
             '<span class="wcd-b-attr-pill ' + posHighlight + '"><i class="fas ' + posIcon + '"></i> ' + escapeHtml(profileData.part_of_speech || 'word') + '</span>' +
         '</div>';
