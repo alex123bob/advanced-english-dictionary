@@ -191,6 +191,7 @@ h3 { font-size: clamp(1.1rem, 2vw, 1.25rem); }
 
 .search-box {
     position: relative;
+    z-index: 10;
 }
 
 .suggestions-dropdown {
