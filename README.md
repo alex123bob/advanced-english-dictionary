@@ -2,6 +2,8 @@
 
 A modern, responsive web-based English dictionary with detailed word definitions, etymology, usage examples, and cultural context.
 
+**Production**: [https://www.lijialab.com](https://www.lijialab.com)
+
 ## Features
 
 - **Detailed Word Lookup**: Search for English words and phrases
