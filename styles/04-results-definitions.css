@@ -173,6 +173,16 @@
     font-size: 0.85rem;
 }
 
+.word-frequency .frequency-loading {
+    display: inline-block;
+    width: 4rem;
+    height: 0.9rem;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #e2e8f0 25%, #cbd5e1 50%, #e2e8f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite linear;
+}
+
 .header-meta {
     display: flex;
     align-items: center;

@@ -742,8 +742,8 @@ document.addEventListener('DOMContentLoaded', () => {
             ${examplesSection}
             ${usageNotesSection}
             ${collocationsSection}
-            ${sense.synonyms && sense.synonyms.length ? `<div class="sense-synonyms"><strong>Synonyms:</strong><div class="synonym-tags">${sense.synonyms.map(syn => `<span class="synonym-tag" data-lookup-word="${syn}">${syn}</span>`).join('')}</div></div>` : ''}
-            ${sense.antonyms && sense.antonyms.length ? `<div class="sense-antonyms"><strong>Antonyms:</strong><div class="antonym-tags">${sense.antonyms.map(ant => `<span class="antonym-tag" data-lookup-word="${ant}">${ant}</span>`).join('')}</div></div>` : ''}
+            ${sense.synonyms && sense.synonyms.filter(s => s && s.trim()).length ? `<div class="sense-synonyms"><strong>Synonyms:</strong><div class="synonym-tags">${sense.synonyms.filter(s => s && s.trim()).map(syn => `<span class="synonym-tag" data-lookup-word="${syn}">${syn}</span>`).join('')}</div></div>` : ''}
+            ${sense.antonyms && sense.antonyms.filter(a => a && a.trim()).length ? `<div class="sense-antonyms"><strong>Antonyms:</strong><div class="antonym-tags">${sense.antonyms.filter(a => a && a.trim()).map(ant => `<span class="antonym-tag" data-lookup-word="${ant}">${ant}</span>`).join('')}</div></div>` : ''}
             <div class="sense-actions">${detailsButton}</div>
         `;
     }
@@ -1815,8 +1815,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadEntryContent(word, entryIndex, basicData) {
         const entryData = basicData.entries ? basicData.entries[entryIndex] : null;
         
+        wordFrequency.style.display = 'flex';
+        frequency.textContent = '';
+        frequency.className = 'frequency-loading';
+
         fetchSection(word, 'frequency', entryIndex).then(result => {
             const data = result.data;
+            frequency.className = '';
             if (data.frequency) {
                 const freqText = data.frequency
                     .split('_')
@@ -1829,6 +1834,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }).catch(err => {
             console.error('Error fetching frequency:', err);
+            frequency.className = '';
             wordFrequency.style.display = 'none';
         });
         
@@ -1961,8 +1967,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 senseItem.dataset.basicSense = JSON.stringify(basicSense);
                 
-                if (senseToRender.synonyms) senseToRender.synonyms.forEach(s => allSynonyms.add(s));
-                if (senseToRender.antonyms) senseToRender.antonyms.forEach(a => allAntonyms.add(a));
+                if (senseToRender.synonyms) senseToRender.synonyms.filter(s => s && s.trim()).forEach(s => allSynonyms.add(s));
+                if (senseToRender.antonyms) senseToRender.antonyms.filter(a => a && a.trim()).forEach(a => allAntonyms.add(a));
             } else {
                 senseItem.innerHTML = `<div class="sense-placeholder-basic">
                     <div class="sense-definition"><strong>${i + 1}.</strong> Definition not available in basic response</div>
@@ -2049,10 +2055,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     sensesList.querySelectorAll('.sense-item-container').forEach(item => {
                         const synTags = item.querySelectorAll('.sense-synonyms .synonym-tag');
-                        synTags.forEach(tag => allSynonyms.add(tag.textContent));
+                        synTags.forEach(tag => { const t = tag.textContent; if (t && t.trim()) allSynonyms.add(t); });
                         
                         const antTags = item.querySelectorAll('.sense-antonyms .antonym-tag');
-                        antTags.forEach(tag => allAntonyms.add(tag.textContent));
+                        antTags.forEach(tag => { const t = tag.textContent; if (t && t.trim()) allAntonyms.add(t); });
                     });
                     
                     updateSynonymsSection(allSynonyms, allAntonyms);
@@ -2187,18 +2193,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function updateSynonymsSection(allSynonyms, allAntonyms) {
-        if (allSynonyms.size > 0 || allAntonyms.size > 0) {
+        const synList = Array.from(allSynonyms).filter(s => s && s.trim());
+        const antList = Array.from(allAntonyms).filter(a => a && a.trim());
+        if (synList.length > 0 || antList.length > 0) {
             let html = '<div class="synonyms-grid">';
-            if (allSynonyms.size > 0) {
+            if (synList.length > 0) {
                 html += `<div class="synonym-group">
                     <div class="synonym-group-header"><i class="fas fa-equals"></i> Synonyms</div>
-                    <div class="synonyms-list">${Array.from(allSynonyms).map(s => `<span class="synonym-tag" data-lookup-word="${s}">${s}</span>`).join('')}</div>
+                    <div class="synonyms-list">${synList.map(s => `<span class="synonym-tag" data-lookup-word="${s}">${s}</span>`).join('')}</div>
                 </div>`;
             }
-            if (allAntonyms.size > 0) {
+            if (antList.length > 0) {
                 html += `<div class="synonym-group">
                     <div class="synonym-group-header antonym-header"><i class="fas fa-not-equal"></i> Antonyms</div>
-                    <div class="antonyms-list">${Array.from(allAntonyms).map(a => `<span class="antonym-tag" data-lookup-word="${a}">${a}</span>`).join('')}</div>
+                    <div class="antonyms-list">${antList.map(a => `<span class="antonym-tag" data-lookup-word="${a}">${a}</span>`).join('')}</div>
                 </div>`;
             }
             html += '</div>';
