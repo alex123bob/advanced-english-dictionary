@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Advanced English Dictionary</title>
     <link rel="stylesheet" href="style.css">
+    <link id="adventureStyleLink" rel="stylesheet" href="styles/11-adventure-lab.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-        <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     </noscript>
     
     <!-- OpenSearch autodiscovery for Chrome "Tab to Search" -->
@@ -19,14 +20,32 @@
     <script src="https://cdn.jsdelivr.net/npm/howler@2.2.4/dist/howler.min.js" defer></script>
 </head>
 <body>
-    <div class="container">
-        <header class="header">
+    <a class="skip-link" href="#mainContent">Skip to dictionary map</a>
+    <div class="container word-adventure-shell">
+        <header class="header word-launcher">
             <div class="header-content">
-                <div class="header-brand">
-                    <i class="fas fa-book-open"></i>
-                    <span>English Dictionary</span>
+                <div class="launcher-orbit" aria-hidden="true">
+                    <span class="orbit-letter orbit-letter-a">A</span>
+                    <span class="orbit-letter orbit-letter-b">B</span>
+                    <span class="orbit-letter orbit-letter-c">C</span>
+                    <span class="orbit-shape orbit-shape-star"></span>
+                    <span class="orbit-shape orbit-shape-moon"></span>
                 </div>
-                <h1 class="header-title">Advanced English Dictionary</h1>
+                <div class="launcher-topline">
+                    <div class="header-brand">
+                        <i class="fas fa-book-open"></i>
+                        <span>Word Adventure</span>
+                    </div>
+                    <button id="styleModeToggleBtn" class="style-mode-toggle" type="button" title="Switch visual style" aria-label="Switch visual style">
+                        <i class="fas fa-store"></i>
+                        <span>Professional</span>
+                    </button>
+                </div>
+                <h1 class="header-title">Word Adventure Lab</h1>
+                <div class="launcher-badges" aria-hidden="true">
+                    <span><i class="fas fa-compass"></i> Explore</span>
+                    <span><i class="fas fa-wand-magic-sparkles"></i> Decode</span>
+                </div>
                 <div class="search-container">
                     <div class="search-box">
                         <i class="fas fa-search search-icon"></i>
@@ -49,7 +68,12 @@
             </div>
         </header>
 
-        <main class="main-content">
+        <main class="main-content word-map" id="mainContent">
+            <div class="map-ribbon" aria-hidden="true">
+                <span class="map-dot map-dot-one"></span>
+                <span class="map-dot map-dot-two"></span>
+                <span class="map-dot map-dot-three"></span>
+            </div>
 
             <div class="loading-container" id="loadingContainer">
                 <div class="loading-spinner">
@@ -221,6 +245,9 @@
             <i class="fas fa-plus speed-dial-icon"></i>
         </button>
     </div>
+    <button id="scrollTopBtn" class="scroll-top-btn" type="button" aria-label="Scroll to top" title="Scroll to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
 
     <!-- Theme picker panel (detached, anchored via JS) -->
     <div id="themePickerPanel" class="theme-picker-panel" role="menu" aria-label="Theme options">

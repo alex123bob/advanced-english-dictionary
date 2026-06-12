@@ -27,6 +27,7 @@ const DIST_DIR = path.join(__dirname, 'dist');
 const FILES_TO_PROCESS = [
   'index.html',
   'style.css',
+  'styles/11-adventure-lab.css',
   'script.js',
   'config.js',
   'opensearch.xml',
@@ -176,7 +177,8 @@ async function createProductionBundle() {
     try {
       await stat(sourcePath);
       const ext = path.extname(fileName);
-      
+      await mkdir(path.dirname(distPath), { recursive: true });
+
       if (ext === '.ico' || ext === '.png' || ext === '.jpg' || ext === '.jpeg' || ext === '.gif') {
         await copyFile(sourcePath, distPath);
         console.log(chalk.green(`✅ Copied binary: ${fileName}`));

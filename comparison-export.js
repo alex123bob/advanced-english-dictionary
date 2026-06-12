@@ -33,7 +33,7 @@
     function getComparisonExportData(wrap, format) {
         const container = wrap.closest('.confusion-detail-container');
         const data = (container && container.__comparisonExportData) || {};
-        const surface = wrap.querySelector('.wcd-b-export-surface');
+        const exportElement = cloneExportSurface(wrap);
     
         return {
             type: 'word_comparison',
@@ -45,8 +45,10 @@
                 profiles: data.profiles || null,
                 examples: data.examples || null
             },
-            html: surface ? surface.outerHTML : wrap.outerHTML,
+            html: exportElement.outerHTML,
             theme: document.documentElement.getAttribute('data-theme') || '',
+            style_mode: document.documentElement.getAttribute('data-style-mode') || 'adventure',
+            css: collectExportCss(),
             created_at: new Date().toISOString()
         };
     }
@@ -189,6 +191,9 @@
     }
 
     function canReadStylesheet(sheet) {
+        if (sheet.disabled) return false;
+        const owner = sheet.ownerNode;
+        if (owner && owner.disabled) return false;
         return !sheet.href || sheet.href.startsWith(window.location.origin);
     }
 
@@ -235,12 +240,110 @@
                 padding: 24px;
                 background: #ffffff;
             }
+            .wcd-export-page > .wcd-b-wrap {
+                width: min(100%, 980px);
+                margin: 0 auto;
+            }
+            @media print {
+                body {
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+                .wcd-export-page {
+                    padding: 14mm;
+                }
+            }
             .wcd-b-export-surface {
                 animation: none !important;
             }
-            .wcd-b-export-surface * {
+            .wcd-b-export-surface *,
+            .wcd-export-clone,
+            .wcd-export-clone *,
+            .wcd-export-clone *::before,
+            .wcd-export-clone *::after {
                 animation: none !important;
                 transition: none !important;
+            }
+            .wcd-export-clone,
+            .wcd-export-clone *,
+            .wcd-export-clone *::before,
+            .wcd-export-clone *::after {
+                contain: none !important;
+                filter: none !important;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                content-visibility: visible !important;
+            }
+            .wcd-export-foreign::before,
+            .wcd-export-foreign::after {
+                content: none !important;
+            }
+            .wcd-export-clone {
+                overflow: visible !important;
+            }
+            .wcd-export-clone .wcd-b-export-surface,
+            .wcd-export-clone .wcd-b-cards-row,
+            .wcd-export-clone .wcd-b-card-body,
+            .wcd-export-clone .wcd-b-insight-panel {
+                overflow: visible !important;
+            }
+            .wcd-export-clone .wcd-b-meta-panel,
+            .wcd-export-clone .wcd-b-tags,
+            .wcd-export-clone .wcd-b-quick-rule,
+            .wcd-export-clone .wcd-b-key-diff,
+            .wcd-export-clone .wcd-b-card,
+            .wcd-export-clone .wcd-b-card-example,
+            .wcd-export-clone .wcd-b-card-note,
+            .wcd-export-clone .wcd-b-card-section,
+            .wcd-export-clone .wcd-b-insight-panel,
+            .wcd-export-clone .wcd-b-vs-badge,
+            .wcd-export-clone .wcd-b-card-marker,
+            .wcd-export-clone .wcd-b-attr-pill,
+            .wcd-export-clone .wcd-b-note-icon,
+            .wcd-export-clone .wcd-b-quote-icon,
+            .wcd-export-clone .wcd-b-colloc-chip,
+            .wcd-export-clone .wcd-b-domain-chip {
+                box-shadow: none !important;
+            }
+            [data-style-mode="adventure"] .wcd-export-clone {
+                background: #fffef7 !important;
+                box-shadow: 4px 4px 0 var(--ink) !important;
+            }
+            [data-style-mode="adventure"] .wcd-export-clone .wcd-b-card,
+            [data-style-mode="adventure"] .wcd-export-clone .wcd-b-meta-panel,
+            [data-style-mode="adventure"] .wcd-export-clone .wcd-b-quick-rule,
+            [data-style-mode="adventure"] .wcd-export-clone .wcd-b-key-diff,
+            [data-style-mode="adventure"] .wcd-export-clone .wcd-b-card-example,
+            [data-style-mode="adventure"] .wcd-export-clone .wcd-b-card-note,
+            [data-style-mode="adventure"] .wcd-export-clone .wcd-b-card-section,
+            [data-style-mode="adventure"] .wcd-export-clone .wcd-b-insight-panel {
+                box-shadow: 2px 2px 0 var(--ink) !important;
+            }
+            [data-style-mode="adventure"] .wcd-export-clone .wcd-b-vs-badge {
+                box-shadow: 3px 3px 0 var(--ink) !important;
+            }
+            [data-style-mode="professional"] .wcd-export-clone {
+                box-shadow: none !important;
+            }
+            [data-style-mode="professional"] .wcd-export-clone .wcd-b-card,
+            [data-style-mode="professional"] .wcd-export-clone .wcd-b-meta-panel,
+            [data-style-mode="professional"] .wcd-export-clone .wcd-b-quick-rule,
+            [data-style-mode="professional"] .wcd-export-clone .wcd-b-key-diff,
+            [data-style-mode="professional"] .wcd-export-clone .wcd-b-card-example,
+            [data-style-mode="professional"] .wcd-export-clone .wcd-b-card-note,
+            [data-style-mode="professional"] .wcd-export-clone .wcd-b-card-section,
+            [data-style-mode="professional"] .wcd-export-clone .wcd-b-insight-panel {
+                box-shadow: none !important;
+            }
+            [data-style-mode="professional"] .wcd-export-clone .wcd-b-tags,
+            [data-style-mode="professional"] .wcd-export-clone .wcd-b-quick-rule,
+            [data-style-mode="professional"] .wcd-export-clone .wcd-b-key-diff {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                background-color: rgba(255, 255, 255, 0.12) !important;
+            }
+            [data-style-mode="professional"] .wcd-export-clone .wcd-b-insight-panel::before {
+                opacity: 0.18 !important;
             }
             .clickable-word {
                 color: inherit;
@@ -278,6 +381,10 @@
     
     function cloneExportSurface(surface) {
         const clone = surface.cloneNode(true);
+        clone.querySelectorAll('.wcd-b-export-actions, .wcd-b-export-status').forEach(el => {
+            el.remove();
+        });
+        clone.classList.add('wcd-export-clone');
         clone.querySelectorAll('[data-lookup-word]').forEach(el => {
             el.removeAttribute('data-lookup-word');
         });
@@ -290,10 +397,11 @@
     
     function buildExportHtml(surface) {
         const theme = document.documentElement.getAttribute('data-theme') || '';
+        const styleMode = document.documentElement.getAttribute('data-style-mode') || 'adventure';
         const clone = cloneExportSurface(surface);
     
         return `<!doctype html>
-            <html lang="en" data-theme="${theme}">
+            <html lang="en" data-theme="${theme}" data-style-mode="${styleMode}">
             <head>
                 <meta charset="utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -895,6 +1003,150 @@
         if (!blob) throw new Error('PNG rendering failed');
         downloadBlob(blob, filename);
     }
+
+    function waitForNextPaint() {
+        return new Promise(resolve => {
+            requestAnimationFrame(() => requestAnimationFrame(resolve));
+        });
+    }
+
+    function loadImage(src) {
+        return new Promise((resolve, reject) => {
+            const image = new Image();
+            image.onload = () => resolve(image);
+            image.onerror = reject;
+            image.src = src;
+        });
+    }
+
+    function buildSvgExportMarkup(html, css, width, height, contentWidth) {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        svg.setAttribute('width', String(width));
+        svg.setAttribute('height', String(height));
+        svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+        const foreignObject = document.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+        foreignObject.setAttribute('x', '0');
+        foreignObject.setAttribute('y', '0');
+        foreignObject.setAttribute('width', String(width));
+        foreignObject.setAttribute('height', String(height));
+
+        const shell = document.createElement('div');
+        shell.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+        shell.className = 'wcd-export-foreign';
+        shell.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') || '');
+        shell.setAttribute('data-style-mode', document.documentElement.getAttribute('data-style-mode') || 'adventure');
+
+        const style = document.createElement('style');
+        style.textContent = `${css}
+            .wcd-export-page-png {
+                width: ${width}px;
+                min-height: ${height}px;
+                padding: 24px;
+                overflow: visible;
+            }
+            .wcd-export-page-png > .wcd-b-wrap {
+                width: ${contentWidth}px;
+                max-width: ${contentWidth}px;
+            }
+        `;
+
+        const main = document.createElement('main');
+        main.className = 'wcd-export-page wcd-export-page-png';
+        main.innerHTML = html;
+
+        shell.appendChild(style);
+        shell.appendChild(main);
+        foreignObject.appendChild(shell);
+        svg.appendChild(foreignObject);
+
+        return new XMLSerializer().serializeToString(svg);
+    }
+
+    async function exportComparisonStyledPng(sourceElement, filename) {
+        if (!sourceElement) throw new Error('No export surface found');
+
+        const sourceRect = sourceElement.getBoundingClientRect();
+        const contentWidth = Math.ceil(Math.max(360, Math.min(1100, sourceRect.width || 900)));
+        const exportWidth = contentWidth + 48;
+        const exportCss = collectExportCss();
+        const measureHost = document.createElement('div');
+        measureHost.style.cssText = [
+            'position: absolute',
+            'left: 0',
+            'top: 0',
+            `width: ${exportWidth}px`,
+            'pointer-events: none',
+            'visibility: hidden',
+            'z-index: -1'
+        ].join(';');
+
+        const clone = cloneExportSurface(sourceElement);
+        const measureShell = document.createElement('div');
+        measureShell.className = 'wcd-export-foreign';
+        measureShell.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') || '');
+        measureShell.setAttribute('data-style-mode', document.documentElement.getAttribute('data-style-mode') || 'adventure');
+
+        const measureStyle = document.createElement('style');
+        measureStyle.textContent = `${exportCss}
+            .wcd-export-page-png {
+                width: ${exportWidth}px;
+                min-height: 0;
+                padding: 24px;
+                overflow: visible;
+            }
+            .wcd-export-page-png > .wcd-b-wrap {
+                width: ${contentWidth}px;
+                max-width: ${contentWidth}px;
+            }
+        `;
+
+        const measurePage = document.createElement('main');
+        measurePage.className = 'wcd-export-page wcd-export-page-png';
+        measurePage.appendChild(clone);
+        measureShell.appendChild(measureStyle);
+        measureShell.appendChild(measurePage);
+        measureHost.appendChild(measureShell);
+        document.body.appendChild(measureHost);
+
+        try {
+            if (document.fonts && document.fonts.ready) {
+                await document.fonts.ready;
+            }
+            await waitForNextPaint();
+
+            const pageRect = measurePage.getBoundingClientRect();
+            const cloneRect = clone.getBoundingClientRect();
+            const exportHeight = Math.ceil(Math.max(
+                measurePage.scrollHeight,
+                measureShell.scrollHeight,
+                clone.scrollHeight + 48,
+                pageRect.height,
+                cloneRect.height + 48,
+                360
+            ) + 16);
+            const svgMarkup = buildSvgExportMarkup(clone.outerHTML, exportCss, exportWidth, exportHeight, contentWidth);
+            const svgUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgMarkup)}`;
+
+            const image = await loadImage(svgUrl);
+            const scale = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.ceil(exportWidth * scale);
+            canvas.height = Math.ceil(exportHeight * scale);
+            const ctx = canvas.getContext('2d');
+            ctx.scale(scale, scale);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, exportWidth, exportHeight);
+            ctx.drawImage(image, 0, 0, exportWidth, exportHeight);
+
+            const blob = await canvasToBlob(canvas, 'image/png');
+            if (!blob) throw new Error('Styled PNG rendering failed');
+            downloadBlob(blob, filename);
+        } finally {
+            measureHost.remove();
+        }
+    }
     
     function exportComparisonPdf(surface) {
         const iframe = document.createElement('iframe');
@@ -927,20 +1179,29 @@
         setComparisonExportStatus(wrap, `Preparing ${format.toUpperCase()}...`, 'is-loading');
     
         try {
-            await requestBackendComparisonExport(payload, format);
-            setComparisonExportStatus(wrap, `${format.toUpperCase()} export ready.`, 'is-success');
-        } catch (backendErr) {
+            if (format === 'pdf') {
+                exportComparisonPdf(wrap);
+                setComparisonExportStatus(wrap, 'Print dialog opened. Choose Save as PDF.', 'is-success');
+            } else if (format === 'png') {
+                await exportComparisonStyledPng(wrap, filename);
+                setComparisonExportStatus(wrap, 'PNG downloaded with current style.', 'is-success');
+            }
+        } catch (localErr) {
             try {
-                if (format === 'pdf') {
-                    exportComparisonPdf(surface);
-                    setComparisonExportStatus(wrap, 'Print dialog opened. Choose Save as PDF.', 'is-success');
-                } else if (format === 'png') {
-                    await exportComparisonPng(payload, filename);
-                    setComparisonExportStatus(wrap, 'PNG downloaded.', 'is-success');
+                await requestBackendComparisonExport(payload, format);
+                setComparisonExportStatus(wrap, `${format.toUpperCase()} export ready.`, 'is-success');
+            } catch (backendErr) {
+                try {
+                    if (format === 'png') {
+                        await exportComparisonPng(payload, filename);
+                        setComparisonExportStatus(wrap, 'PNG downloaded.', 'is-success');
+                    } else {
+                        throw backendErr;
+                    }
+                } catch (fallbackErr) {
+                    console.error('Comparison export failed:', localErr, backendErr, fallbackErr);
+                    setComparisonExportStatus(wrap, `Could not export ${format.toUpperCase()}.`, 'is-error');
                 }
-            } catch (fallbackErr) {
-                console.error('Comparison export failed:', backendErr, fallbackErr);
-                setComparisonExportStatus(wrap, `Could not export ${format.toUpperCase()}.`, 'is-error');
             }
         } finally {
             button.disabled = false;

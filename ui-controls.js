@@ -3,6 +3,8 @@
     'use strict';
 
     const THEME_KEY = 'dict_theme';
+    const STYLE_MODE_KEY = 'dict_style_mode';
+    const STYLE_MODES = new Set(['adventure', 'professional']);
 
     function applyTheme(theme) {
         if (theme) {
@@ -81,13 +83,85 @@
         });
     }
 
+    function applyStyleMode(mode) {
+        const resolved = STYLE_MODES.has(mode) ? mode : 'adventure';
+        const adventureLink = document.getElementById('adventureStyleLink');
+        const toggleBtn = document.getElementById('styleModeToggleBtn');
+        const isProfessional = resolved === 'professional';
+
+        document.documentElement.setAttribute('data-style-mode', resolved);
+        if (adventureLink) {
+            adventureLink.disabled = isProfessional;
+        }
+        if (toggleBtn) {
+            toggleBtn.setAttribute('aria-pressed', String(isProfessional));
+            toggleBtn.setAttribute(
+                'aria-label',
+                isProfessional ? 'Switch to Adventure style' : 'Switch to Professional style'
+            );
+            toggleBtn.title = isProfessional ? 'Switch to Adventure style' : 'Switch to Professional style';
+            toggleBtn.innerHTML = isProfessional
+                ? '<i class="fas fa-wand-magic-sparkles"></i><span>Adventure</span>'
+                : '<i class="fas fa-store"></i><span>Professional</span>';
+        }
+    }
+
+    function initStyleMode() {
+        const saved = localStorage.getItem(STYLE_MODE_KEY);
+        const resolved = STYLE_MODES.has(saved) ? saved : 'adventure';
+        const toggleBtn = document.getElementById('styleModeToggleBtn');
+
+        applyStyleMode(resolved);
+
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', e => {
+                e.stopPropagation();
+                const current = document.documentElement.getAttribute('data-style-mode') || 'adventure';
+                const next = current === 'professional' ? 'adventure' : 'professional';
+                localStorage.setItem(STYLE_MODE_KEY, next);
+                applyStyleMode(next);
+            });
+        }
+    }
+
+    function initScrollTop() {
+        const scrollTopBtn = document.getElementById('scrollTopBtn');
+        if (!scrollTopBtn) return;
+
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        let ticking = false;
+
+        function updateVisibility() {
+            scrollTopBtn.classList.toggle('visible', window.scrollY > 420);
+            ticking = false;
+        }
+
+        window.addEventListener('scroll', () => {
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(updateVisibility);
+        }, { passive: true });
+
+        scrollTopBtn.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: prefersReducedMotion.matches ? 'auto' : 'smooth'
+            });
+        });
+
+        updateVisibility();
+    }
+
     function init(options = {}) {
         initTheme(options.config || window.config || null);
+        initStyleMode();
         initSpeedDial();
+        initScrollTop();
     }
 
     window.UIControls = {
         init,
-        applyTheme
+        applyTheme,
+        applyStyleMode
     };
 })();

@@ -1736,7 +1736,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        closeSuggestions();
+        prepareSearchSubmit();
         
         showEmptyState(false);
         showResults(false);
@@ -2386,6 +2386,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function prepareSearchSubmit() {
+        closeSuggestions();
+        if (searchInput) {
+            searchInput.blur();
+            requestAnimationFrame(() => searchInput.blur());
+        }
+    }
+
     async function fetchSuggestions(query) {
         if (!query || query.length < 2) {
             closeSuggestions();
@@ -2461,7 +2469,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function selectSuggestion(value) {
         searchInput.value = value;
-        closeSuggestions();
+        prepareSearchSubmit();
         handleSearch();
     }
 
