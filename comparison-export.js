@@ -1019,7 +1019,110 @@
         });
     }
 
-    function buildSvgExportMarkup(html, css, width, height, contentWidth) {
+    function getResponsiveExportCss(viewportWidth) {
+        let css = '';
+
+        if (viewportWidth <= 900) {
+            css += `
+                .wcd-export-clone .wcd-b-meta-panel {
+                    grid-template-columns: 1fr !important;
+                }
+                .wcd-export-clone .wcd-b-cards-row {
+                    grid-template-columns: 1fr !important;
+                    gap: 0 !important;
+                }
+                .wcd-export-clone .wcd-b-vs-divider {
+                    flex-direction: row !important;
+                    height: 52px !important;
+                    min-height: 52px !important;
+                }
+                .wcd-export-clone .wcd-b-vs-divider::before {
+                    inset: 50% 0 auto 0 !important;
+                    width: 100% !important;
+                    height: 3px !important;
+                    background:
+                        repeating-linear-gradient(
+                            to right,
+                            color-mix(in srgb, var(--primary-color) 40%, transparent) 0 10px,
+                            transparent 10px 18px
+                        ) !important;
+                }
+                .wcd-export-clone .wcd-b-vs-badge {
+                    width: auto !important;
+                    min-width: 3.5rem !important;
+                    height: 2.4rem !important;
+                    padding-inline: 0.9rem !important;
+                    transform: rotate(-4deg) !important;
+                }
+            `;
+        } else {
+            css += `
+                .wcd-export-clone .wcd-b-meta-panel {
+                    grid-template-columns: minmax(0, 0.8fr) minmax(220px, 1fr) minmax(220px, 1fr) !important;
+                }
+                .wcd-export-clone .wcd-b-cards-row {
+                    grid-template-columns: minmax(0, 1fr) 3.7rem minmax(0, 1fr) !important;
+                    gap: 0 !important;
+                }
+                .wcd-export-clone .wcd-b-vs-divider {
+                    flex-direction: column !important;
+                    height: auto !important;
+                    min-height: 0 !important;
+                }
+                .wcd-export-clone .wcd-b-vs-divider::before {
+                    inset: 0 auto 0 50% !important;
+                    width: 3px !important;
+                    height: auto !important;
+                    background:
+                        repeating-linear-gradient(
+                            to bottom,
+                            color-mix(in srgb, var(--primary-color) 40%, transparent) 0 10px,
+                            transparent 10px 18px
+                        ) !important;
+                }
+                .wcd-export-clone .wcd-b-vs-badge {
+                    width: 3.15rem !important;
+                    min-width: 0 !important;
+                    height: 2.65rem !important;
+                    padding: 0 !important;
+                    transform: rotate(-6deg) !important;
+                }
+            `;
+        }
+
+        if (viewportWidth <= 640) {
+            css += `
+                .wcd-export-clone.wcd-b-wrap {
+                    padding: 0.8rem !important;
+                    border-radius: 16px !important;
+                }
+                .wcd-export-clone .wcd-b-toolbar {
+                    flex-direction: column !important;
+                    align-items: stretch !important;
+                }
+                .wcd-export-clone .wcd-b-export-actions {
+                    align-self: stretch !important;
+                    grid-template-columns: repeat(2, 1fr) !important;
+                }
+                .wcd-export-clone .wcd-b-card-head {
+                    grid-template-columns: auto minmax(0, 1fr) !important;
+                }
+                .wcd-export-clone .wcd-b-attr-pill {
+                    grid-column: 1 / -1 !important;
+                    justify-self: start !important;
+                }
+                .wcd-export-clone .wcd-b-card-chips,
+                .wcd-export-clone .wcd-b-colloc-chip {
+                    max-width: 100% !important;
+                    white-space: normal !important;
+                }
+            `;
+        }
+
+        return css;
+    }
+
+    function buildSvgExportMarkup(html, css, width, height, contentWidth, responsiveCss) {
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
         svg.setAttribute('width', String(width));
@@ -1040,6 +1143,11 @@
 
         const style = document.createElement('style');
         style.textContent = `${css}
+            .wcd-export-foreign {
+                width: ${width}px;
+                min-height: ${height}px;
+                overflow: visible;
+            }
             .wcd-export-page-png {
                 width: ${width}px;
                 min-height: ${height}px;
@@ -1050,6 +1158,7 @@
                 width: ${contentWidth}px;
                 max-width: ${contentWidth}px;
             }
+            ${responsiveCss || ''}
         `;
 
         const main = document.createElement('main');
@@ -1064,6 +1173,32 @@
         return new XMLSerializer().serializeToString(svg);
     }
 
+    function getVisualBounds(root) {
+        const rootRect = root.getBoundingClientRect();
+        const bounds = {
+            top: rootRect.top,
+            right: rootRect.right,
+            bottom: rootRect.bottom,
+            left: rootRect.left
+        };
+
+        root.querySelectorAll('*').forEach(node => {
+            const rect = node.getBoundingClientRect();
+            if (!rect.width && !rect.height) return;
+            bounds.top = Math.min(bounds.top, rect.top);
+            bounds.right = Math.max(bounds.right, rect.right);
+            bounds.bottom = Math.max(bounds.bottom, rect.bottom);
+            bounds.left = Math.min(bounds.left, rect.left);
+        });
+
+        return {
+            width: Math.ceil(bounds.right - bounds.left),
+            height: Math.ceil(bounds.bottom - bounds.top),
+            topOffset: Math.max(0, Math.ceil(rootRect.top - bounds.top)),
+            bottomOffset: Math.max(0, Math.ceil(bounds.bottom - rootRect.bottom))
+        };
+    }
+
     async function exportComparisonStyledPng(sourceElement, filename) {
         if (!sourceElement) throw new Error('No export surface found');
 
@@ -1071,6 +1206,8 @@
         const contentWidth = Math.ceil(Math.max(360, Math.min(1100, sourceRect.width || 900)));
         const exportWidth = contentWidth + 48;
         const exportCss = collectExportCss();
+        const viewportWidth = window.innerWidth || document.documentElement.clientWidth || exportWidth;
+        const responsiveExportCss = getResponsiveExportCss(viewportWidth);
         const measureHost = document.createElement('div');
         measureHost.style.cssText = [
             'position: absolute',
@@ -1100,6 +1237,7 @@
                 width: ${contentWidth}px;
                 max-width: ${contentWidth}px;
             }
+            ${responsiveExportCss}
         `;
 
         const measurePage = document.createElement('main');
@@ -1118,15 +1256,21 @@
 
             const pageRect = measurePage.getBoundingClientRect();
             const cloneRect = clone.getBoundingClientRect();
+            const pageVisualBounds = getVisualBounds(measurePage);
+            const cloneVisualBounds = getVisualBounds(clone);
             const exportHeight = Math.ceil(Math.max(
+                sourceElement.scrollHeight + 96,
+                sourceRect.height + 96,
                 measurePage.scrollHeight,
                 measureShell.scrollHeight,
                 clone.scrollHeight + 48,
                 pageRect.height,
                 cloneRect.height + 48,
+                pageVisualBounds.height,
+                cloneVisualBounds.height + 48 + cloneVisualBounds.topOffset + cloneVisualBounds.bottomOffset,
                 360
-            ) + 16);
-            const svgMarkup = buildSvgExportMarkup(clone.outerHTML, exportCss, exportWidth, exportHeight, contentWidth);
+            ) + 32);
+            const svgMarkup = buildSvgExportMarkup(clone.outerHTML, exportCss, exportWidth, exportHeight, contentWidth, responsiveExportCss);
             const svgUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgMarkup)}`;
 
             const image = await loadImage(svgUrl);
