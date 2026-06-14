@@ -1,6 +1,6 @@
 # Advanced English Dictionary
 
-A modern, responsive web-based English dictionary with detailed word definitions, etymology, usage examples, and cultural context.
+A multi-client English dictionary workspace with a browser website, Chrome extension, and reserved folders for future native and cross-platform clients.
 
 **Production**: [https://www.lijialab.com](https://www.lijialab.com)
 
@@ -27,19 +27,18 @@ The dictionary currently includes:
 
 ```
 advanced-english-dictionary/
-├── index.html          # Main HTML page
-├── style.css           # CSS styles
-├── script.js           # JavaScript functionality
-├── config.js           # Configuration for API endpoints
+├── clients/
+│   ├── web/            # Existing browser website and build system
+│   ├── chrome-extension/ # Chrome extension client
+│   ├── macos-native/   # Reserved
+│   ├── windows-native/  # Reserved
+│   ├── ios-app/        # Reserved
+│   ├── android-app/    # Reserved
+│   └── pwa/            # Reserved
+├── package.json        # Workspace-level scripts
 ├── LICENSE             # MIT License
 ├── README.md           # This file
-├── package.json        # Node.js dependencies and scripts
-├── dev-server.js       # Development server with live reload
-├── server.js           # Production server
-├── build.js            # Build script for production
-├── deploy.sh           # Deployment automation script
-├── DEPLOYMENT.md       # Detailed deployment guide
-└── dist/               # Production build (generated)
+└── node_modules/       # Workspace dependencies
 ```
 
 ## Quick Start
@@ -63,25 +62,25 @@ advanced-english-dictionary/
 ### Development
 
 1. **Start your real API server** on port 8000 (your dictionary API)
-2. **Start the development server** with live reload:
+2. **Start the development server** with live reload for the website client:
 ```bash
 npm run dev
 ```
 3. Open http://localhost:3000 in your browser.
 
-The frontend will communicate with your API at http://localhost:8000/api/dictionary
+The website and Chrome extension both communicate with your API at `http://localhost:8000/api/dictionary` by default.
 
 ### Production Build
 
-Create an optimized production bundle:
+Create optimized production bundles for all shipped clients:
 ```bash
 npm run build
 ```
-The production files will be in the `dist/` folder.
+The website build will be in `clients/web/dist/` and the extension build will be in `clients/chrome-extension/dist/`.
 
 ### Production Server
 
-Preview the production build:
+Preview the website production build:
 ```bash
 npm run preview
 ```
@@ -134,21 +133,21 @@ MIT License - See LICENSE file for details.
 
 ## Deployment
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions to various cloud platforms.
+See [clients/web/DEPLOYMENT.md](clients/web/DEPLOYMENT.md) for detailed deployment instructions to various cloud platforms.
 
 ### Quick Deployment Options:
 
 1. **Vercel/Netlify**: Connect GitHub repo, set build command to `npm run build`
-2. **AWS S3**: Upload `dist/` folder to S3 bucket with static hosting enabled
-3. **Traditional VPS**: Copy `dist/` to web server directory
+2. **AWS S3**: Upload `clients/web/dist/` to S3 bucket with static hosting enabled
+3. **Traditional VPS**: Copy `clients/web/dist/` to web server directory
 
 ## Development
 
 ### Adding Features
 
-1. Modify `script.js` for new functionality
-2. Update `style.css` for styling changes
-3. Edit `index.html` for structural changes
+1. Modify files under `clients/web/` for the existing browser app
+2. Update `clients/chrome-extension/` for extension-specific behavior
+3. Add new client folders under `clients/` when expanding to native or cross-platform apps
 4. Test with `npm run dev`
 
 ### Code Style

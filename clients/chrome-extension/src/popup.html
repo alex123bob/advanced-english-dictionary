@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced English Dictionary</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main class="popup-shell">
+    <header class="popup-header">
+      <div>
+        <p class="eyebrow">Dictionary Lens</p>
+        <h1>Advanced English</h1>
+      </div>
+      <button id="openOptionsButton" class="icon-button" type="button" title="Settings" aria-label="Open settings">Set</button>
+    </header>
+
+    <form id="searchForm" class="search-form">
+      <label class="sr-only" for="searchInput">Search word</label>
+      <input id="searchInput" type="search" placeholder="Search a word or phrase" autocomplete="off" spellcheck="false" autofocus>
+      <button type="submit">Define</button>
+    </form>
+
+    <section id="statusMessage" class="status-message" hidden></section>
+
+    <section id="resultPanel" class="result-panel" hidden>
+      <div class="result-heading">
+        <div>
+          <h2 id="headword"></h2>
+          <p id="pronunciation" class="pronunciation"></p>
+        </div>
+        <span id="partOfSpeech" class="part-of-speech"></span>
+      </div>
+
+      <div id="definitions" class="definitions"></div>
+      <div id="details" class="details-grid"></div>
+
+      <div class="actions-row">
+        <button id="openWebsiteButton" class="secondary-button" type="button">Open full website</button>
+      </div>
+    </section>
+
+    <section class="recent-section">
+      <div class="section-title-row">
+        <h2>Recent</h2>
+        <button id="clearRecentButton" class="link-button" type="button">Clear</button>
+      </div>
+      <div id="recentList" class="recent-list"></div>
+    </section>
+  </main>
+
+  <script src="shared.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

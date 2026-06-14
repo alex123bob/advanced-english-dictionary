@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Advanced English Dictionary",
+  "description": "Look up words from a compact popup or inspect selected words on any page.",
+  "version": "1.0.0",
+  "action": {
+    "default_title": "Advanced English Dictionary",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-script.js"],
+      "css": ["content-script.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_page": "options.html",
+  "permissions": [
+    "contextMenus",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": ["<all_urls>"]
+}
