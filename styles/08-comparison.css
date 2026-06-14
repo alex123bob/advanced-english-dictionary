@@ -1011,9 +1011,8 @@
 .wcd-b-quote-icon {
     width: 1.5rem;
     height: 1.5rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    position: relative;
+    display: block;
     align-self: start;
     margin-top: 0.16rem;
     border-radius: 999px;
@@ -1025,8 +1024,14 @@
 }
 
 .wcd-b-quote-icon::before {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1em;
+    transform: translate(-50%, -50%);
     display: block;
     line-height: 1;
+    text-align: center;
 }
 
 .wcd-b-card-a .wcd-b-card-example {
