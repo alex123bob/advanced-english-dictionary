@@ -2,7 +2,7 @@
 
 ## Overview
 
-The project has been restructured from a single browser-only website into a multi-client workspace. The existing website remains intact as the `web` client, and a new Chrome extension client has been added with compact popup search, selected-word inspection, and website search handoff.
+The project has been restructured from a single browser-only website into a multi-client workspace. The existing website remains intact as the `web` client. Additional clients now include Chrome extension, PWA, macOS, Windows, iOS, and Android starters that share the same dictionary API contract.
 
 ## Project Structure
 
@@ -11,11 +11,11 @@ advanced-english-dictionary/
 ├── clients/
 │   ├── web/                 # Existing browser website and build system
 │   ├── chrome-extension/    # Chrome extension client
-│   ├── macos-native/        # Reserved for future native macOS client
-│   ├── windows-native/      # Reserved for future native Windows client
-│   ├── ios-app/             # Reserved for future iOS app
-│   ├── android-app/         # Reserved for future Android app
-│   └── pwa/                 # Reserved for future PWA client
+│   ├── macos-native/        # SwiftUI macOS starter
+│   ├── windows-native/      # WinUI-style Windows starter
+│   ├── ios-app/             # SwiftUI iOS starter
+│   ├── android-app/         # Jetpack Compose Android starter
+│   └── pwa/                 # Installable static PWA starter
 ├── package.json             # Workspace-level scripts
 ├── package-lock.json
 ├── README.md
@@ -62,27 +62,29 @@ npm run preview
 npm run build
 npm run build:web
 npm run build:chrome-extension
+npm run build:pwa
 ```
 
 Script behavior:
 
 - `npm run dev` starts the web client development server.
 - `npm run preview` builds and serves the web production bundle.
-- `npm run build` builds both the web client and Chrome extension.
+- `npm run build` builds the web client, Chrome extension, and PWA.
 - `npm run build:web` builds only the web client.
 - `npm run build:chrome-extension` builds only the Chrome extension.
+- `npm run build:pwa` builds only the PWA.
 
-## Future Client Space
+## Additional Client Starters
 
-Reserved folders were added for future clients:
+The formerly reserved folders now contain concrete starter implementations:
 
-- `clients/macos-native/`
-- `clients/windows-native/`
-- `clients/ios-app/`
-- `clients/android-app/`
-- `clients/pwa/`
+- `clients/pwa/`: installable framework-free PWA with service worker caching, API settings, recent searches, and responsive result cards.
+- `clients/macos-native/`: SwiftUI desktop app skeleton with split-view search, recent words, and async API client.
+- `clients/ios-app/`: SwiftUI mobile app skeleton with compact search flow, recent words, API settings, and shared response models.
+- `clients/android-app/`: Jetpack Compose source starter with mobile lookup UI, recent words, API settings, coroutine API client, and serializable models.
+- `clients/windows-native/`: WinUI-style C# source starter with desktop lookup layout, recent words, HTTP API client, and response models.
 
-Each future client should remain isolated under `clients/` and consume the shared dictionary API contract rather than duplicating unrelated client-specific code.
+Each client remains isolated under `clients/` and consumes the shared dictionary API contract rather than duplicating the website implementation.
 
 ## Verification
 
@@ -91,7 +93,7 @@ Completed checks:
 - `npm install` completed and refreshed the workspace lockfile.
 - `npm audit fix` resolved the reported `ws` vulnerability.
 - `npm audit --audit-level=moderate` reports zero vulnerabilities.
-- `npm run build` succeeds for both clients.
+- `npm run build` succeeds for the web, Chrome extension, and PWA clients.
 - `npm run preview` starts the production web server successfully on port `8080`.
 - `npm run dev` was verified on `PORT=3001`; port `3000` was already in use locally.
 
@@ -100,6 +102,7 @@ Generated build outputs:
 ```text
 clients/web/dist/
 clients/chrome-extension/dist/
+clients/pwa/dist/
 ```
 
 ## Chrome Extension Loading
@@ -111,3 +114,11 @@ To load the Chrome extension locally:
 3. Enable Developer mode.
 4. Choose “Load unpacked”.
 5. Select `clients/chrome-extension/dist`.
+
+## Native Client Integration
+
+The native clients are source-level starters rather than fully generated IDE projects:
+
+- Open `clients/macos-native/` or `clients/ios-app/` files in a new Xcode SwiftUI app target.
+- Open `clients/android-app/` in Android Studio or copy the source into an existing Compose app module.
+- Copy `clients/windows-native/src/AdvancedDictionaryWindows/` into a Windows App SDK / WinUI project.

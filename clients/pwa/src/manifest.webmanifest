@@ -1,0 +1,17 @@
+{
+  "name": "Advanced English Dictionary",
+  "short_name": "Dictionary",
+  "description": "Installable dictionary client for fast word lookup.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f5f1e8",
+  "theme_color": "#123c69",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

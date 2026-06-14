@@ -30,11 +30,11 @@ advanced-english-dictionary/
 ├── clients/
 │   ├── web/            # Existing browser website and build system
 │   ├── chrome-extension/ # Chrome extension client
-│   ├── macos-native/   # Reserved
-│   ├── windows-native/  # Reserved
-│   ├── ios-app/        # Reserved
-│   ├── android-app/    # Reserved
-│   └── pwa/            # Reserved
+│   ├── macos-native/   # SwiftUI macOS starter
+│   ├── windows-native/  # WinUI-style Windows starter
+│   ├── ios-app/        # SwiftUI iOS starter
+│   ├── android-app/    # Jetpack Compose Android starter
+│   └── pwa/            # Installable PWA starter
 ├── package.json        # Workspace-level scripts
 ├── LICENSE             # MIT License
 ├── README.md           # This file
@@ -76,7 +76,7 @@ Create optimized production bundles for all shipped clients:
 ```bash
 npm run build
 ```
-The website build will be in `clients/web/dist/` and the extension build will be in `clients/chrome-extension/dist/`.
+The website build will be in `clients/web/dist/`, the extension build will be in `clients/chrome-extension/dist/`, and the PWA build will be in `clients/pwa/dist/`.
 
 ### Production Server
 
@@ -147,7 +147,7 @@ See [clients/web/DEPLOYMENT.md](clients/web/DEPLOYMENT.md) for detailed deployme
 
 1. Modify files under `clients/web/` for the existing browser app
 2. Update `clients/chrome-extension/` for extension-specific behavior
-3. Add new client folders under `clients/` when expanding to native or cross-platform apps
+3. Use the native starter folders under `clients/` when expanding platform-specific apps
 4. Test with `npm run dev`
 
 ### Code Style
