@@ -1,0 +1,9 @@
+{
+  "name": "@advanced-english-dictionary/pwa",
+  "version": "1.0.0",
+  "description": "Installable PWA client for Advanced English Dictionary",
+  "private": true,
+  "scripts": {
+    "build": "node build.js"
+  }
+}

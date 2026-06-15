@@ -94,12 +94,6 @@ const server = http.createServer((req, res) => {
   const parsedUrl = url.parse(req.url, true);
   let pathname = parsedUrl.pathname;
   
-  // Handle WebSocket upgrade for live reload
-  if (req.headers.upgrade && req.headers.upgrade.toLowerCase() === 'websocket') {
-    handleWebSocket(req, res);
-    return;
-  }
-
   // Default to index.html
   if (pathname === '/') {
     pathname = '/index.html';

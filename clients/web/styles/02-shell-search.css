@@ -195,17 +195,19 @@ h3 { font-size: clamp(1.1rem, 2vw, 1.25rem); }
 }
 
 .suggestions-dropdown {
-    position: absolute;
-    top: calc(100% + 0.5rem);
-    left: 0;
-    right: 0;
+    position: fixed;
+    top: var(--suggestions-top, 0);
+    left: var(--suggestions-left, 0);
+    right: auto;
+    width: min(var(--suggestions-width, 420px), calc(100vw - 24px));
     background: white;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
-    max-height: 200px;
+    max-height: var(--suggestions-max-height, min(440px, calc(100vh - 24px)));
     overflow-y: auto;
+    overscroll-behavior: contain;
     box-shadow: 0 4px 12px rgba(20, 184, 166, 0.15);
-    z-index: 1000;
+    z-index: 2147483000;
     display: none;
 }
 
@@ -306,8 +308,8 @@ h3 { font-size: clamp(1.1rem, 2vw, 1.25rem); }
 
 @media (max-width: 600px) {
     .suggestions-dropdown {
-        top: calc(100% + 4px);
-        max-height: 40vh;
+        width: min(var(--suggestions-width, 420px), calc(100vw - 16px));
+        max-height: var(--suggestions-max-height, min(56vh, calc(100vh - 16px)));
     }
     
     .suggestion-item {

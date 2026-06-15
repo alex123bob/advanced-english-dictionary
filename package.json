@@ -1,13 +1,19 @@
 {
   "name": "advanced-english-dictionary",
   "version": "1.0.0",
-  "description": "Advanced English Dictionary web application",
-  "main": "server.js",
+  "description": "Advanced English Dictionary multi-client workspace",
+  "private": true,
+  "workspaces": [
+    "clients/*"
+  ],
   "scripts": {
-    "dev": "node dev-server.js",
-    "start": "node server.js",
-    "build": "node build.js",
-    "preview": "npm run build && node server.js"
+    "dev": "npm --prefix clients/web run dev",
+    "start": "npm --prefix clients/web run start",
+    "build": "npm run build:web && npm run build:chrome-extension && npm run build:pwa",
+    "build:web": "npm --prefix clients/web run build",
+    "build:chrome-extension": "npm --prefix clients/chrome-extension run build",
+    "build:pwa": "npm --prefix clients/pwa run build",
+    "preview": "npm --prefix clients/web run preview"
   },
   "keywords": [
     "dictionary",

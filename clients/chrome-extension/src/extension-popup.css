@@ -1,0 +1,227 @@
+html,
+body {
+  width: 800px;
+  min-height: 600px;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+body {
+  font-family: Nunito, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.word-adventure-shell {
+  min-height: 600px;
+}
+
+.header.word-launcher {
+  min-height: auto;
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+
+.main-content.word-map {
+  min-height: 360px;
+}
+
+.footer {
+  display: none;
+}
+
+.speed-dial,
+.scroll-top-btn,
+.history-panel {
+  position: fixed;
+}
+
+.fas,
+.fab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1em;
+  font-style: normal;
+  line-height: 1;
+}
+
+.fas::before,
+.fab::before {
+  content: "\25CF";
+}
+
+.fa-arrow-left::before {
+  content: "\2190";
+}
+
+.fa-arrow-up::before {
+  content: "\2191";
+}
+
+.fa-arrows-alt-h::before,
+.fa-exchange-alt::before {
+  content: "\2194";
+}
+
+.fa-chevron-down::before {
+  content: "\2304";
+}
+
+.fa-times::before {
+  content: "\00D7";
+}
+
+.fa-plus::before {
+  content: "+";
+}
+
+.fa-not-equal::before {
+  content: "\2260";
+}
+
+.fa-equals::before {
+  content: "=";
+}
+
+.fa-search::before {
+  content: "\2315";
+}
+
+.fa-book::before,
+.fa-book-open::before {
+  content: "\1F56E";
+}
+
+.fa-store::before {
+  content: "\25A4";
+}
+
+.fa-compass::before {
+  content: "\25CE";
+}
+
+.fa-wand-magic-sparkles::before,
+.fa-magic::before {
+  content: "\2726";
+}
+
+.fa-lightbulb::before {
+  content: "\25C9";
+}
+
+.fa-chart-line::before {
+  content: "\2197";
+}
+
+.fa-history::before,
+.fa-clock::before {
+  content: "\25F7";
+}
+
+.fa-globe-americas::before,
+.fa-globe::before {
+  content: "\25CE";
+}
+
+.fa-language::before {
+  content: "A";
+}
+
+.fa-sitemap::before,
+.fa-project-diagram::before {
+  content: "\22EF";
+}
+
+.fa-comment-dots::before,
+.fa-comments::before {
+  content: "\2026";
+}
+
+.fa-video::before,
+.fa-play-circle::before,
+.fa-bilibili::before {
+  content: "\25B6";
+}
+
+.fa-palette::before {
+  content: "\25D0";
+}
+
+.fa-trash-alt::before {
+  content: "\232B";
+}
+
+.fa-volume-up::before {
+  content: "\266A";
+}
+
+.fa-stop::before {
+  content: "\25A0";
+}
+
+.fa-info-circle::before {
+  content: "i";
+}
+
+.fa-check-circle::before {
+  content: "\2713";
+}
+
+.fa-circle-exclamation::before,
+.fa-exclamation-circle::before,
+.fa-exclamation-triangle::before {
+  content: "!";
+}
+
+.fa-file-pdf::before {
+  content: "PDF";
+  font-size: 0.68em;
+}
+
+.fa-file-image::before {
+  content: "PNG";
+  font-size: 0.68em;
+}
+
+.fa-robot::before {
+  content: "\25A3";
+}
+
+.fa-quote-left::before {
+  content: "\201C";
+}
+
+.fa-user::before {
+  content: "\25C9";
+}
+
+.fa-calendar::before {
+  content: "\25A6";
+}
+
+.fa-eye::before {
+  content: "\25C9";
+}
+
+.fa-heart::before {
+  content: "\2665";
+}
+
+.fa-download::before {
+  content: "\2193";
+}
+
+.fa-spinner::before,
+.fa-sync::before,
+.fa-rotate-right::before {
+  content: "\21BB";
+}
+
+.fa-spin::before {
+  animation: extension-icon-spin 1s linear infinite;
+}
+
+@keyframes extension-icon-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
