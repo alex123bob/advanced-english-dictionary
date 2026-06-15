@@ -12,9 +12,13 @@ const STORAGE_KEYS = {
 function sanitizeWord(value) {
   return (value || '')
     .replace(/[\u2018\u2019]/g, "'")
+    .replace(/\s+/g, ' ')
     .replace(/^[^A-Za-z0-9']+|[^A-Za-z0-9']+$/g, '')
-    .trim()
-    .slice(0, 80);
+    .trim();
+}
+
+function getSearchableSelection(value) {
+  return sanitizeWord(value);
 }
 
 function escapeHtml(value) {
@@ -99,7 +103,9 @@ async function fetchDictionaryEntry(word, settings) {
   });
 
   if (!response.ok) {
-    throw new Error(`Dictionary request failed (${response.status}).`);
+    const error = new Error(`Dictionary request failed (${response.status}).`);
+    error.status = response.status;
+    throw error;
   }
 
   const data = await response.json();

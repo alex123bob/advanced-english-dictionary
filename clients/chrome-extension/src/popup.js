@@ -79,6 +79,14 @@ function renderResult(data) {
   elements.resultPanel.hidden = false;
 }
 
+function isLookupNotFoundError(error) {
+  const message = error && error.message ? error.message : '';
+  return error && (
+    error.status === 404 ||
+    /not found|no result|no entry|no definition|status 404|\(404\)/i.test(message)
+  );
+}
+
 async function search(word) {
   const cleanWord = sanitizeWord(word);
   if (!cleanWord) return;
@@ -95,6 +103,12 @@ async function search(word) {
     await renderRecentSearches();
     setStatus('');
   } catch (error) {
+    if (isLookupNotFoundError(error)) {
+      console.log('Dictionary lookup returned no result:', cleanWord);
+      setStatus('No dictionary entry found for this selection.', '');
+      return;
+    }
+
     setStatus(`${error.message} Check the extension options if your API is not running on localhost:8000.`, 'error');
   }
 }

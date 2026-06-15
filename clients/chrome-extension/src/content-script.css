@@ -1,20 +1,5 @@
-#advanced-dictionary-selection-button {
-  position: absolute;
-  z-index: 2147483647;
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  border: 0;
-  border-radius: 999px;
-  padding: 8px 12px;
-  background: #172554;
-  color: #f8fafc;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.28);
-  cursor: pointer;
-  font: 600 12px/1.1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-
-#advanced-dictionary-selection-button:hover {
-  background: #1d4ed8;
+#advanced-dictionary-inspection-lens,
+#advanced-dictionary-selection-hint {
+  all: initial;
+  box-sizing: border-box;
 }

@@ -76,7 +76,11 @@ const AudioManager = {
 };
 
 // Wait for DOM to be fully loaded
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    if (window.advancedDictionaryConfigReady) {
+        await window.advancedDictionaryConfigReady;
+    }
+
     const config = window.config;
 
     const searchInput = document.getElementById('searchInput');
@@ -99,6 +103,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const videoResourcesContent = document.getElementById('videoResourcesContent');
 
     const suggestionsDropdown = document.getElementById('suggestionsDropdown');
+    const suggestionsAnchor = searchInput ? searchInput.closest('.search-box') : null;
+    if (suggestionsDropdown && suggestionsDropdown.parentElement !== document.body) {
+        document.body.appendChild(suggestionsDropdown);
+    }
+
     let suggestionDebounceTimer;
     let suggestionRequestToken = 0;
     let currentFocus = -1;
@@ -113,7 +122,13 @@ document.addEventListener('DOMContentLoaded', () => {
     ComparisonExport.init({ config, getCurrentWord: () => currentWord });
 
     const urlParams = new URLSearchParams(window.location.search);
-    const queryParam = urlParams.get('q');
+    let queryParam = urlParams.get('q');
+    if (!queryParam && window.advancedDictionaryGetPendingWord) {
+        queryParam = await window.advancedDictionaryGetPendingWord();
+        if (queryParam) {
+            window.history.replaceState({ word: queryParam }, '', `?q=${encodeURIComponent(queryParam)}`);
+        }
+    }
     
     // Set initial browser history state so Back can return here
     window.history.replaceState({ word: queryParam || null }, '');
@@ -1641,13 +1656,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         if (!response.ok) {
-            throw new Error(`Failed to fetch ${section}`);
+            const error = new Error(`Failed to fetch ${section}: status ${response.status}`);
+            error.status = response.status;
+            error.section = section;
+            throw error;
         }
         
         const responseData = await response.json();
         
         if (!responseData.success) {
-            throw new Error(responseData.error || `Failed to fetch ${section}`);
+            const error = new Error(responseData.error || `Failed to fetch ${section}`);
+            error.section = section;
+            throw error;
         }
         
         // Extract metadata fields
@@ -1727,6 +1747,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const orchestrator = new AnimationOrchestrator();
 
+    function isLookupNotFoundError(error) {
+        const message = error && error.message ? error.message : '';
+        return error && (
+            error.status === 404 ||
+            /not found|no result|no entry|no definition|status 404|\(404\)/i.test(message)
+        );
+    }
+
     async function handleSearch({ skipBrowserHistory = false, skipSearchHistory = false } = {}) {
         const query = searchInput.value.trim();
         if (!query) {
@@ -1735,7 +1763,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => searchInput.classList.remove('shake'), 500);
             return;
         }
-        
+
         prepareSearchSubmit();
         
         showEmptyState(false);
@@ -1806,9 +1834,14 @@ document.addEventListener('DOMContentLoaded', () => {
             searchInput.blur();
             
         } catch (error) {
-            console.error('Search error:', error);
             showLoading(false);
             showEmptyState(true);
+            if (isLookupNotFoundError(error)) {
+                console.log('Dictionary lookup returned no result:', query);
+                return;
+            }
+
+            console.error('Search error:', error);
         }
     }
     
@@ -2374,12 +2407,48 @@ document.addEventListener('DOMContentLoaded', () => {
         return text.replace(regex, '<strong>$1</strong>');
     }
 
+    function clampNumber(value, min, max) {
+        return Math.max(min, Math.min(value, max));
+    }
+
+    function positionSuggestionsDropdown() {
+        if (!suggestionsDropdown || !suggestionsAnchor || !suggestionsDropdown.classList.contains('active')) return;
+
+        const anchorRect = suggestionsAnchor.getBoundingClientRect();
+        const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        const edgeGap = viewportWidth < 640 ? 8 : 12;
+        const dropdownGap = viewportWidth < 640 ? 6 : 8;
+        const width = Math.min(Math.max(anchorRect.width, 260), viewportWidth - edgeGap * 2);
+        const left = clampNumber(anchorRect.left, edgeGap, viewportWidth - width - edgeGap);
+        const belowSpace = viewportHeight - anchorRect.bottom - dropdownGap - edgeGap;
+        const aboveSpace = anchorRect.top - dropdownGap - edgeGap;
+        const preferredHeight = Math.min(440, Math.max(300, suggestionsDropdown.scrollHeight || 300));
+        const placeAbove = belowSpace < Math.min(260, preferredHeight) && aboveSpace > belowSpace;
+        const availableHeight = Math.max(180, placeAbove ? aboveSpace : belowSpace);
+        const maxHeight = Math.min(preferredHeight, availableHeight);
+        const top = placeAbove
+            ? Math.max(edgeGap, anchorRect.top - dropdownGap - maxHeight)
+            : Math.min(anchorRect.bottom + dropdownGap, viewportHeight - edgeGap - Math.min(maxHeight, 180));
+
+        suggestionsDropdown.style.setProperty('--suggestions-left', `${Math.round(left)}px`);
+        suggestionsDropdown.style.setProperty('--suggestions-top', `${Math.round(top)}px`);
+        suggestionsDropdown.style.setProperty('--suggestions-width', `${Math.round(width)}px`);
+        suggestionsDropdown.style.setProperty('--suggestions-max-height', `${Math.round(maxHeight)}px`);
+    }
+
+    function scheduleSuggestionsDropdownPosition() {
+        if (!suggestionsDropdown || !suggestionsDropdown.classList.contains('active')) return;
+        requestAnimationFrame(positionSuggestionsDropdown);
+    }
+
     function closeSuggestions() {
         suggestionRequestToken++;
         clearTimeout(suggestionDebounceTimer);
         if (suggestionsDropdown) {
             suggestionsDropdown.classList.remove('active');
             suggestionsDropdown.innerHTML = '';
+            suggestionsDropdown.removeAttribute('style');
             currentFocus = -1;
             searchInput.setAttribute('aria-expanded', 'false');
             searchInput.removeAttribute('aria-activedescendant');
@@ -2412,10 +2481,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 suggestionsDropdown.classList.add('active');
                 searchInput.setAttribute('aria-expanded', 'true');
+                positionSuggestionsDropdown();
             }
 
             const apiUrl = config.api.getUrl('suggest');
-            const response = await fetch(`${apiUrl}?q=${encodeURIComponent(query)}&limit=10`);
+            const response = await fetch(`${apiUrl}?q=${encodeURIComponent(query)}&limit=15`);
             
             if (!response.ok) throw new Error('Network response was not ok');
             
@@ -2450,6 +2520,7 @@ document.addEventListener('DOMContentLoaded', () => {
         suggestionsDropdown.innerHTML = html;
         suggestionsDropdown.classList.add('active');
         searchInput.setAttribute('aria-expanded', 'true');
+        positionSuggestionsDropdown();
         currentFocus = -1;
 
         suggestionsDropdown.querySelectorAll('.suggestion-item').forEach(item => {
@@ -2465,6 +2536,7 @@ document.addEventListener('DOMContentLoaded', () => {
         suggestionsDropdown.innerHTML = '<div class="suggestions-empty">No suggestions found</div>';
         suggestionsDropdown.classList.add('active');
         searchInput.setAttribute('aria-expanded', 'true');
+        positionSuggestionsDropdown();
     }
 
     function selectSuggestion(value) {
@@ -2537,5 +2609,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 closeSuggestions();
             }
         });
+
+        window.addEventListener('resize', scheduleSuggestionsDropdownPosition);
+        window.addEventListener('scroll', scheduleSuggestionsDropdownPosition, true);
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', scheduleSuggestionsDropdownPosition);
+            window.visualViewport.addEventListener('scroll', scheduleSuggestionsDropdownPosition);
+        }
     }
 });

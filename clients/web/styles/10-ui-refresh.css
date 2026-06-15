@@ -103,7 +103,7 @@ input:focus-visible,
     isolation: isolate;
     margin: clamp(14px, 2vw, 24px) 0 clamp(18px, 3vw, 32px);
     padding: clamp(22px, 4vw, 42px) 0 clamp(20px, 3.4vw, 34px);
-    overflow: clip;
+    overflow: visible;
     border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: clamp(18px, 2.8vw, 30px);
     background:
@@ -162,6 +162,8 @@ input:focus-visible,
 
 .search-container {
     max-width: 860px;
+    position: relative;
+    z-index: 5;
 }
 
 .search-box {
@@ -612,6 +614,10 @@ input:focus-visible,
     background: rgba(255, 255, 255, 0.96);
     box-shadow: var(--panel-shadow);
     backdrop-filter: blur(18px);
+}
+
+.suggestions-dropdown {
+    max-height: var(--suggestions-max-height, clamp(300px, 52vh, 440px));
 }
 
 .suggestion-item:hover,

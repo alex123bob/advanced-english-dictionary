@@ -5,6 +5,31 @@ const path = require('path');
 
 const sourceDir = path.join(__dirname, 'src');
 const distDir = path.join(__dirname, 'dist');
+const webDir = path.join(__dirname, '..', 'web');
+
+const extensionFiles = [
+  'manifest.json',
+  'background.js',
+  'content-script.js',
+  'content-script.css',
+  'shared.js',
+  'extension-config.js',
+  'extension-popup.css',
+  'options.html',
+  'options.css',
+  'options.js'
+];
+
+const webFiles = [
+  'style.css',
+  'confusion-ui.js',
+  'ui-controls.js',
+  'comparison-export.js',
+  'comparison-controller.js',
+  'script.js',
+  'favicon.ico',
+  'opensearch.xml'
+];
 
 function removeDirectory(directory) {
   if (!fs.existsSync(directory)) return;
@@ -37,6 +62,31 @@ function copyDirectory(from, to) {
 }
 
 removeDirectory(distDir);
-copyDirectory(sourceDir, distDir);
+fs.mkdirSync(distDir, { recursive: true });
+
+for (const fileName of extensionFiles) {
+  fs.copyFileSync(path.join(sourceDir, fileName), path.join(distDir, fileName));
+}
+
+for (const fileName of webFiles) {
+  fs.copyFileSync(path.join(webDir, fileName), path.join(distDir, fileName));
+}
+
+copyDirectory(path.join(webDir, 'styles'), path.join(distDir, 'styles'));
+copyDirectory(path.join(sourceDir, 'icons'), path.join(distDir, 'icons'));
+
+const webIndex = fs.readFileSync(path.join(webDir, 'index.html'), 'utf8');
+const popupHtml = webIndex
+  .replace(/\s*<link rel="stylesheet" href="https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/font-awesome\/6\.4\.0\/css\/all\.min\.css"[^>]*>\n?/g, '')
+  .replace(/\s*<link href="https:\/\/fonts\.googleapis\.com\/css2\?[^"]+"[^>]*>\n?/g, '')
+  .replace(/\s*<noscript>[\s\S]*?<\/noscript>\n?/g, '')
+  .replace(/\s*<script src="https:\/\/cdn\.jsdelivr\.net\/npm\/howler@2\.2\.4\/dist\/howler\.min\.js" defer><\/script>\n?/g, '')
+  .replace('<script src="config.js"></script>', '<script src="extension-config.js"></script>')
+  .replace(/\s*<!-- OpenSearch autodiscovery[\s\S]*?<link rel="search" type="application\/opensearchdescription\+xml" href="opensearch\.xml" title="Dictionary Search">\s*/g, '\n')
+  .replace('<script src="script.js" onload="console.log(\'script.js loaded successfully\')" onerror="console.error(\'Failed to load script.js\')"></script>', '<script src="script.js"></script>')
+  .replace(/\s*<script src="extension-config\.js"><\/script>\s*/g, '    <script src="extension-config.js"></script>\n')
+  .replace('</head>', '    <link rel="stylesheet" href="extension-popup.css">\n</head>');
+
+fs.writeFileSync(path.join(distDir, 'popup.html'), popupHtml, 'utf8');
 
 console.log(`Chrome extension build ready: ${distDir}`);
