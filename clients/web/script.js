@@ -5,16 +5,39 @@
 const AudioManager = {
     currentSound: null,
     currentButton: null,
+
+    resolveAudioUrl(audioUrl) {
+        if (!audioUrl) return '';
+
+        try {
+            return new URL(audioUrl).href;
+        } catch {
+            const apiHost = window.config && window.config.api ? window.config.api.host : '';
+            if (audioUrl.startsWith('/') && apiHost) {
+                return `${apiHost.replace(/\/+$/, '')}${audioUrl}`;
+            }
+            return audioUrl;
+        }
+    },
+
+    stopCurrentSound() {
+        if (!this.currentSound) return;
+
+        if (typeof this.currentSound.stop === 'function') {
+            this.currentSound.stop();
+        } else if (typeof this.currentSound.pause === 'function') {
+            this.currentSound.pause();
+            this.currentSound.currentTime = 0;
+        }
+    },
     
     play(audioUrl, buttonElement) {
-        if (typeof Howl === 'undefined') {
-            console.warn('Audio library is still loading.');
-            return;
-        }
+        const playableUrl = this.resolveAudioUrl(audioUrl);
+        if (!playableUrl) return;
 
         // Stop current sound if playing
         if (this.currentSound) {
-            this.currentSound.stop();
+            this.stopCurrentSound();
             if (this.currentButton) {
                 this.updateButtonState(this.currentButton, false);
             }
@@ -26,10 +49,15 @@ const AudioManager = {
             this.currentButton = null;
             return;
         }
+
+        if (typeof Howl === 'undefined') {
+            this.playNativeAudio(playableUrl, buttonElement);
+            return;
+        }
         
         // Create new Howl instance
         this.currentSound = new Howl({
-            src: [audioUrl],
+            src: [playableUrl],
             html5: true, // Use HTML5 Audio for streaming
             volume: 0.8,
             onplay: () => {
@@ -60,9 +88,42 @@ const AudioManager = {
         this.currentButton = buttonElement;
         this.currentSound.play();
     },
+
+    playNativeAudio(audioUrl, buttonElement) {
+        const audio = new Audio(audioUrl);
+        audio.volume = 0.8;
+
+        audio.addEventListener('play', () => {
+            this.updateButtonState(buttonElement, true);
+        });
+        audio.addEventListener('ended', () => {
+            this.updateButtonState(buttonElement, false);
+            this.currentSound = null;
+            this.currentButton = null;
+        });
+        audio.addEventListener('pause', () => {
+            this.updateButtonState(buttonElement, false);
+        });
+        audio.addEventListener('error', () => {
+            console.warn('Audio playback failed:', audio.error || audioUrl);
+            this.updateButtonState(buttonElement, false);
+            this.currentSound = null;
+            this.currentButton = null;
+        });
+
+        this.currentSound = audio;
+        this.currentButton = buttonElement;
+        audio.play().catch(error => {
+            console.warn('Audio playback failed:', error);
+            this.updateButtonState(buttonElement, false);
+            this.currentSound = null;
+            this.currentButton = null;
+        });
+    },
     
     updateButtonState(button, isPlaying) {
         const icon = button.querySelector('i');
+        if (!icon) return;
         if (isPlaying) {
             icon.classList.remove('fa-volume-up');
             icon.classList.add('fa-stop');
