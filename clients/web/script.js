@@ -179,8 +179,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const HISTORY_KEY = 'dict_search_history';
     const MAX_HISTORY_ITEMS = 10;
+    const LANGUAGE_KEY = 'dict_response_language';
+    const BILINGUAL_LANG = 'zh-cn';
+    const BILINGUAL_SECTIONS = new Set([
+        'basic',
+        'common_phrases',
+        'etymology',
+        'word_family',
+        'usage_context',
+        'cultural_notes',
+        'frequency',
+        'detailed_sense',
+        'examples',
+        'usage_notes',
+        'confusion_meta',
+        'confusion_profiles',
+        'confusion_examples',
+        'confusion_all'
+    ]);
+    let currentResponseLanguage = normalizeResponseLanguage(localStorage.getItem(LANGUAGE_KEY) || 'en');
+
     UIControls.init({ config });
     ComparisonExport.init({ config, getCurrentWord: () => currentWord });
+    initLanguageToggle();
 
     const urlParams = new URLSearchParams(window.location.search);
     let queryParam = urlParams.get('q');
@@ -214,6 +235,53 @@ document.addEventListener('DOMContentLoaded', async () => {
             clearResults();
         }
     });
+
+    function normalizeResponseLanguage(language) {
+        return language === BILINGUAL_LANG ? BILINGUAL_LANG : 'en';
+    }
+
+    function isBilingualMode() {
+        return currentResponseLanguage === BILINGUAL_LANG;
+    }
+
+    function shouldRequestBilingualSection(section) {
+        return isBilingualMode() && BILINGUAL_SECTIONS.has(section);
+    }
+
+    function updateLanguageToggleUI() {
+        document.documentElement.dataset.responseLanguage = currentResponseLanguage;
+        document.documentElement.lang = isBilingualMode() ? 'zh-CN' : 'en';
+
+        document.querySelectorAll('.language-toggle-option').forEach(button => {
+            const isActive = normalizeResponseLanguage(button.dataset.language) === currentResponseLanguage;
+            button.classList.toggle('active', isActive);
+            button.setAttribute('aria-pressed', String(isActive));
+        });
+    }
+
+    function initLanguageToggle() {
+        const languageToggleGroup = document.getElementById('languageToggleGroup');
+        updateLanguageToggleUI();
+
+        if (!languageToggleGroup) return;
+
+        languageToggleGroup.addEventListener('click', event => {
+            const button = event.target.closest('.language-toggle-option');
+            if (!button) return;
+
+            const nextLanguage = normalizeResponseLanguage(button.dataset.language);
+            if (nextLanguage === currentResponseLanguage) return;
+
+            currentResponseLanguage = nextLanguage;
+            localStorage.setItem(LANGUAGE_KEY, currentResponseLanguage);
+            updateLanguageToggleUI();
+
+            const query = searchInput.value.trim();
+            if (query && currentWordData && currentWord) {
+                handleSearch({ skipBrowserHistory: true, skipSearchHistory: true });
+            }
+        });
+    }
     
     function getSearchHistory() {
         try {
@@ -773,10 +841,142 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
         container.innerHTML = skeletons[type] || skeletons.default;
     }
+
+    function hasContent(value) {
+        if (Array.isArray(value)) return value.some(item => hasContent(item));
+        if (value && typeof value === 'object') return Object.values(value).some(item => hasContent(item));
+        return value !== null && value !== undefined && String(value).trim() !== '';
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function getZhData(sectionZh, preferredKey = null) {
+        if (!hasContent(sectionZh)) return null;
+        if (typeof sectionZh === 'string') return sectionZh;
+        if (preferredKey && hasContent(sectionZh[preferredKey])) return sectionZh[preferredKey];
+        if (hasContent(sectionZh.zh_data)) return getZhData(sectionZh.zh_data, preferredKey);
+        return sectionZh;
+    }
+
+    function getZhTextValue(sectionZh, preferredKey = null) {
+        const value = getZhData(sectionZh, preferredKey);
+        if (!hasContent(value)) return '';
+        if (typeof value === 'string' || typeof value === 'number') return String(value);
+        if (Array.isArray(value)) return value.filter(hasContent).join('、');
+        if (value && typeof value === 'object') {
+            const preferredValue = preferredKey && hasContent(value[preferredKey]) ? value[preferredKey] : null;
+            if (preferredValue) return getZhTextValue(preferredValue);
+            const firstText = Object.values(value).find(item => typeof item === 'string' && item.trim());
+            return firstText || '';
+        }
+        return '';
+    }
+
+    function getLocalizedValue(englishValue, zhValue) {
+        if (isBilingualMode() && hasContent(zhValue)) return zhValue;
+        return englishValue;
+    }
+
+    function getLocalizedArray(englishValues = [], zhValues = []) {
+        const selectedValues = isBilingualMode() && Array.isArray(zhValues) && zhValues.some(hasContent)
+            ? zhValues
+            : englishValues;
+        return Array.isArray(selectedValues) ? selectedValues.filter(hasContent) : [];
+    }
+
+    function renderLanguageText(text) {
+        if (!hasContent(text)) return '';
+        return isBilingualMode() ? escapeHtml(text) : makeWordsClickable(text);
+    }
+
+    function languageLabel(english, chinese) {
+        return isBilingualMode() ? chinese : english;
+    }
+
+    function renderLanguageTags(values, className, lookupWords = true) {
+        if (!Array.isArray(values) || !values.some(hasContent)) return '';
+        return values.filter(hasContent).map(value => {
+            const text = isBilingualMode() ? escapeHtml(value) : value;
+            const lookupAttr = lookupWords && !isBilingualMode() ? ` data-lookup-word="${escapeHtml(value)}"` : '';
+            return `<span class="${className}"${lookupAttr}>${text}</span>`;
+        }).join('');
+    }
+
+    function renderEnglishLookupTags(values, className) {
+        if (!Array.isArray(values) || !values.some(hasContent)) return '';
+        return values.filter(hasContent).map(value => {
+            const text = escapeHtml(value);
+            return `<span class="${className}" data-lookup-word="${text}">${text}</span>`;
+        }).join('');
+    }
+
+    function findBasicZhEntry(basicData, entryIndex) {
+        const zhEntries = basicData && basicData.basic_zh && Array.isArray(basicData.basic_zh.entries)
+            ? basicData.basic_zh.entries
+            : [];
+        return zhEntries.find(entry => Number(entry.entry_index) === Number(entryIndex)) || zhEntries[entryIndex] || null;
+    }
+
+    function getBasicSenseZh(basicData, entryIndex, meaningIndex, senseIndex) {
+        const zhEntry = findBasicZhEntry(basicData, entryIndex);
+        const zhMeaning = zhEntry && Array.isArray(zhEntry.meanings_summary)
+            ? zhEntry.meanings_summary[meaningIndex]
+            : null;
+        const zhDefinition = zhMeaning && Array.isArray(zhMeaning.definitions)
+            ? zhMeaning.definitions[senseIndex]
+            : null;
+
+        if (!zhMeaning && !zhDefinition) return null;
+
+        return {
+            definition: zhDefinition && zhDefinition.definition,
+            example: zhDefinition && zhDefinition.example,
+            synonyms: zhDefinition && zhDefinition.synonyms,
+            antonyms: zhDefinition && zhDefinition.antonyms,
+            part_of_speech: zhMeaning && zhMeaning.part_of_speech
+        };
+    }
+
+    function buildDetailedSenseZh(senseData, examplesData, usageNotesData) {
+        const detailedZh = senseData.detailed_sense_zh || {};
+        const zh = {
+            definition: detailedZh.zh_definition,
+            part_of_speech: detailedZh.zh_part_of_speech,
+            synonyms: detailedZh.zh_synonyms,
+            antonyms: detailedZh.zh_antonyms,
+            word_specific_phrases: detailedZh.zh_word_specific_phrases,
+            examples: examplesData.zh_examples,
+            collocations: examplesData.zh_collocations,
+            usage_notes: usageNotesData.zh_learner_guidance,
+            common_pitfalls: usageNotesData.zh_common_pitfalls
+        };
+        return hasContent(zh) ? zh : null;
+    }
+
+    function getLocalizedSense(englishSense, zhSense = null) {
+        if (!isBilingualMode() || !hasContent(zhSense)) return englishSense;
+
+        const localized = {
+            ...englishSense,
+            definition: zhSense.definition || englishSense.definition,
+            part_of_speech: zhSense.part_of_speech || englishSense.part_of_speech,
+            usage_notes: zhSense.usage_notes || englishSense.usage_notes,
+            common_pitfalls: getLocalizedArray(englishSense.common_pitfalls || [], zhSense.common_pitfalls || [])
+        };
+
+        return localized;
+    }
     
     function renderSenseHTML(sense, index, isDetailed = false) {
         let metaBadges = '';
-        if (sense.tone || (sense.usage_register && sense.usage_register.length) || (sense.domain && sense.domain.length)) {
+        if (!isBilingualMode() && (sense.tone || (sense.usage_register && sense.usage_register.length) || (sense.domain && sense.domain.length))) {
             metaBadges = '<div class="sense-meta">';
             if (sense.tone) {
                 metaBadges += `<span class="tone-badge tone-${sense.tone}">${sense.tone}</span>`;
@@ -789,37 +989,41 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             metaBadges += '</div>';
         }
-        
+
         const hasExamples = (sense.examples && sense.examples.length) || sense.example;
         const examplesList = sense.examples || (sense.example ? [sense.example] : []);
         
         const examplesSection = hasExamples ? 
             `<div class="sense-examples">
-                ${examplesList.map(ex => `<div class="example-item"><span class="example-arrow">→</span><em>${makeWordsClickable(ex)}</em></div>`).join('')}
+                ${examplesList.map(ex => `<div class="example-item"><span class="example-arrow">→</span><em>${escapeHtml(ex)}</em></div>`).join('')}
             </div>` : '';
         
         const collocationsSection = sense.collocations && sense.collocations.length ?
-            `<div class="sense-collocations"><strong>Common collocations:</strong><div class="collocation-tags">${sense.collocations.map(col => `<span class="collocation-tag" data-lookup-word="${col}">${col}</span>`).join('')}</div></div>` : '';
+            `<div class="sense-collocations"><strong>${languageLabel('Common collocations', '常见搭配')}:</strong><div class="collocation-tags">${renderEnglishLookupTags(sense.collocations, 'collocation-tag')}</div></div>` : '';
         
         const usageNotesSection = sense.usage_notes ? 
-            `<div class="usage-notes"><strong>Usage notes:</strong> ${makeWordsClickable(sense.usage_notes)}</div>` : '';
+            `<div class="usage-notes"><strong>${languageLabel('Usage notes', '用法说明')}:</strong> ${renderLanguageText(sense.usage_notes)}${sense.common_pitfalls && sense.common_pitfalls.length ? `<div class="collocation-tags">${renderLanguageTags(sense.common_pitfalls, 'collocation-tag', false)}</div>` : ''}</div>` : '';
+
+        const wordSpecificPhrasesSection = sense.word_specific_phrases && sense.word_specific_phrases.length ?
+            `<div class="sense-collocations"><strong>${languageLabel('Word-specific phrases', '相关词组')}:</strong><div class="collocation-tags">${renderEnglishLookupTags(sense.word_specific_phrases, 'collocation-tag')}</div></div>` : '';
         
         const detailsButton = !isDetailed ? 
             `<button class="sense-detail-btn" data-sense-index="${index}" title="Load detailed information">
-                <i class="fas fa-info-circle"></i> View Details
+                <i class="fas fa-info-circle"></i> ${languageLabel('View Details', '查看详情')}
             </button>` : 
-            `<div class="sense-detailed-badge"><i class="fas fa-check-circle"></i> Detailed view loaded</div>`;
+            `<div class="sense-detailed-badge"><i class="fas fa-check-circle"></i> ${languageLabel('Detailed view loaded', '详情已加载')}</div>`;
         
         return `
             <div class="sense-definition">
-                <strong>${index + 1}.</strong> ${sense.part_of_speech ? `<span class="sense-pos">(${sense.part_of_speech})</span>` : ''} ${makeWordsClickable(sense.definition)}
+                <strong>${index + 1}.</strong> ${sense.part_of_speech ? `<span class="sense-pos">(${escapeHtml(sense.part_of_speech)})</span>` : ''} ${renderLanguageText(sense.definition)}
             </div>
             ${metaBadges}
             ${examplesSection}
             ${usageNotesSection}
             ${collocationsSection}
-            ${sense.synonyms && sense.synonyms.filter(s => s && s.trim()).length ? `<div class="sense-synonyms"><strong>Synonyms:</strong><div class="synonym-tags">${sense.synonyms.filter(s => s && s.trim()).map(syn => `<span class="synonym-tag" data-lookup-word="${syn}">${syn}</span>`).join('')}</div></div>` : ''}
-            ${sense.antonyms && sense.antonyms.filter(a => a && a.trim()).length ? `<div class="sense-antonyms"><strong>Antonyms:</strong><div class="antonym-tags">${sense.antonyms.filter(a => a && a.trim()).map(ant => `<span class="antonym-tag" data-lookup-word="${ant}">${ant}</span>`).join('')}</div></div>` : ''}
+            ${wordSpecificPhrasesSection}
+            ${sense.synonyms && sense.synonyms.filter(s => s && s.trim()).length ? `<div class="sense-synonyms"><strong>${languageLabel('Synonyms', '近义词')}:</strong><div class="synonym-tags">${renderEnglishLookupTags(sense.synonyms, 'synonym-tag')}</div></div>` : ''}
+            ${sense.antonyms && sense.antonyms.filter(a => a && a.trim()).length ? `<div class="sense-antonyms"><strong>${languageLabel('Antonyms', '反义词')}:</strong><div class="antonym-tags">${renderEnglishLookupTags(sense.antonyms, 'antonym-tag')}</div></div>` : ''}
             <div class="sense-actions">${detailsButton}</div>
         `;
     }
@@ -844,10 +1048,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="cultural-section">
                     <div class="cultural-section-header">
                         <i class="fas fa-landmark"></i>
-                        <span>Historical Context</span>
+                        <span>${languageLabel('Historical Context', '历史背景')}</span>
                     </div>
                     <div class="cultural-section-content">
-                        <p>${makeWordsClickable(historical_context)}</p>
+                        <p>${renderLanguageText(historical_context)}</p>
                     </div>
                 </div>
             `;
@@ -859,11 +1063,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="cultural-section">
                     <div class="cultural-section-header">
                         <i class="fas fa-palette"></i>
-                        <span>Cultural Associations</span>
+                        <span>${languageLabel('Cultural Associations', '文化联想')}</span>
                     </div>
                     <div class="cultural-section-content">
                         <ul class="cultural-list">
-                            ${cultural_associations.map(item => `<li>${makeWordsClickable(item)}</li>`).join('')}
+                            ${cultural_associations.map(item => `<li>${renderLanguageText(item)}</li>`).join('')}
                         </ul>
                     </div>
                 </div>
@@ -876,11 +1080,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="cultural-section">
                     <div class="cultural-section-header">
                         <i class="fas fa-users"></i>
-                        <span>Social Perceptions</span>
+                        <span>${languageLabel('Social Perceptions', '社会印象')}</span>
                     </div>
                     <div class="cultural-section-content">
                         <ul class="cultural-list">
-                            ${social_perceptions.map(item => `<li>${makeWordsClickable(item)}</li>`).join('')}
+                            ${social_perceptions.map(item => `<li>${renderLanguageText(item)}</li>`).join('')}
                         </ul>
                     </div>
                 </div>
@@ -951,21 +1155,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     // Helper function to enhance usage context with visual structure
-    function enhanceUsageContext(usageContext) {
+    function enhanceUsageContext(usageContext, englishUsageContext = null) {
         if (!usageContext) return '<div class="no-data">No usage context available</div>';
         
         let html = '<div class="usage-context-enhanced">';
         
         // Modern Relevance - Feature Box
         if (usageContext.modern_relevance) {
-            const enhancedText = addContextEmoji(usageContext.modern_relevance);
+            const enhancedText = isBilingualMode() ? usageContext.modern_relevance : addContextEmoji(usageContext.modern_relevance);
             html += `
                 <div class="modern-relevance-feature">
                     <div class="feature-header">
                         <i class="fas fa-lightbulb feature-icon"></i>
-                        <span class="feature-label">Modern Relevance</span>
+                        <span class="feature-label">${languageLabel('Modern Relevance', '现代语境')}</span>
                     </div>
-                    <div class="feature-content">${makeWordsClickable(enhancedText)}</div>
+                    <div class="feature-content">${renderLanguageText(enhancedText)}</div>
                 </div>
             `;
         }
@@ -975,7 +1179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const regionEntries = Object.entries(usageContext.regional_variations);
             if (regionEntries.length > 0) {
                 html += '<div class="regional-section">';
-                html += '<div class="section-header"><i class="fas fa-globe"></i> Regional Variations</div>';
+                html += `<div class="section-header"><i class="fas fa-globe"></i> ${languageLabel('Regional Variations', '地区差异')}</div>`;
                 
                 const flagMap = {
                     'UK': '🇬🇧', 'US': '🇺🇸', 'USA': '🇺🇸', 'United States': '🇺🇸',
@@ -990,8 +1194,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     html += `
                         <div class="region-card">
                             <div class="region-flag">${flag}</div>
-                            <div class="region-name">${region}</div>
-                            <div class="region-text">${makeWordsClickable(description)}</div>
+                            <div class="region-name">${escapeHtml(region)}</div>
+                            <div class="region-text">${renderLanguageText(description)}</div>
                         </div>
                     `;
                 });
@@ -1002,13 +1206,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
         // Common Confusions
-        if (usageContext.common_confusions && usageContext.common_confusions.length) {
+        const commonConfusions = englishUsageContext && englishUsageContext.common_confusions
+            ? englishUsageContext.common_confusions
+            : usageContext.common_confusions;
+
+        if (commonConfusions && commonConfusions.length) {
             html += '<div class="confusion-section">';
-            html += '<div class="section-header"><i class="fas fa-exclamation-triangle"></i> Commonly Confused With</div>';
+            html += `<div class="section-header"><i class="fas fa-exclamation-triangle"></i> ${languageLabel('Commonly Confused With', '易混淆词')}</div>`;
             html += '<div class="confusion-chips">';
             
-            usageContext.common_confusions.forEach(word => {
-                html += `<button class="confusion-chip" data-confused-word="${word}"><span class="confusion-chip-text">${word}</span><i class="fas fa-arrows-alt-h confusion-chip-icon"></i></button>`;
+            commonConfusions.forEach(word => {
+                const safeWord = escapeHtml(word);
+                html += `<button class="confusion-chip" data-confused-word="${safeWord}"><span class="confusion-chip-text">${safeWord}</span><i class="fas fa-arrows-alt-h confusion-chip-icon"></i></button>`;
             });
             
             html += '</div>';
@@ -1179,7 +1388,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="phrase-chip-wrapper">
                     <button class="phrase-chip" data-phrase="${phrase}" data-word="${word}">
                         <i class="fas fa-comment-dots"></i>
-                        <span>${phrase}</span>
+                        <span>${escapeHtml(phrase)}</span>
                     </button>
                     <button class="ai-video-btn" data-phrase="${phrase}" data-word="${word}" title="Generate AI Video">
                         <i class="fas fa-robot"></i>
@@ -1706,6 +1915,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else if (indexOrEntryIndex !== null) {
             body.index = indexOrEntryIndex;
         }
+
+        if (shouldRequestBilingualSection(section)) {
+            body.lang = BILINGUAL_LANG;
+        }
         
         const response = await fetch(apiUrl, {
             method: 'POST',
@@ -1921,7 +2134,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     .split('_')
                     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                     .join(' ');
-                frequency.textContent = freqText;
+                const zhFrequency = getZhTextValue(data.frequency_zh, 'frequency');
+                frequency.textContent = isBilingualMode() && hasContent(zhFrequency) ? zhFrequency : freqText;
                 wordFrequency.style.display = 'flex';
             } else {
                 wordFrequency.style.display = 'none';
@@ -1935,12 +2149,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         fetchSection(word, 'etymology', entryIndex).then(result => {
             const data = result.data;
             if (data.etymology) {
+                const selectedEtymology = getLocalizedValue(data.etymology, getZhData(data.etymology_zh, 'etymology'));
                 let etymologyHtml = '';
-                if (data.etymology.etymology) {
-                    etymologyHtml += `<div class="etymology-text">${highlightEtymologyTerms(data.etymology.etymology)}</div>`;
+                const etymologyText = typeof selectedEtymology === 'string'
+                    ? selectedEtymology
+                    : selectedEtymology && selectedEtymology.etymology;
+                const rootAnalysis = selectedEtymology && typeof selectedEtymology === 'object'
+                    ? selectedEtymology.root_analysis
+                    : '';
+
+                if (etymologyText) {
+                    etymologyHtml += `<div class="etymology-text">${isBilingualMode() ? escapeHtml(etymologyText) : highlightEtymologyTerms(etymologyText)}</div>`;
                 }
-                if (data.etymology.root_analysis) {
-                    etymologyHtml += `<div class="root-analysis"><div class="etymology-label">Root Analysis</div><div>${makeWordsClickable(data.etymology.root_analysis)}</div></div>`;
+                if (rootAnalysis) {
+                    const label = isBilingualMode() ? '词根分析' : 'Root Analysis';
+                    etymologyHtml += `<div class="root-analysis"><div class="etymology-label">${label}</div><div>${renderLanguageText(rootAnalysis)}</div></div>`;
                 }
                 etymologyContent.innerHTML = etymologyHtml || '<div class="no-data">No etymology information available</div>';
             } else {
@@ -1954,7 +2177,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         fetchSection(word, 'cultural_notes', entryIndex).then(result => {
             const data = result.data;
             if (data.cultural_notes) {
-                culturalContent.innerHTML = renderCulturalNotes(data.cultural_notes);
+                const selectedCulturalNotes = getLocalizedValue(data.cultural_notes, getZhData(data.cultural_notes_zh, 'cultural_notes'));
+                culturalContent.innerHTML = renderCulturalNotes(selectedCulturalNotes);
             } else {
                 culturalContent.innerHTML = '<div class="no-data">No cultural notes available</div>';
             }
@@ -1966,7 +2190,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         fetchSection(word, 'usage_context', entryIndex).then(result => {
             const data = result.data;
             if (data.usage_context) {
-                usageContent.innerHTML = enhanceUsageContext(data.usage_context);
+                const selectedUsageContext = getLocalizedValue(data.usage_context, getZhData(data.usage_context_zh, 'usage_context'));
+                usageContent.innerHTML = enhanceUsageContext(selectedUsageContext, data.usage_context);
             } else {
                 usageContent.innerHTML = '<div class="no-data">No usage context available</div>';
             }
@@ -1979,7 +2204,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const data = result.data;
             if (data.word_family && data.word_family.word_family && data.word_family.word_family.length) {
                 const displayWords = data.word_family.word_family.slice(0, 20);
-                wordFamilyContent.innerHTML = `<div class="word-family-tags">${displayWords.map(wf => `<span class="word-tag" data-lookup-word="${wf}">${wf}</span>`).join('')}</div>`;
+                wordFamilyContent.innerHTML = `<div class="word-family-tags">${renderEnglishLookupTags(displayWords, 'word-tag')}</div>`;
             } else {
                 wordFamilyContent.innerHTML = '<div class="no-data">No word family available</div>';
             }
@@ -2026,12 +2251,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         const preloadedSenses = [];
         if (entryData && entryData.meanings_summary) {
-            entryData.meanings_summary.forEach(meaning => {
+            entryData.meanings_summary.forEach((meaning, meaningIndex) => {
                 if (meaning.senses && Array.isArray(meaning.senses)) {
-                    meaning.senses.forEach(sense => {
+                    meaning.senses.forEach((sense, senseIndex) => {
+                        const zh = getBasicSenseZh(currentWordData || {}, entryIndex, meaningIndex, senseIndex);
                         preloadedSenses.push({
                             ...sense,
-                            part_of_speech: meaning.part_of_speech
+                            part_of_speech: meaning.part_of_speech,
+                            ...(zh ? { zh } : {})
                         });
                     });
                 }
@@ -2053,13 +2280,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             if (preloadedSenses[i]) {
                 const basicSense = preloadedSenses[i];
+                const displaySense = getLocalizedSense(basicSense, basicSense.zh);
                 
-                let senseToRender = basicSense;
+                let senseToRender = displaySense;
                 let isDetailed = false;
                 
                 senseItem.innerHTML = renderSenseHTML(senseToRender, i, isDetailed);
                 
-                senseItem.dataset.basicSense = JSON.stringify(basicSense);
+                senseItem.dataset.basicSense = JSON.stringify(senseToRender);
                 
                 if (senseToRender.synonyms) senseToRender.synonyms.filter(s => s && s.trim()).forEach(s => allSynonyms.add(s));
                 if (senseToRender.antonyms) senseToRender.antonyms.filter(a => a && a.trim()).forEach(a => allAntonyms.add(a));
@@ -2130,11 +2358,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     if (usageNotesData.usage_notes) {
                         detailedSense.usage_notes = usageNotesData.usage_notes;
                     }
+                    const displayDetailedSense = getLocalizedSense(detailedSense, buildDetailedSenseZh(senseData, examplesData, usageNotesData));
                     
                     const entryData = currentWordData.entries[entryIndex];
                     const pronunciationHtml = renderInlinePronunciation(entryData);
                     
-                    senseItem.innerHTML = renderSenseHTML(detailedSense, senseIndex, true);
+                    senseItem.innerHTML = renderSenseHTML(displayDetailedSense, senseIndex, true);
                     
                     setTimeout(() => {
                         const badge = senseItem.querySelector('.sense-detailed-badge');
@@ -2181,8 +2410,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         entryTabsContainer.style.display = 'block';
         
         const currentEntry = basicData.entries[currentSelectedEntry || 0];
-        const currentPos = currentEntry.meanings_summary.map(m => m.part_of_speech).join(', ');
-        const currentText = `Form ${(currentSelectedEntry || 0) + 1}: ${currentPos} (${currentEntry.total_senses} sense${currentEntry.total_senses !== 1 ? 's' : ''})`;
+        const currentZhEntry = findBasicZhEntry(basicData, currentSelectedEntry || 0);
+        const currentMeanings = isBilingualMode() && currentZhEntry ? currentZhEntry.meanings_summary : currentEntry.meanings_summary;
+        const currentPos = currentMeanings.map(m => m.part_of_speech).filter(Boolean).join(', ');
+        const currentText = isBilingualMode()
+            ? `词条 ${(currentSelectedEntry || 0) + 1}: ${currentPos} (${currentEntry.total_senses} 个义项)`
+            : `Form ${(currentSelectedEntry || 0) + 1}: ${currentPos} (${currentEntry.total_senses} sense${currentEntry.total_senses !== 1 ? 's' : ''})`;
         
         const selectorHTML = `
             <div class="entry-dropdown-container">
@@ -2192,8 +2425,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
                 <div class="dropdown-menu" id="dropdownMenu" style="display: none;">
                     ${basicData.entries.map((entry, idx) => {
-                        const posLabels = entry.meanings_summary.map(m => m.part_of_speech).join(', ');
-                        const text = `Form ${idx + 1}: ${posLabels} (${entry.total_senses} sense${entry.total_senses !== 1 ? 's' : ''})`;
+                        const zhEntry = findBasicZhEntry(basicData, idx);
+                        const meanings = isBilingualMode() && zhEntry ? zhEntry.meanings_summary : entry.meanings_summary;
+                        const posLabels = meanings.map(m => m.part_of_speech).filter(Boolean).join(', ');
+                        const text = isBilingualMode()
+                            ? `词条 ${idx + 1}: ${posLabels} (${entry.total_senses} 个义项)`
+                            : `Form ${idx + 1}: ${posLabels} (${entry.total_senses} sense${entry.total_senses !== 1 ? 's' : ''})`;
                         const isSelected = idx === (currentSelectedEntry || 0);
                         return `<div class="dropdown-option ${isSelected ? 'selected' : ''}" data-index="${idx}">${text}</div>`;
                     }).join('')}
@@ -2293,20 +2530,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             let html = '<div class="synonyms-grid">';
             if (synList.length > 0) {
                 html += `<div class="synonym-group">
-                    <div class="synonym-group-header"><i class="fas fa-equals"></i> Synonyms</div>
-                    <div class="synonyms-list">${synList.map(s => `<span class="synonym-tag" data-lookup-word="${s}">${s}</span>`).join('')}</div>
+                    <div class="synonym-group-header"><i class="fas fa-equals"></i> ${languageLabel('Synonyms', '近义词')}</div>
+                    <div class="synonyms-list">${renderEnglishLookupTags(synList, 'synonym-tag')}</div>
                 </div>`;
             }
             if (antList.length > 0) {
                 html += `<div class="synonym-group">
-                    <div class="synonym-group-header antonym-header"><i class="fas fa-not-equal"></i> Antonyms</div>
-                    <div class="antonyms-list">${antList.map(a => `<span class="antonym-tag" data-lookup-word="${a}">${a}</span>`).join('')}</div>
+                    <div class="synonym-group-header antonym-header"><i class="fas fa-not-equal"></i> ${languageLabel('Antonyms', '反义词')}</div>
+                    <div class="antonyms-list">${renderEnglishLookupTags(antList, 'antonym-tag')}</div>
                 </div>`;
             }
             html += '</div>';
             synonymsContent.innerHTML = html;
         } else {
-            synonymsContent.innerHTML = '<div class="no-data">No synonyms or antonyms available</div>';
+            synonymsContent.innerHTML = `<div class="no-data">${languageLabel('No synonyms or antonyms available', '暂无近义词或反义词')}</div>`;
         }
     }
 

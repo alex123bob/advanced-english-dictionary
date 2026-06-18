@@ -28,6 +28,53 @@
     gap: 0.75rem;
 }
 
+.launcher-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.language-toggle {
+    min-height: 38px;
+    display: inline-grid;
+    grid-template-columns: repeat(2, minmax(44px, 1fr));
+    align-items: center;
+    padding: 0.18rem;
+    border: 1px solid color-mix(in srgb, var(--primary-color) 24%, var(--border-color));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+    box-shadow: 0 8px 18px color-mix(in srgb, var(--primary-color) 8%, transparent);
+}
+
+.language-toggle-option {
+    min-width: 44px;
+    min-height: 32px;
+    padding: 0.35rem 0.62rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-light);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 900;
+    line-height: 1;
+    transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.language-toggle-option:hover,
+.language-toggle-option:focus-visible {
+    color: var(--text-color);
+}
+
+.language-toggle-option.active {
+    background: var(--primary-color);
+    color: #fff;
+    box-shadow: 0 8px 18px color-mix(in srgb, var(--primary-color) 22%, transparent);
+}
+
 .style-mode-toggle {
     min-height: 38px;
     display: inline-flex;
@@ -129,6 +176,15 @@
     .launcher-topline {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .launcher-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .language-toggle {
+        flex: 1 1 auto;
     }
 
     .scroll-top-btn {

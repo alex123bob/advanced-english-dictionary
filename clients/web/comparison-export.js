@@ -40,6 +40,7 @@
             format,
             word: data.word || getCurrentWord() || '',
             confused_word: data.confusedWord || '',
+            language: data.language || document.documentElement.dataset.responseLanguage || 'en',
             comparison: {
                 meta: data.meta || null,
                 profiles: data.profiles || null,
