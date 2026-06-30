@@ -83,11 +83,17 @@
         });
     }
 
+    function getTranslator() {
+        return (window.AdvancedDictionaryI18n && window.AdvancedDictionaryI18n.t) || (key => key);
+    }
+
     function applyStyleMode(mode) {
+        const t = getTranslator();
         const resolved = STYLE_MODES.has(mode) ? mode : 'adventure';
         const adventureLink = document.getElementById('adventureStyleLink');
         const toggleBtn = document.getElementById('styleModeToggleBtn');
         const isProfessional = resolved === 'professional';
+        const nextLabel = isProfessional ? t('switchAdventureStyle') : t('switchProfessionalStyle');
 
         document.documentElement.setAttribute('data-style-mode', resolved);
         if (adventureLink) {
@@ -95,14 +101,11 @@
         }
         if (toggleBtn) {
             toggleBtn.setAttribute('aria-pressed', String(isProfessional));
-            toggleBtn.setAttribute(
-                'aria-label',
-                isProfessional ? 'Switch to Adventure style' : 'Switch to Professional style'
-            );
-            toggleBtn.title = isProfessional ? 'Switch to Adventure style' : 'Switch to Professional style';
+            toggleBtn.setAttribute('aria-label', nextLabel);
+            toggleBtn.title = nextLabel;
             toggleBtn.innerHTML = isProfessional
-                ? '<i class="fas fa-wand-magic-sparkles"></i><span>Adventure</span>'
-                : '<i class="fas fa-store"></i><span>Professional</span>';
+                ? '<i class="fas fa-wand-magic-sparkles"></i><span>' + t('adventureStyle') + '</span>'
+                : '<i class="fas fa-store"></i><span>' + t('professionalStyle') + '</span>';
         }
     }
 

@@ -20,22 +20,30 @@
         return mwc(safe);
     }
 
+    function isZhMode() {
+        return document.documentElement.dataset.responseLanguage === 'zh-cn';
+    }
+
+    function t(en, zh) {
+        return isZhMode() ? zh : en;
+    }
+
     function renderScaffold(searchedWord, confusedWord) {
         var safeSearchedWord = escapeHtml(searchedWord);
         var safeConfusedWord = escapeHtml(confusedWord);
         return '<div class="wcd-b-wrap">' +
             '<div class="wcd-b-toolbar">' +
                 '<div class="wcd-b-title">' +
-                    '<span class="wcd-b-title-kicker"><i class="fas fa-microscope"></i> Word Lab</span>' +
+                    '<span class="wcd-b-title-kicker"><i class="fas fa-microscope"></i> ' + t('Word Lab', '词义对比') + '</span>' +
                     '<span class="wcd-b-title-main">' +
                     '<span class="wcd-b-title-word wcd-b-title-word-a">' + safeSearchedWord + '</span>' +
                     '<span class="wcd-b-title-vs">vs</span>' +
                     '<span class="wcd-b-title-word wcd-b-title-word-b">' + safeConfusedWord + '</span>' +
                     '</span>' +
                 '</div>' +
-                '<div class="wcd-b-export-actions" aria-label="Export comparison">' +
-                    '<button type="button" class="wcd-b-export-btn" data-export-format="pdf" title="Export as PDF" aria-label="Export comparison as PDF" disabled><i class="fas fa-file-pdf"></i></button>' +
-                    '<button type="button" class="wcd-b-export-btn" data-export-format="png" title="Export as PNG" aria-label="Export comparison as PNG" disabled><i class="fas fa-file-image"></i></button>' +
+                '<div class="wcd-b-export-actions" aria-label="' + t('Export comparison', '导出对比') + '">' +
+                    '<button type="button" class="wcd-b-export-btn" data-export-format="pdf" title="' + t('Export as PDF', '导出 PDF') + '" aria-label="' + t('Export comparison as PDF', '导出对比为 PDF') + '" disabled><i class="fas fa-file-pdf"></i></button>' +
+                    '<button type="button" class="wcd-b-export-btn" data-export-format="png" title="' + t('Export as PNG', '导出 PNG') + '" aria-label="' + t('Export comparison as PNG', '导出对比为 PNG') + '" disabled><i class="fas fa-file-image"></i></button>' +
                 '</div>' +
             '</div>' +
             '<div class="wcd-b-export-status" aria-live="polite"></div>' +
@@ -57,19 +65,19 @@
         var difficulty = meta.difficulty;
 
         var difficultyConfig = {
-            low:    { color: '#10b981', label: 'Easy to tell apart', icon: 'fa-check-circle' },
-            medium: { color: '#f59e0b', label: 'Often confused',     icon: 'fa-exclamation-circle' },
-            high:   { color: '#ef4444', label: 'Very easily mixed',  icon: 'fa-times-circle' }
+            low:    { color: '#10b981', label: t('Easy to tell apart', '容易区分'), icon: 'fa-check-circle' },
+            medium: { color: '#f59e0b', label: t('Often confused', '容易混淆'),     icon: 'fa-exclamation-circle' },
+            high:   { color: '#ef4444', label: t('Very easily mixed', '非常容易混淆'),  icon: 'fa-times-circle' }
         };
-        var diff = difficultyConfig[difficulty] || { color: '#94a3b8', label: difficulty || 'Unknown', icon: 'fa-circle' };
+        var diff = difficultyConfig[difficulty] || { color: '#94a3b8', label: difficulty || t('Unknown', '未知'), icon: 'fa-circle' };
 
         var typeIcons = {
             near_homophone: 'fa-volume-up', semantic_overlap: 'fa-project-diagram',
             spelling_similarity: 'fa-spell-check', false_friend: 'fa-mask', register_mismatch: 'fa-sliders-h'
         };
         var typeLabels = {
-            near_homophone: 'Sounds alike', semantic_overlap: 'Meaning overlap',
-            spelling_similarity: 'Similar spelling', false_friend: 'False friend', register_mismatch: 'Register mismatch'
+            near_homophone: t('Sounds alike', '发音相近'), semantic_overlap: t('Meaning overlap', '含义重叠'),
+            spelling_similarity: t('Similar spelling', '拼写相近'), false_friend: t('False friend', '假朋友词'), register_mismatch: t('Register mismatch', '语体不一致')
         };
         var typeIcon  = typeIcons[confusion_type]  || 'fa-question-circle';
         var typeLabel = typeLabels[confusion_type] || confusion_type;
@@ -88,7 +96,7 @@
             html += '<div class="wcd-b-quick-rule">' +
                 '<div class="wcd-b-quick-rule-icon"><i class="fas fa-bolt"></i></div>' +
                 '<div class="wcd-b-quick-rule-body">' +
-                    '<div class="wcd-b-quick-rule-label">Rule</div>' +
+                    '<div class="wcd-b-quick-rule-label">' + t('Rule', '判断规则') + '</div>' +
                     '<div class="wcd-b-quick-rule-text">' + enhanceText(quick_rule) + '</div>' +
                 '</div>' +
             '</div>';
@@ -98,7 +106,7 @@
             html += '<div class="wcd-b-key-diff">' +
                 '<div class="wcd-b-key-diff-icon"><i class="fas fa-not-equal"></i></div>' +
                 '<div class="wcd-b-key-diff-body">' +
-                    '<div class="wcd-b-key-diff-label">Difference</div>' +
+                    '<div class="wcd-b-key-diff-label">' + t('Difference', '关键区别') + '</div>' +
                     '<div class="wcd-b-key-diff-text">' + enhanceText(key_differentiator) + '</div>' +
                 '</div>' +
             '</div>';
@@ -123,7 +131,7 @@
         html += '<div class="wcd-b-card-body">';
 
         html += '<div class="wcd-b-card-meaning">' +
-            '<div class="wcd-b-card-kicker">Core sense</div>' +
+            '<div class="wcd-b-card-kicker">' + t('Core sense', '核心含义') + '</div>' +
             '<div class="wcd-b-card-meaning-text">' + enhanceText(profileData.core_meaning) + '</div>' +
         '</div>';
 
@@ -152,7 +160,7 @@
                 html += '<div class="wcd-b-card-note wcd-b-card-usage-note">' +
                     '<div class="wcd-b-note-icon"><i class="fas fa-lightbulb"></i></div>' +
                     '<div class="wcd-b-note-copy">' +
-                        '<div class="wcd-b-note-label">Use when</div>' +
+                        '<div class="wcd-b-note-label">' + t('Use when', '使用场景') + '</div>' +
                         '<div class="wcd-b-note-text">' + enhanceText(examplesData.usage_note) + '</div>' +
                     '</div>' +
                 '</div>';
@@ -161,7 +169,7 @@
                 html += '<div class="wcd-b-card-note wcd-b-card-grammar">' +
                     '<div class="wcd-b-note-icon"><i class="fas fa-cogs"></i></div>' +
                     '<div class="wcd-b-note-copy">' +
-                        '<div class="wcd-b-note-label">Grammar</div>' +
+                        '<div class="wcd-b-note-label">' + t('Grammar', '语法') + '</div>' +
                         '<div class="wcd-b-note-text">' + enhanceText(profileData.grammar_note) + '</div>' +
                     '</div>' +
                 '</div>';
@@ -175,7 +183,7 @@
 
         if (profileData.collocations && profileData.collocations.length) {
             html += '<div class="wcd-b-card-section">' +
-                '<div class="wcd-b-card-section-label"><i class="fas fa-link"></i> Explore with</div>' +
+                '<div class="wcd-b-card-section-label"><i class="fas fa-link"></i> ' + t('Explore with', '常见搭配') + '</div>' +
                 '<div class="wcd-b-card-chips">' + profileData.collocations.map(function (c) { return '<span class="wcd-b-colloc-chip">' + escapeHtml(c) + '</span>'; }).join('') + '</div>' +
             '</div>';
         }
