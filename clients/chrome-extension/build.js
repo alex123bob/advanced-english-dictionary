@@ -73,6 +73,7 @@ for (const fileName of webFiles) {
 }
 
 copyDirectory(path.join(webDir, 'styles'), path.join(distDir, 'styles'));
+copyDirectory(path.join(webDir, 'i18n'), path.join(distDir, 'i18n'));
 copyDirectory(path.join(sourceDir, 'icons'), path.join(distDir, 'icons'));
 copyDirectory(path.join(sourceDir, 'vendor'), path.join(distDir, 'vendor'));
 
