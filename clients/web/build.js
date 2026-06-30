@@ -35,6 +35,9 @@ const FILES_TO_PROCESS = [
 ];
 
 const SCRIPT_MODULES = [
+  'i18n/i18n.js',
+  'i18n/locales/en.js',
+  'i18n/locales/zh-cn.js',
   'confusion-ui.js',
   'ui-controls.js',
   'comparison-export.js',

@@ -20,7 +20,7 @@
     <script src="https://cdn.jsdelivr.net/npm/howler@2.2.4/dist/howler.min.js" defer></script>
 </head>
 <body>
-    <a class="skip-link" href="#mainContent">Skip to dictionary map</a>
+    <a class="skip-link" href="#mainContent" data-i18n="skipLink">Skip to dictionary map</a>
     <div class="container word-adventure-shell">
         <header class="header word-launcher">
             <div class="header-content">
@@ -37,9 +37,13 @@
                         <span>Word Adventure</span>
                     </div>
                     <div class="launcher-actions">
-                        <div id="languageToggleGroup" class="language-toggle" role="group" aria-label="Response language">
-                            <button class="language-toggle-option active" type="button" data-language="en" aria-pressed="true" title="English response">EN</button>
-                            <button class="language-toggle-option" type="button" data-language="zh-cn" aria-pressed="false" title="English with Simplified Chinese">中文</button>
+                        <div id="languageSelector" class="language-selector">
+                            <button id="languageSelectorBtn" class="language-selector-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Response language">
+                                <i class="fas fa-language"></i>
+                                <span class="language-selector-text">English</span>
+                                <i class="fas fa-chevron-down language-selector-arrow"></i>
+                            </button>
+                            <div id="languageSelectorMenu" class="language-selector-menu" role="listbox" aria-label="Response language"></div>
                         </div>
                         <button id="styleModeToggleBtn" class="style-mode-toggle" type="button" title="Switch visual style" aria-label="Switch visual style">
                             <i class="fas fa-store"></i>
@@ -56,13 +60,13 @@
                     <div class="search-box">
                         <i class="fas fa-search search-icon"></i>
                         <input type="text" id="searchInput" placeholder="Enter a word or phrase (e.g., 'pipe', 'serendipity')" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-autocomplete="list" aria-controls="suggestionsDropdown" aria-expanded="false" role="combobox" autofocus>
-                        <button id="searchButton" class="search-btn" aria-label="Look up word">
-                            <i class="fas fa-search"></i> Look Up
+                        <button id="searchButton" class="search-btn" aria-label="Look up word" data-i18n-aria-label="searchButtonAria">
+                            <i class="fas fa-search"></i> <span data-i18n="lookUp">Look Up</span>
                         </button>
                         <div id="suggestionsDropdown" class="suggestions-dropdown" role="listbox"></div>
                     </div>
                     <div class="search-hint">
-                        <span class="search-hint-label"><i class="fas fa-lightbulb"></i> Try:</span>
+                        <span class="search-hint-label"><i class="fas fa-lightbulb"></i> <span data-i18n="tryLabel">Try:</span></span>
                         <div class="search-hint-chips">
                             <button class="search-hint-chip example-btn" data-word="pipe">pipe</button>
                             <button class="search-hint-chip example-btn" data-word="serendipity">serendipity</button>
@@ -84,7 +88,7 @@
             <div class="loading-container" id="loadingContainer">
                 <div class="loading-spinner">
                     <div class="spinner"></div>
-                    <p>Searching dictionary...</p>
+                    <p data-i18n="searchingDictionary">Searching dictionary...</p>
                 </div>
             </div>
 
@@ -111,23 +115,23 @@
                 </div>
 
                 <!-- Sticky Tab Navigation -->
-                <nav class="sticky-tabs" id="stickyTabs" aria-label="Word information sections">
+                <nav class="sticky-tabs" id="stickyTabs" aria-label="Word information sections" data-i18n-aria-label="wordSectionsAria">
                     <ul class="tab-list" role="tablist">
-                        <li role="presentation"><a href="#definitions-section" class="tab-link active" role="tab">Definitions</a></li>
-                        <li role="presentation"><a href="#etymology-section" class="tab-link" role="tab">Etymology</a></li>
-                        <li role="presentation"><a href="#synonyms-section" class="tab-link" role="tab">Thesaurus</a></li>
-                        <li role="presentation"><a href="#cultural-section" class="tab-link" role="tab">Culture</a></li>
-                        <li role="presentation"><a href="#usage-section" class="tab-link" role="tab">Usage</a></li>
-                        <li role="presentation"><a href="#family-section" class="tab-link" role="tab">Family</a></li>
-                        <li role="presentation"><a href="#phrases-section" class="tab-link" role="tab">Phrases</a></li>
-                        <li role="presentation"><a href="#videos-section" class="tab-link" role="tab">Videos</a></li>
+                        <li role="presentation"><a href="#definitions-section" class="tab-link active" role="tab" data-i18n="tabDefinitions">Definitions</a></li>
+                        <li role="presentation"><a href="#etymology-section" class="tab-link" role="tab" data-i18n="tabEtymology">Etymology</a></li>
+                        <li role="presentation"><a href="#synonyms-section" class="tab-link" role="tab" data-i18n="tabThesaurus">Thesaurus</a></li>
+                        <li role="presentation"><a href="#cultural-section" class="tab-link" role="tab" data-i18n="tabCulture">Culture</a></li>
+                        <li role="presentation"><a href="#usage-section" class="tab-link" role="tab" data-i18n="tabUsage">Usage</a></li>
+                        <li role="presentation"><a href="#family-section" class="tab-link" role="tab" data-i18n="tabFamily">Family</a></li>
+                        <li role="presentation"><a href="#phrases-section" class="tab-link" role="tab" data-i18n="tabPhrases">Phrases</a></li>
+                        <li role="presentation"><a href="#videos-section" class="tab-link" role="tab" data-i18n="tabVideos">Videos</a></li>
                     </ul>
                 </nav>
 
                 <div class="content-single-column">
                      <details class="accordion-section definitions-section" id="definitions-section" open>
                          <summary class="accordion-header">
-                             <h3><i class="fas fa-book"></i> Definitions & Examples</h3>
+                             <h3><i class="fas fa-book"></i> <span data-i18n="sectionDefinitions">Definitions & Examples</span></h3>
                              <i class="fas fa-chevron-down accordion-icon"></i>
                          </summary>
                          <div class="accordion-content" id="definitionsContent">
@@ -137,7 +141,7 @@
 
                      <details class="accordion-section etymology-section" id="etymology-section">
                          <summary class="accordion-header">
-                             <h3><i class="fas fa-history"></i> Etymology</h3>
+                             <h3><i class="fas fa-history"></i> <span data-i18n="sectionEtymology">Etymology</span></h3>
                              <i class="fas fa-chevron-down accordion-icon"></i>
                          </summary>
                          <div class="accordion-content" id="etymologyContent">
@@ -147,7 +151,7 @@
 
                     <details class="accordion-section synonyms-section" id="synonyms-section">
                         <summary class="accordion-header">
-                            <h3><i class="fas fa-exchange-alt"></i> Synonyms & Antonyms</h3>
+                            <h3><i class="fas fa-exchange-alt"></i> <span data-i18n="sectionSynonyms">Synonyms & Antonyms</span></h3>
                             <i class="fas fa-chevron-down accordion-icon"></i>
                         </summary>
                         <div class="accordion-content" id="synonymsContent">
@@ -157,7 +161,7 @@
 
                     <details class="accordion-section cultural-section" id="cultural-section">
                         <summary class="accordion-header">
-                            <h3><i class="fas fa-globe-americas"></i> Cultural Notes</h3>
+                            <h3><i class="fas fa-globe-americas"></i> <span data-i18n="sectionCulture">Cultural Notes</span></h3>
                             <i class="fas fa-chevron-down accordion-icon"></i>
                         </summary>
                         <div class="accordion-content" id="culturalContent">
@@ -167,7 +171,7 @@
 
                      <details class="accordion-section usage-section" id="usage-section">
                          <summary class="accordion-header">
-                             <h3><i class="fas fa-language"></i> Usage Context</h3>
+                             <h3><i class="fas fa-language"></i> <span data-i18n="sectionUsage">Usage Context</span></h3>
                              <i class="fas fa-chevron-down accordion-icon"></i>
                          </summary>
                          <div class="accordion-content" id="usageContent">
@@ -177,7 +181,7 @@
 
                     <details class="accordion-section word-family-section" id="family-section">
                         <summary class="accordion-header">
-                            <h3><i class="fas fa-sitemap"></i> Word Family</h3>
+                            <h3><i class="fas fa-sitemap"></i> <span data-i18n="sectionFamily">Word Family</span></h3>
                             <i class="fas fa-chevron-down accordion-icon"></i>
                         </summary>
                         <div class="accordion-content" id="wordFamilyContent">
@@ -187,7 +191,7 @@
 
                      <details class="accordion-section common-phrases-section" id="phrases-section">
                          <summary class="accordion-header">
-                             <h3><i class="fas fa-comment-dots"></i> Common Phrases</h3>
+                             <h3><i class="fas fa-comment-dots"></i> <span data-i18n="sectionPhrases">Common Phrases</span></h3>
                              <i class="fas fa-chevron-down accordion-icon"></i>
                          </summary>
                          <div class="accordion-content" id="commonPhrasesContent">
@@ -197,7 +201,7 @@
 
                      <details class="accordion-section video-resources-section" id="videos-section">
                          <summary class="accordion-header">
-                             <h3><i class="fas fa-video"></i> Video Resources</h3>
+                             <h3><i class="fas fa-video"></i> <span data-i18n="sectionVideos">Video Resources</span></h3>
                              <i class="fas fa-chevron-down accordion-icon"></i>
                          </summary>
                          <div class="accordion-content" id="videoResourcesContent">
@@ -212,21 +216,21 @@
                     <div class="empty-state-icon-wrap">
                         <i class="fas fa-book-open"></i>
                     </div>
-                    <h3>Look up any English word</h3>
-                    <p>Definitions, etymology, synonyms, cultural notes, usage context, and real-world video examples — all in one place.</p>
+                    <h3 data-i18n="emptyTitle">Look up any English word</h3>
+                    <p data-i18n="emptyDescription">Definitions, etymology, synonyms, cultural notes, usage context, and real-world video examples — all in one place.</p>
                     <div class="empty-state-features">
-                        <span class="empty-feature-pill"><i class="fas fa-spell-check"></i> Definitions</span>
-                        <span class="empty-feature-pill"><i class="fas fa-history"></i> Etymology</span>
-                        <span class="empty-feature-pill"><i class="fas fa-exchange-alt"></i> Thesaurus</span>
-                        <span class="empty-feature-pill"><i class="fas fa-video"></i> Videos</span>
+                        <span class="empty-feature-pill"><i class="fas fa-spell-check"></i> <span data-i18n="tabDefinitions">Definitions</span></span>
+                        <span class="empty-feature-pill"><i class="fas fa-history"></i> <span data-i18n="tabEtymology">Etymology</span></span>
+                        <span class="empty-feature-pill"><i class="fas fa-exchange-alt"></i> <span data-i18n="tabThesaurus">Thesaurus</span></span>
+                        <span class="empty-feature-pill"><i class="fas fa-video"></i> <span data-i18n="tabVideos">Videos</span></span>
                     </div>
                 </div>
             </div>
         </main>
 
         <footer class="footer">
-            <p>Advanced English Dictionary &copy; 2026 | Powered by comprehensive linguistic analysis</p>
-            <p class="footer-note">This dictionary provides detailed information including etymology, cultural context, and usage notes for English learners and enthusiasts.</p>
+            <p data-i18n="footerMain">Advanced English Dictionary &copy; 2026 | Powered by comprehensive linguistic analysis</p>
+            <p class="footer-note" data-i18n="footerNote">This dictionary provides detailed information including etymology, cultural context, and usage notes for English learners and enthusiasts.</p>
         </footer>
     </div>
 
@@ -234,30 +238,30 @@
     <div class="speed-dial" id="speedDial">
         <div class="speed-dial-items">
             <div class="speed-dial-item" style="--i:0">
-                <span class="speed-dial-label">Theme</span>
-                <button id="themePickerBtn" class="speed-dial-child-btn" title="Change theme" aria-label="Change theme" aria-expanded="false" aria-haspopup="true">
+                <span class="speed-dial-label" data-i18n="theme">Theme</span>
+                <button id="themePickerBtn" class="speed-dial-child-btn" title="Change theme" aria-label="Change theme" aria-expanded="false" aria-haspopup="true" data-i18n-title="changeTheme" data-i18n-aria-label="changeTheme">
                     <i class="fas fa-palette"></i>
                 </button>
             </div>
             <div class="speed-dial-item" style="--i:1">
-                <span class="speed-dial-label">History</span>
-                <button id="historyToggleBtn" class="speed-dial-child-btn" title="Search History" aria-label="Open search history">
+                <span class="speed-dial-label" data-i18n="history">History</span>
+                <button id="historyToggleBtn" class="speed-dial-child-btn" title="Search History" aria-label="Open search history" data-i18n-title="searchHistory" data-i18n-aria-label="openSearchHistory">
                     <i class="fas fa-history"></i>
                     <span class="history-badge" id="historyBadge" style="display: none;">0</span>
                 </button>
             </div>
         </div>
-        <button class="speed-dial-main-btn" id="speedDialBtn" title="Actions" aria-label="Actions" aria-expanded="false">
+        <button class="speed-dial-main-btn" id="speedDialBtn" title="Actions" aria-label="Actions" aria-expanded="false" data-i18n-title="actions" data-i18n-aria-label="actions">
             <i class="fas fa-plus speed-dial-icon"></i>
         </button>
     </div>
-    <button id="scrollTopBtn" class="scroll-top-btn" type="button" aria-label="Scroll to top" title="Scroll to top">
+    <button id="scrollTopBtn" class="scroll-top-btn" type="button" aria-label="Scroll to top" title="Scroll to top" data-i18n-title="scrollTop" data-i18n-aria-label="scrollTop">
         <i class="fas fa-arrow-up"></i>
     </button>
 
     <!-- Theme picker panel (detached, anchored via JS) -->
-    <div id="themePickerPanel" class="theme-picker-panel" role="menu" aria-label="Theme options">
-        <div class="theme-picker-title">Choose theme</div>
+    <div id="themePickerPanel" class="theme-picker-panel" role="menu" aria-label="Theme options" data-i18n-aria-label="themeOptions">
+        <div class="theme-picker-title" data-i18n="chooseTheme">Choose theme</div>
         <div class="theme-swatches">
             <button class="theme-swatch" data-theme="" title="Teal & Emerald" style="--s1:#14b8a6;--s2:#10b981;"></button>
             <button class="theme-swatch" data-theme="coral-peach" title="Coral & Peach" style="--s1:#ff7b72;--s2:#ffb347;"></button>
@@ -305,20 +309,20 @@
     <!-- Floating History Panel -->
     <div id="historyPanel" class="history-panel">
         <div class="history-panel-header">
-            <h3><i class="fas fa-history"></i> Search History</h3>
-            <button id="closeHistoryBtn" class="close-history-btn" aria-label="Close search history">
+            <h3><i class="fas fa-history"></i> <span data-i18n="searchHistory">Search History</span></h3>
+            <button id="closeHistoryBtn" class="close-history-btn" aria-label="Close search history" data-i18n-aria-label="closeSearchHistory">
                 <i class="fas fa-times"></i>
             </button>
         </div>
         <div class="history-panel-content" id="historyPanelContent">
             <div class="empty-history">
                 <i class="fas fa-clock"></i>
-                <p>No search history yet</p>
+                <p data-i18n="noSearchHistory">No search history yet</p>
             </div>
         </div>
         <div class="history-panel-footer">
-            <button id="clearAllHistoryBtn" class="clear-all-history-btn" aria-label="Clear all search history">
-                <i class="fas fa-trash-alt"></i> Clear All History
+            <button id="clearAllHistoryBtn" class="clear-all-history-btn" aria-label="Clear all search history" data-i18n-aria-label="clearAllHistory">
+                <i class="fas fa-trash-alt"></i> <span data-i18n="clearAllHistory">Clear All History</span>
             </button>
         </div>
     </div>
@@ -326,6 +330,9 @@
     <!-- Overlay for panel -->
     <div id="historyOverlay" class="history-overlay"></div>
 
+    <script src="i18n/i18n.js"></script>
+    <script src="i18n/locales/en.js"></script>
+    <script src="i18n/locales/zh-cn.js"></script>
     <script src="confusion-ui.js"></script>
     <script src="ui-controls.js"></script>
     <script src="comparison-export.js"></script>

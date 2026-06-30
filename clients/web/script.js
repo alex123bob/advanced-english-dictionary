@@ -180,7 +180,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const HISTORY_KEY = 'dict_search_history';
     const MAX_HISTORY_ITEMS = 10;
     const LANGUAGE_KEY = 'dict_response_language';
+    const i18n = window.AdvancedDictionaryI18n;
+    if (!i18n) {
+        throw new Error('AdvancedDictionaryI18n must be loaded before script.js');
+    }
+    const DEFAULT_RESPONSE_LANG = i18n.defaultLanguage;
     const BILINGUAL_LANG = 'zh-cn';
+    const RESPONSE_LANGUAGES = i18n.getLanguages();
     const BILINGUAL_SECTIONS = new Set([
         'basic',
         'common_phrases',
@@ -199,9 +205,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     ]);
     let currentResponseLanguage = normalizeResponseLanguage(localStorage.getItem(LANGUAGE_KEY) || 'en');
 
-    UIControls.init({ config });
+    i18n.setLanguage(currentResponseLanguage);
+
+    applyLocalizedStaticText();
+    UIControls.init({ config, t, getCurrentLanguage: () => currentResponseLanguage });
     ComparisonExport.init({ config, getCurrentWord: () => currentWord });
-    initLanguageToggle();
+    initLanguageSelector();
 
     const urlParams = new URLSearchParams(window.location.search);
     let queryParam = urlParams.get('q');
@@ -237,7 +246,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     function normalizeResponseLanguage(language) {
-        return language === BILINGUAL_LANG ? BILINGUAL_LANG : 'en';
+        return i18n.normalizeLanguage(language);
+    }
+
+    function getResponseLanguage(code = currentResponseLanguage) {
+        return i18n.getLanguageMeta(code);
+    }
+
+    function t(key, replacements = {}) {
+        return i18n.t(key, replacements, currentResponseLanguage);
+    }
+
+    function applyLocalizedStaticText() {
+        document.querySelectorAll('[data-i18n]').forEach(element => {
+            element.textContent = t(element.dataset.i18n);
+        });
+        document.querySelectorAll('[data-i18n-title]').forEach(element => {
+            element.title = t(element.dataset.i18nTitle);
+        });
+        document.querySelectorAll('[data-i18n-aria-label]').forEach(element => {
+            element.setAttribute('aria-label', t(element.dataset.i18nAriaLabel));
+        });
     }
 
     function isBilingualMode() {
@@ -248,37 +277,140 @@ document.addEventListener('DOMContentLoaded', async () => {
         return isBilingualMode() && BILINGUAL_SECTIONS.has(section);
     }
 
-    function updateLanguageToggleUI() {
-        document.documentElement.dataset.responseLanguage = currentResponseLanguage;
-        document.documentElement.lang = isBilingualMode() ? 'zh-CN' : 'en';
+    function updateLanguageSelectorUI() {
+        const language = getResponseLanguage();
+        const selector = document.getElementById('languageSelector');
+        const button = document.getElementById('languageSelectorBtn');
+        const buttonText = button ? button.querySelector('.language-selector-text') : null;
+        const menu = document.getElementById('languageSelectorMenu');
 
-        document.querySelectorAll('.language-toggle-option').forEach(button => {
-            const isActive = normalizeResponseLanguage(button.dataset.language) === currentResponseLanguage;
-            button.classList.toggle('active', isActive);
-            button.setAttribute('aria-pressed', String(isActive));
+        document.documentElement.dataset.responseLanguage = currentResponseLanguage;
+        document.documentElement.lang = language.htmlLang;
+
+        if (selector) {
+            selector.dataset.language = currentResponseLanguage;
+        }
+        if (button) {
+            button.setAttribute('aria-label', t('responseLanguage'));
+            button.title = t('responseLanguage');
+        }
+        if (buttonText) {
+            buttonText.textContent = language.nativeLabel || language.label;
+        }
+        if (menu) {
+            menu.setAttribute('aria-label', t('responseLanguage'));
+        }
+
+        document.querySelectorAll('.language-selector-option').forEach(option => {
+            const isActive = normalizeResponseLanguage(option.dataset.language) === currentResponseLanguage;
+            option.classList.toggle('active', isActive);
+            option.setAttribute('aria-selected', String(isActive));
         });
     }
 
-    function initLanguageToggle() {
-        const languageToggleGroup = document.getElementById('languageToggleGroup');
-        updateLanguageToggleUI();
+    function initLanguageSelector() {
+        const selector = document.getElementById('languageSelector');
+        const button = document.getElementById('languageSelectorBtn');
+        const menu = document.getElementById('languageSelectorMenu');
+        updateLanguageSelectorUI();
 
-        if (!languageToggleGroup) return;
+        if (!selector || !button || !menu) return;
 
-        languageToggleGroup.addEventListener('click', event => {
-            const button = event.target.closest('.language-toggle-option');
-            if (!button) return;
+        function renderLanguageOptions() {
+            menu.innerHTML = RESPONSE_LANGUAGES.map(language => {
+            const nativeLabel = language.nativeLabel ? `<span class="language-selector-native">${escapeHtml(language.nativeLabel)}</span>` : '';
+            return `
+                <button class="language-selector-option" type="button" role="option" data-language="${language.code}">
+                    <span class="language-selector-option-main">
+                        <span class="language-selector-option-label">${escapeHtml(language.label)}</span>
+                        ${nativeLabel}
+                    </span>
+                    <span class="language-selector-option-desc">${escapeHtml(t(language.descriptionKey))}</span>
+                    <i class="fas fa-check language-selector-check" aria-hidden="true"></i>
+                </button>
+            `;
+            }).join('');
+        }
 
-            const nextLanguage = normalizeResponseLanguage(button.dataset.language);
+        renderLanguageOptions();
+        updateLanguageSelectorUI();
+
+        function closeMenu() {
+            selector.classList.remove('open');
+            button.setAttribute('aria-expanded', 'false');
+            menu.style.removeProperty('--language-menu-left');
+            menu.style.removeProperty('--language-menu-top');
+            menu.style.removeProperty('--language-menu-width');
+        }
+
+        function positionMenu() {
+            const buttonRect = button.getBoundingClientRect();
+            const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+            const edgeGap = viewportWidth < 640 ? 8 : 12;
+            const menuWidth = Math.min(viewportWidth - edgeGap * 2, viewportWidth < 640 ? 276 : 292);
+            const preferredLeft = buttonRect.right - menuWidth;
+            const left = Math.max(edgeGap, Math.min(preferredLeft, viewportWidth - menuWidth - edgeGap));
+            const top = buttonRect.bottom + 8;
+
+            menu.style.setProperty('--language-menu-left', `${Math.round(left)}px`);
+            menu.style.setProperty('--language-menu-top', `${Math.round(top)}px`);
+            menu.style.setProperty('--language-menu-width', `${Math.round(menuWidth)}px`);
+        }
+
+        function toggleMenu() {
+            const isOpen = selector.classList.toggle('open');
+            button.setAttribute('aria-expanded', String(isOpen));
+            if (isOpen) {
+                positionMenu();
+            }
+        }
+
+        button.addEventListener('click', event => {
+            event.stopPropagation();
+            toggleMenu();
+        });
+
+        menu.addEventListener('click', event => {
+            const option = event.target.closest('.language-selector-option');
+            if (!option) return;
+
+            const nextLanguage = normalizeResponseLanguage(option.dataset.language);
+            closeMenu();
             if (nextLanguage === currentResponseLanguage) return;
 
             currentResponseLanguage = nextLanguage;
+            i18n.setLanguage(currentResponseLanguage);
             localStorage.setItem(LANGUAGE_KEY, currentResponseLanguage);
-            updateLanguageToggleUI();
+            applyLocalizedStaticText();
+            renderLanguageOptions();
+            updateLanguageSelectorUI();
+            updatePlaceholder();
+            updateSearchHistoryUI();
+            if (window.UIControls && typeof window.UIControls.applyStyleMode === 'function') {
+                window.UIControls.applyStyleMode(document.documentElement.getAttribute('data-style-mode') || 'adventure');
+            }
 
             const query = searchInput.value.trim();
             if (query && currentWordData && currentWord) {
                 handleSearch({ skipBrowserHistory: true, skipSearchHistory: true });
+            }
+        });
+
+        document.addEventListener('click', event => {
+            if (!selector.contains(event.target)) {
+                closeMenu();
+            }
+        });
+
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape') {
+                closeMenu();
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            if (selector.classList.contains('open')) {
+                positionMenu();
             }
         });
     }
@@ -338,7 +470,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             panelContent.innerHTML = `
                 <div class="empty-history">
                     <i class="fas fa-clock"></i>
-                    <p>No search history yet</p>
+                    <p>${t('noSearchHistory')}</p>
                 </div>
             `;
             return;
@@ -357,7 +489,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                     <div class="history-item-time">${timeAgo}</div>
                                 </div>
                             </div>
-                            <button class="history-item-delete" data-index="${index}" title="Remove">
+                            <button class="history-item-delete" data-index="${index}" title="${t('remove')}" aria-label="${t('remove')}">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
@@ -391,10 +523,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     function getTimeAgo(timestamp) {
         const seconds = Math.floor((Date.now() - timestamp) / 1000);
         
-        if (seconds < 60) return 'Just now';
-        if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-        if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+        if (seconds < 60) return t('justNow');
+        if (seconds < 3600) return t('minutesAgo', { count: Math.floor(seconds / 60) });
+        if (seconds < 86400) return t('hoursAgo', { count: Math.floor(seconds / 3600) });
+        if (seconds < 604800) return t('daysAgo', { count: Math.floor(seconds / 86400) });
         return new Date(timestamp).toLocaleDateString();
     }
     
@@ -496,11 +628,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const headerHtml = `
                     <div class="selected-phrase-header">
                         <button class="back-to-phrases-btn" data-word="${word}">
-                            <i class="fas fa-arrow-left"></i> Back
+                            <i class="fas fa-arrow-left"></i> ${t('back')}
                         </button>
                         <div class="selected-phrase-info">
                             <i class="fas fa-robot"></i>
-                            <span>AI Video for: <strong>"${phrase}"</strong></span>
+                            <span>${t('aiVideoFor')} <strong>"${escapeHtml(phrase)}"</strong></span>
                         </div>
                     </div>
                 `;
@@ -509,7 +641,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div class="ai-videos-container">
                         <div class="section-loading">
                             <div class="spinner"></div>
-                            <p>Checking for existing video...</p>
+                            <p>${t('checkingExistingVideo')}</p>
                         </div>
                     </div>
                 `;
@@ -574,11 +706,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                             const headerHtml = `
                                 <div class="selected-phrase-header">
                                     <button class="back-to-phrases-btn" data-word="${word}">
-                                        <i class="fas fa-arrow-left"></i> Back
+                                        <i class="fas fa-arrow-left"></i> ${t('back')}
                                     </button>
                                     <div class="selected-phrase-info">
                                         <i class="fas fa-quote-left"></i>
-                                        <span>Videos for: <strong>"${phrase}"</strong></span>
+                                        <span>${t('videosFor')} <strong>"${escapeHtml(phrase)}"</strong></span>
                                     </div>
                                 </div>
                             `;
@@ -587,15 +719,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                             videoResourcesContent.innerHTML = `
                                 <div class="selected-phrase-header">
                                     <button class="back-to-phrases-btn" data-word="${word}">
-                                        <i class="fas fa-arrow-left"></i> Back
+                                        <i class="fas fa-arrow-left"></i> ${t('back')}
                                     </button>
                                 </div>
                                 <div class="bilibili-empty-state">
                                     <div class="bilibili-empty-state-icon">
                                         <i class="fab fa-bilibili"></i>
                                     </div>
-                                    <div class="bilibili-empty-state-title">No videos this time</div>
-                                    <div class="bilibili-empty-state-desc">Couldn't find anything for <strong>"${phrase}"</strong> — maybe give another phrase a go 🌸</div>
+                                    <div class="bilibili-empty-state-title">${t('noVideosThisTime')}</div>
+                                    <div class="bilibili-empty-state-desc">${t('noVideosForPhrase', { phrase: escapeHtml(phrase) })}</div>
                                 </div>
                             `;
                         }
@@ -606,18 +738,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const stateHtml = isNoResults
                             ? `<div class="bilibili-empty-state">
                                     <div class="bilibili-empty-state-icon"><i class="fab fa-bilibili"></i></div>
-                                    <div class="bilibili-empty-state-title">No videos this time</div>
-                                    <div class="bilibili-empty-state-desc">Couldn't find anything for <strong>"${phrase}"</strong> — maybe give another phrase a go 🌸</div>
+                                    <div class="bilibili-empty-state-title">${t('noVideosThisTime')}</div>
+                                    <div class="bilibili-empty-state-desc">${t('noVideosForPhrase', { phrase: escapeHtml(phrase) })}</div>
                                 </div>`
                             : `<div class="bilibili-error-state">
                                     <div class="bilibili-error-state-icon"><i class="fas fa-circle-exclamation"></i></div>
-                                    <div class="bilibili-error-state-title">Couldn't load videos</div>
-                                    <div class="bilibili-error-state-desc">Something went wrong while searching for <strong>"${phrase}"</strong>. Please try again.</div>
+                                    <div class="bilibili-error-state-title">${t('couldNotLoadVideos')}</div>
+                                    <div class="bilibili-error-state-desc">${t('videoSearchError', { phrase: escapeHtml(phrase) })}</div>
                                 </div>`;
                         videoResourcesContent.innerHTML = `
                             <div class="selected-phrase-header">
                                 <button class="back-to-phrases-btn" data-word="${word}">
-                                    <i class="fas fa-arrow-left"></i> Back
+                                    <i class="fas fa-arrow-left"></i> ${t('back')}
                                 </button>
                             </div>
                             ${stateHtml}
@@ -665,7 +797,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const badge = document.createElement('div');
         badge.id = 'staleRefreshBadge';
         badge.className = 'stale-refresh-badge';
-        badge.innerHTML = `<i class="fas fa-sync fa-spin"></i> Refreshing...`;
+        badge.innerHTML = `<i class="fas fa-sync fa-spin"></i> ${t('refreshing')}`;
         
         // Style the badge
         Object.assign(badge.style, {
@@ -1030,14 +1162,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Helper function to render structured cultural notes
     function renderCulturalNotes(culturalNotesData) {
-        if (!culturalNotesData) return '<div class="no-data">No cultural notes available</div>';
+        if (!culturalNotesData) return `<div class="no-data">${t('noCulturalNotes')}</div>`;
         
         const { historical_context, cultural_associations, social_perceptions } = culturalNotesData;
         
         // Check if we have any data
         if (!historical_context && (!cultural_associations || !cultural_associations.length) && 
             (!social_perceptions || !social_perceptions.length)) {
-            return '<div class="no-data">No cultural notes available</div>';
+            return `<div class="no-data">${t('noCulturalNotes')}</div>`;
         }
         
         let html = '<div class="cultural-notes-structured">';
@@ -1156,7 +1288,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Helper function to enhance usage context with visual structure
     function enhanceUsageContext(usageContext, englishUsageContext = null) {
-        if (!usageContext) return '<div class="no-data">No usage context available</div>';
+        if (!usageContext) return `<div class="no-data">${t('noUsageContext')}</div>`;
         
         let html = '<div class="usage-context-enhanced">';
         
@@ -1380,7 +1512,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Helper function to render phrase chips for video search
     function renderPhraseChips(phrases, word) {
         if (!phrases || phrases.length === 0) {
-            return '<div class="no-data">No common phrases available</div>';
+            return `<div class="no-data">${t('noCommonPhrases')}</div>`;
         }
 
         const phraseButtons = phrases.map(phrase => {
@@ -1390,7 +1522,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <i class="fas fa-comment-dots"></i>
                         <span>${escapeHtml(phrase)}</span>
                     </button>
-                    <button class="ai-video-btn" data-phrase="${phrase}" data-word="${word}" title="Generate AI Video">
+                    <button class="ai-video-btn" data-phrase="${phrase}" data-word="${word}" title="${t('generateAiVideo')}" aria-label="${t('generateAiVideo')}">
                         <i class="fas fa-robot"></i>
                     </button>
                 </div>
@@ -1401,14 +1533,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="phrase-chips-container">
                 <div class="phrase-chips-header">
                     <i class="fas fa-lightbulb"></i>
-                    <span>Click a phrase to find videos:</span>
+                    <span>${t('clickPhraseToFindVideos')}</span>
                 </div>
                 <div class="phrase-chips-list">
                     ${phraseButtons}
                 </div>
                 <div class="phrase-chips-hint">
                     <i class="fas fa-info-circle"></i>
-                    <span>Videos will load based on your selected phrase</span>
+                    <span>${t('videosLoadSelectedPhrase')}</span>
                 </div>
             </div>
         `;
@@ -1421,9 +1553,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="empty-state-icon">
                     <i class="fas fa-play-circle"></i>
                 </div>
-                <div class="empty-state-title">Tap a phrase to load videos</div>
+                <div class="empty-state-title">${t('tapPhraseToLoadVideos')}</div>
                 <div class="empty-state-description">
-                    Go to <strong>Phrases</strong> above and tap any phrase to see real-world usage examples
+                    ${t('goToPhrasesForVideos')}
                 </div>
             </div>
         `;
@@ -1431,7 +1563,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function renderVideoResources(videoGroups) {
         if (!videoGroups || videoGroups.length === 0) {
-            return '<div class="no-data">No video resources available</div>';
+            return `<div class="no-data">${t('noVideoResources')}</div>`;
         }
 
         let html = '<div class="video-resources-container">';
@@ -1445,12 +1577,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <div class="video-resource-header">
                             <div class="video-resource-title">
                                 <i class="fab fa-bilibili bilibili-icon"></i>
-                                <span>Bilibili Videos</span>
+                                <span>${t('bilibiliVideos')}</span>
                             </div>
-                            <span class="video-resource-badge">${videos.length} video${videos.length !== 1 ? 's' : ''}</span>
+                            <span class="video-resource-badge">${t(videos.length === 1 ? 'videoCount' : 'videoCountPlural', { count: videos.length })}</span>
                         </div>
                         <div class="video-resource-description">
-                            Watch real-world usage examples from Bilibili content creators
+                            ${t('watchRealWorldExamples')}
                         </div>
                         ${renderBilibiliVideos(videos)}
                     </div>
@@ -1461,12 +1593,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <div class="video-resource-header">
                             <div class="video-resource-title">
                                 <i class="fas fa-robot ai-icon"></i>
-                                <span>AI-Generated Conversation</span>
+                                <span>${t('aiGeneratedConversation')}</span>
                             </div>
-                            <span class="video-resource-badge">AI Generated</span>
+                            <span class="video-resource-badge">${t('aiGenerated')}</span>
                         </div>
                         <div class="video-resource-description">
-                            Learn through AI-generated English conversations featuring this phrase
+                            ${t('learnThroughAiConversation')}
                         </div>
                         ${renderAIVideos(videos)}
                     </div>
@@ -1495,7 +1627,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="conversation-section">
                     <div class="conversation-header">
                         <i class="fas fa-theater-masks"></i>
-                        <span>Scenario</span>
+                        <span>${t('scenario')}</span>
                     </div>
                     <div class="conversation-scenario">
                         ${scenario}
@@ -1510,7 +1642,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="conversation-section">
                     <div class="conversation-header">
                         <i class="fas fa-comments"></i>
-                        <span>Dialogue</span>
+                        <span>${t('dialogue')}</span>
                     </div>
                     <div class="conversation-dialogue">
                         ${dialogue.map(line => `
@@ -1530,7 +1662,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="conversation-section">
                     <div class="conversation-header">
                         <i class="fas fa-lightbulb"></i>
-                        <span>Explanation</span>
+                        <span>${t('explanation')}</span>
                     </div>
                     <div class="conversation-explanation">
                         ${phrase_explanation}
@@ -1545,14 +1677,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     function renderAIVideos(videos) {
         if (!videos || videos.length === 0) {
-            return '<div class="ai-videos-container"><div class="no-data">AI-generated videos coming soon...</div></div>';
+            return `<div class="ai-videos-container"><div class="no-data">${t('aiVideosComingSoon')}</div></div>`;
         }
 
         const video = videos[0]; // Assuming one video for now
 
         if (video.status === 'pending' || video.status === 'processing') {
             const progress = video.progress || 0;
-            const message = video.message || 'Generating video...';
+            const message = video.message || t('generatingVideo');
             
             return `
                 <div class="ai-videos-container">
@@ -1560,7 +1692,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <div class="ai-status-icon">
                             <i class="fas fa-robot"></i>
                         </div>
-                        <div class="ai-status-text">Creating Your Video</div>
+                        <div class="ai-status-text">${t('creatingYourVideo')}</div>
                         <div class="ai-status-subtext">${message}</div>
                         <div class="ai-progress-container">
                             <div class="ai-progress-bar" style="width: ${progress}%"></div>
@@ -1576,20 +1708,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div class="ai-video-player-container">
                         <video class="ai-video-player" controls autoplay playsinline>
                             <source src="${video.video_url}" type="video/mp4">
-                            Your browser does not support the video tag.
+                            ${t('browserNoVideo')}
                         </video>
                     </div>
                     <div class="video-info" style="padding: 1rem 0;">
-                        <h4 class="video-title">AI Generated Explanation</h4>
+                        <h4 class="video-title">${t('aiGeneratedExplanation')}</h4>
                         <div class="video-description">
-                            Custom AI-generated video explanation for "${video.phrase || 'this phrase'}"
+                            ${t('customAiExplanation', { phrase: escapeHtml(video.phrase || 'this phrase') })}
                         </div>
                     </div>
                 </div>
             `;
         }
         
-        return '<div class="ai-videos-container"><div class="error-message">Unknown video status</div></div>';
+        return `<div class="ai-videos-container"><div class="error-message">${t('unknownVideoStatus')}</div></div>`;
     }
 
     async function checkExistingVideos(word, phrase) {
@@ -1617,8 +1749,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div class="ai-prompt-icon" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1.5rem; opacity: 0.8;">
                         <i class="fas fa-robot"></i>
                     </div>
-                    <h3 style="margin-bottom: 0.5rem; color: var(--text-color);">Ready to Generate</h3>
-                    <p style="margin-bottom: 2rem; color: var(--text-light);">Create a custom AI video explanation for "${phrase}"</p>
+                    <h3 style="margin-bottom: 0.5rem; color: var(--text-color);">${t('readyToGenerate')}</h3>
+                    <p style="margin-bottom: 2rem; color: var(--text-light);">${t('createCustomAiVideo', { phrase: escapeHtml(phrase) })}</p>
                     <button id="start-generation-btn" style="
                         padding: 0.8rem 1.8rem; 
                         font-size: 1rem; 
@@ -1634,7 +1766,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         box-shadow: 0 4px 12px rgba(20, 184, 166, 0.2);
                         transition: all 0.2s ease;
                     " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(20, 184, 166, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(20, 184, 166, 0.2)'">
-                        <i class="fas fa-magic"></i> Generate AI Video
+                        <i class="fas fa-magic"></i> ${t('generateAiVideo')}
                     </button>
                 </div>
             </div>
@@ -1646,7 +1778,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 videoResourcesContent.innerHTML = headerHtml + renderAIVideos([{
                     status: 'pending',
                     progress: 0,
-                    message: 'Initializing generation...'
+                    message: t('initializingGeneration')
                 }]);
                 
                 startAIVideoGeneration(phrase, word)
@@ -1660,7 +1792,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         videoResourcesContent.innerHTML = headerHtml + conversationHtml + renderAIVideos([{
                             status: 'pending',
                             progress: 5,
-                            message: 'Generating video...'
+                            message: t('generatingVideo')
                         }]);
                         
                         pollVideoStatus(task_id, phrase, word, headerHtml, conversation_script);
@@ -1668,7 +1800,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     .catch(err => {
                         console.error('Error starting AI video generation:', err);
                         videoResourcesContent.innerHTML = headerHtml + `
-                            <div class="error-message">Failed to start video generation: ${err.message}</div>
+                            <div class="error-message">${t('failedToStartGeneration', { message: escapeHtml(err.message) })}</div>
                         `;
                     });
             });
@@ -1732,7 +1864,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const poll = async () => {
             if (attempts >= maxAttempts) {
                 videoResourcesContent.innerHTML = headerHtml + conversationHtml + `
-                    <div class="error-message">Video generation timed out. Please try again later.</div>
+                    <div class="error-message">${t('videoGenerationTimeout')}</div>
                 `;
                 return;
             }
@@ -1754,7 +1886,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 if (data.error || !data.success) {
                     videoResourcesContent.innerHTML = headerHtml + conversationHtml + `
-                        <div class="error-message">Error getting status: ${data.error || 'Unknown error'}</div>
+                        <div class="error-message">${t('statusError', { message: escapeHtml(data.error || t('unknownError')) })}</div>
                     `;
                     return;
                 }
@@ -1767,11 +1899,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }]);
                 } else if (data.status === 'failed') {
                      videoResourcesContent.innerHTML = headerHtml + conversationHtml + `
-                        <div class="error-message">Video generation failed: ${data.error || 'Unknown error'}</div>
+                        <div class="error-message">${t('videoGenerationFailed', { message: escapeHtml(data.error || t('unknownError')) })}</div>
                     `;
                 } else {
                     const progress = data.progress || Math.min((attempts / maxAttempts) * 100, 95);
-                    const message = data.message || 'Processing video content...';
+                    const message = data.message || t('processingVideo');
                     
                     videoResourcesContent.innerHTML = headerHtml + conversationHtml + renderAIVideos([{
                         status: 'pending',
@@ -1786,7 +1918,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             } catch (error) {
                 console.error('Error polling video status:', error);
                 videoResourcesContent.innerHTML = headerHtml + conversationHtml + `
-                    <div class="error-message">Failed to check video status: ${error.message}</div>
+                    <div class="error-message">${t('failedToCheckVideoStatus', { message: escapeHtml(error.message) })}</div>
                 `;
             }
         };
@@ -1798,8 +1930,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!videos || videos.length === 0) {
             return `<div class="bilibili-empty-state">
                 <div class="bilibili-empty-state-icon"><i class="fab fa-bilibili"></i></div>
-                <div class="bilibili-empty-state-title">No videos this time</div>
-                <div class="bilibili-empty-state-desc">Nothing came up for this phrase — try another one 🌸</div>
+                <div class="bilibili-empty-state-title">${t('noVideosThisTime')}</div>
+                <div class="bilibili-empty-state-desc">${t('noVideosForThisPhrase')}</div>
             </div>`;
         }
 
@@ -2162,16 +2294,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                     etymologyHtml += `<div class="etymology-text">${isBilingualMode() ? escapeHtml(etymologyText) : highlightEtymologyTerms(etymologyText)}</div>`;
                 }
                 if (rootAnalysis) {
-                    const label = isBilingualMode() ? '词根分析' : 'Root Analysis';
+                    const label = t('rootAnalysis');
                     etymologyHtml += `<div class="root-analysis"><div class="etymology-label">${label}</div><div>${renderLanguageText(rootAnalysis)}</div></div>`;
                 }
-                etymologyContent.innerHTML = etymologyHtml || '<div class="no-data">No etymology information available</div>';
+                etymologyContent.innerHTML = etymologyHtml || `<div class="no-data">${t('noEtymology')}</div>`;
             } else {
-                etymologyContent.innerHTML = '<div class="no-data">No etymology information available</div>';
+                etymologyContent.innerHTML = `<div class="no-data">${t('noEtymology')}</div>`;
             }
         }).catch(err => {
             console.error('Error fetching etymology:', err);
-            etymologyContent.innerHTML = '<div class="error-message">Failed to load etymology</div>';
+            etymologyContent.innerHTML = `<div class="error-message">${t('failedEtymology')}</div>`;
         });
         
         fetchSection(word, 'cultural_notes', entryIndex).then(result => {
@@ -2180,11 +2312,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const selectedCulturalNotes = getLocalizedValue(data.cultural_notes, getZhData(data.cultural_notes_zh, 'cultural_notes'));
                 culturalContent.innerHTML = renderCulturalNotes(selectedCulturalNotes);
             } else {
-                culturalContent.innerHTML = '<div class="no-data">No cultural notes available</div>';
+                culturalContent.innerHTML = `<div class="no-data">${t('noCulturalNotes')}</div>`;
             }
         }).catch(err => {
             console.error('Error fetching cultural_notes:', err);
-            culturalContent.innerHTML = '<div class="error-message">Failed to load cultural notes</div>';
+            culturalContent.innerHTML = `<div class="error-message">${t('failedCulturalNotes')}</div>`;
         });
         
         fetchSection(word, 'usage_context', entryIndex).then(result => {
@@ -2193,11 +2325,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const selectedUsageContext = getLocalizedValue(data.usage_context, getZhData(data.usage_context_zh, 'usage_context'));
                 usageContent.innerHTML = enhanceUsageContext(selectedUsageContext, data.usage_context);
             } else {
-                usageContent.innerHTML = '<div class="no-data">No usage context available</div>';
+                usageContent.innerHTML = `<div class="no-data">${t('noUsageContext')}</div>`;
             }
         }).catch(err => {
             console.error('Error fetching usage_context:', err);
-            usageContent.innerHTML = '<div class="error-message">Failed to load usage context</div>';
+            usageContent.innerHTML = `<div class="error-message">${t('failedUsageContext')}</div>`;
         });
         
         fetchSection(word, 'word_family', entryIndex).then(result => {
@@ -2206,11 +2338,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const displayWords = data.word_family.word_family.slice(0, 20);
                 wordFamilyContent.innerHTML = `<div class="word-family-tags">${renderEnglishLookupTags(displayWords, 'word-tag')}</div>`;
             } else {
-                wordFamilyContent.innerHTML = '<div class="no-data">No word family available</div>';
+                wordFamilyContent.innerHTML = `<div class="no-data">${t('noWordFamily')}</div>`;
             }
         }).catch(err => {
             console.error('Error fetching word_family:', err);
-            wordFamilyContent.innerHTML = '<div class="error-message">Failed to load word family</div>';
+            wordFamilyContent.innerHTML = `<div class="error-message">${t('failedWordFamily')}</div>`;
         });
         
         fetchSection(word, 'common_phrases').then(result => {
@@ -2228,11 +2360,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (data.common_phrases && data.common_phrases.length) {
                 commonPhrasesContent.innerHTML = renderPhraseChips(data.common_phrases, word);
             } else {
-                commonPhrasesContent.innerHTML = '<div class="no-data">No common phrases available</div>';
+                commonPhrasesContent.innerHTML = `<div class="no-data">${t('noCommonPhrases')}</div>`;
             }
         }).catch(err => {
             console.error('Error fetching common_phrases:', err);
-            commonPhrasesContent.innerHTML = '<div class="error-message">Failed to load common phrases</div>';
+            commonPhrasesContent.innerHTML = `<div class="error-message">${t('failedCommonPhrases')}</div>`;
         });
         
         videoResourcesContent.innerHTML = renderVideoResourcesEmptyState();
@@ -2244,8 +2376,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const totalSensesToLoad = entryData ? entryData.total_senses : 0;
         
         if (!totalSensesToLoad) {
-            definitionsContent.innerHTML = '<div class="no-data">No definitions available for this form</div>';
-            synonymsContent.innerHTML = '<div class="no-data">No synonyms or antonyms available</div>';
+            definitionsContent.innerHTML = `<div class="no-data">${t('noDefinitionsForForm')}</div>`;
+            synonymsContent.innerHTML = `<div class="no-data">${t('noSynonymsAntonyms')}</div>`;
             return;
         }
         
@@ -2293,9 +2425,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (senseToRender.antonyms) senseToRender.antonyms.filter(a => a && a.trim()).forEach(a => allAntonyms.add(a));
             } else {
                 senseItem.innerHTML = `<div class="sense-placeholder-basic">
-                    <div class="sense-definition"><strong>${i + 1}.</strong> Definition not available in basic response</div>
-                    <button class="sense-detail-btn" data-sense-index="${i}" title="Load full definition">
-                        <i class="fas fa-download"></i> Load Definition
+                    <div class="sense-definition"><strong>${i + 1}.</strong> ${t('definitionNotAvailable')}</div>
+                    <button class="sense-detail-btn" data-sense-index="${i}" title="${t('loadFullDefinition')}">
+                        <i class="fas fa-download"></i> ${t('loadDefinition')}
                     </button>
                 </div>`;
             }
@@ -2324,7 +2456,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         senseItem.innerHTML = renderSenseHTML(basicSense, senseIndex, false, '');
                         const actionsDiv = senseItem.querySelector('.sense-actions');
                         if (actionsDiv) {
-                            actionsDiv.innerHTML = '<div class="sense-detailed-badge sense-loading-badge"><i class="fas fa-spinner fa-spin"></i> Loading details...</div>';
+                            actionsDiv.innerHTML = `<div class="sense-detailed-badge sense-loading-badge"><i class="fas fa-spinner fa-spin"></i> ${t('loadingDetails')}</div>`;
                         }
                     } catch (e) {
                         console.warn('Failed to parse basic sense data:', e);
@@ -2332,7 +2464,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } else {
                     const actionsDiv = this.closest('.sense-actions');
                     if (actionsDiv) {
-                        actionsDiv.innerHTML = '<div class="sense-detailed-badge sense-loading-badge"><i class="fas fa-spinner fa-spin"></i> Loading details...</div>';
+                        actionsDiv.innerHTML = `<div class="sense-detailed-badge sense-loading-badge"><i class="fas fa-spinner fa-spin"></i> ${t('loadingDetails')}</div>`;
                     }
                 }
                 
@@ -2389,7 +2521,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     console.error(`Error loading detailed sense ${senseIndex}:`, err);
                     const actionsDiv = senseItem.querySelector('.sense-actions');
                     if (actionsDiv) {
-                        actionsDiv.innerHTML = '<button class="sense-detail-btn" data-sense-index="' + senseIndex + '" title="Load detailed information"><i class="fas fa-exclamation-triangle"></i> Failed - Retry</button>';
+                        actionsDiv.innerHTML = `<button class="sense-detail-btn" data-sense-index="${senseIndex}" title="${t('loadDetailedInfo')}"><i class="fas fa-exclamation-triangle"></i> ${t('failedRetry')}</button>`;
                         attachDetailButtonHandlers();
                     }
                 }
@@ -2413,9 +2545,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         const currentZhEntry = findBasicZhEntry(basicData, currentSelectedEntry || 0);
         const currentMeanings = isBilingualMode() && currentZhEntry ? currentZhEntry.meanings_summary : currentEntry.meanings_summary;
         const currentPos = currentMeanings.map(m => m.part_of_speech).filter(Boolean).join(', ');
-        const currentText = isBilingualMode()
-            ? `词条 ${(currentSelectedEntry || 0) + 1}: ${currentPos} (${currentEntry.total_senses} 个义项)`
-            : `Form ${(currentSelectedEntry || 0) + 1}: ${currentPos} (${currentEntry.total_senses} sense${currentEntry.total_senses !== 1 ? 's' : ''})`;
+        const currentText = t('formLabel', {
+            index: (currentSelectedEntry || 0) + 1,
+            pos: currentPos,
+            count: currentEntry.total_senses,
+            senseLabel: t(currentEntry.total_senses === 1 ? 'senseSingular' : 'sensePlural')
+        });
         
         const selectorHTML = `
             <div class="entry-dropdown-container">
@@ -2428,9 +2563,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                         const zhEntry = findBasicZhEntry(basicData, idx);
                         const meanings = isBilingualMode() && zhEntry ? zhEntry.meanings_summary : entry.meanings_summary;
                         const posLabels = meanings.map(m => m.part_of_speech).filter(Boolean).join(', ');
-                        const text = isBilingualMode()
-                            ? `词条 ${idx + 1}: ${posLabels} (${entry.total_senses} 个义项)`
-                            : `Form ${idx + 1}: ${posLabels} (${entry.total_senses} sense${entry.total_senses !== 1 ? 's' : ''})`;
+                        const text = t('formLabel', {
+                            index: idx + 1,
+                            pos: posLabels,
+                            count: entry.total_senses,
+                            senseLabel: t(entry.total_senses === 1 ? 'senseSingular' : 'sensePlural')
+                        });
                         const isSelected = idx === (currentSelectedEntry || 0);
                         return `<div class="dropdown-option ${isSelected ? 'selected' : ''}" data-index="${idx}">${text}</div>`;
                     }).join('')}
@@ -2585,7 +2723,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     if (clearAllHistoryBtn) {
         clearAllHistoryBtn.addEventListener('click', () => {
-            if (confirm('Clear all search history?')) {
+            if (confirm(t('clearAllHistoryConfirm'))) {
 
                 
                 // Clear history
@@ -2667,11 +2805,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Adjust placeholder text for mobile
     function updatePlaceholder() {
         if (window.innerWidth <= 480) {
-            searchInput.placeholder = 'Word or phrase';
+            searchInput.placeholder = t('searchPlaceholderMobile');
         } else if (window.innerWidth <= 768) {
-            searchInput.placeholder = 'Search a word or phrase';
+            searchInput.placeholder = t('searchPlaceholderTablet');
         } else {
-            searchInput.placeholder = "Enter a word or phrase (e.g., 'pipe', 'serendipity')";
+            searchInput.placeholder = t('searchPlaceholderDesktop');
         }
     }
     
@@ -2774,7 +2912,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 suggestionsDropdown.innerHTML = `
                     <div class="suggestions-loading">
                         <div class="spinner-small"></div>
-                        <span>Loading suggestions...</span>
+                        <span>${t('loadingSuggestions')}</span>
                     </div>
                 `;
                 suggestionsDropdown.classList.add('active');
@@ -2831,7 +2969,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function renderNoSuggestions() {
-        suggestionsDropdown.innerHTML = '<div class="suggestions-empty">No suggestions found</div>';
+        suggestionsDropdown.innerHTML = `<div class="suggestions-empty">${t('noSuggestions')}</div>`;
         suggestionsDropdown.classList.add('active');
         searchInput.setAttribute('aria-expanded', 'true');
         positionSuggestionsDropdown();
