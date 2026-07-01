@@ -883,20 +883,12 @@
 }
 
 .cultural-notes-structured > .cultural-section {
-    margin-bottom: 1.25rem;
-}
-
-.cultural-notes-structured > .cultural-section:last-child {
-    margin-bottom: 0;
-}
-
-.cultural-section {
     background: transparent;
     padding: 0;
     margin-bottom: 1.5rem;
 }
 
-.cultural-section:last-child {
+.cultural-notes-structured > .cultural-section:last-child {
     margin-bottom: 0;
 }
 

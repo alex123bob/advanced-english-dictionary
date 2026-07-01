@@ -385,7 +385,7 @@ input:focus-visible,
 .video-resource-group,
 .regional-section,
 .confusion-section,
-.cultural-section,
+.cultural-notes-structured > .cultural-section,
 .synonym-group,
 .usage-notes,
 .modern-relevance-feature,
@@ -817,8 +817,7 @@ input:focus-visible,
     gap: 0.9rem;
 }
 
-.cultural-notes-structured > .cultural-section,
-.cultural-section {
+.cultural-notes-structured > .cultural-section {
     /* margin: 0; */
     /* padding: 1rem; */
     border-radius: 12px;

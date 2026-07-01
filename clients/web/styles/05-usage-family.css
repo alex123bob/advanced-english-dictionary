@@ -701,7 +701,7 @@
     }
     
     /* Enhanced cultural notes and usage context - mobile */
-    .cultural-section {
+    .cultural-notes-structured > .cultural-section {
         padding: 0.75rem;
     }
     
