@@ -113,6 +113,14 @@ The script will:
        index index.html;
        
        # SPA routing - redirect all requests to index.html
+       location = /home {
+           try_files /home/index.html =404;
+       }
+
+       location ^~ /home/ {
+           try_files $uri $uri/ /home/index.html;
+       }
+
        location / {
            try_files $uri $uri/ /index.html;
        }

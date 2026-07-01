@@ -97,6 +97,8 @@ const server = http.createServer((req, res) => {
   // Default to index.html
   if (pathname === '/') {
     pathname = '/index.html';
+  } else if (pathname === '/home' || pathname === '/home/') {
+    pathname = '/home/index.html';
   }
   
   // Remove leading slash

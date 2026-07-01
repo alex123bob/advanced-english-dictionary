@@ -29,9 +29,13 @@ const MIME_TYPES = {
 };
 
 function send(res, statusCode, content, headers = {}) {
+  const cleanHeaders = Object.fromEntries(
+    Object.entries(headers).filter(([, value]) => value !== undefined)
+  );
+
   res.writeHead(statusCode, {
     'Access-Control-Allow-Origin': '*',
-    ...headers
+    ...cleanHeaders
   });
   res.end(content);
 }
@@ -61,6 +65,7 @@ const server = http.createServer((req, res) => {
   let pathname = decodeURIComponent(parsedUrl.pathname || '/');
 
   if (pathname === '/') pathname = '/index.html';
+  if (pathname === '/home' || pathname === '/home/') pathname = '/home/index.html';
 
   const requestedPath = path.normalize(path.join(DIST_DIR, pathname));
   if (!requestedPath.startsWith(DIST_DIR)) {

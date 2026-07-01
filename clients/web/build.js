@@ -26,6 +26,8 @@ const DIST_DIR = path.join(__dirname, 'dist');
 // Files to process
 const FILES_TO_PROCESS = [
   'index.html',
+  'home/index.html',
+  'home/icon.svg',
   'style.css',
   'styles/11-adventure-lab.css',
   'script.js',
@@ -99,9 +101,12 @@ async function minifyCSS(css) {
 }
 
 // Optimize HTML and update references to hashed files
-async function optimizeHTML(html, cssHashed, jsHashed) {
+async function optimizeHTML(html, cssHashed, jsHashed, homeCssHashed) {
   html = html.replace(/href="style\.css"/g, `href="${cssHashed}"`);
   html = html.replace(/src="script\.js"/g, `src="${jsHashed}"`);
+  if (homeCssHashed) {
+    html = html.replace(/href="\/home\/home\.css"/g, `href="/home/${homeCssHashed}"`);
+  }
   SCRIPT_MODULES
     .filter(fileName => fileName !== 'script.js')
     .forEach(fileName => {
@@ -155,19 +160,26 @@ async function createProductionBundle() {
 
   // Read and hash CSS and JS
   const cssContent = await bundleCSS('style.css');
+  const homeCssContent = await readFile(path.join(SOURCE_DIR, 'home', 'home.css'), 'utf8');
   const jsContent = (await Promise.all(
     SCRIPT_MODULES.map(fileName => readFile(path.join(SOURCE_DIR, fileName), 'utf8'))
   )).join('\n');
   const minifiedCSS = await minifyCSS(cssContent);
+  const minifiedHomeCSS = await minifyCSS(homeCssContent);
   const minifiedJS = (await minify(jsContent)).code;
   const cssHash = getHash(minifiedCSS);
+  const homeCssHash = getHash(minifiedHomeCSS);
   const jsHash = getHash(minifiedJS);
   const cssHashed = `style.${cssHash}.css`;
+  const homeCssHashed = `home.${homeCssHash}.css`;
   const jsHashed = `script.${jsHash}.js`;
 
   // Write hashed CSS and JS
   await writeFile(path.join(DIST_DIR, cssHashed), minifiedCSS, 'utf8');
   console.log(chalk.green(`✅ Minified & Hashed CSS: ${cssHashed}`));
+  await mkdir(path.join(DIST_DIR, 'home'), { recursive: true });
+  await writeFile(path.join(DIST_DIR, 'home', homeCssHashed), minifiedHomeCSS, 'utf8');
+  console.log(chalk.green(`✅ Minified & Hashed Portal CSS: home/${homeCssHashed}`));
   await writeFile(path.join(DIST_DIR, jsHashed), minifiedJS, 'utf8');
   console.log(chalk.green(`✅ Minified & Hashed JS: ${jsHashed}`));
 
@@ -191,7 +203,7 @@ async function createProductionBundle() {
 
         switch (ext) {
           case '.html':
-            processedContent = await optimizeHTML(content, cssHashed, jsHashed);
+            processedContent = await optimizeHTML(content, cssHashed, jsHashed, homeCssHashed);
             break;
           case '.xml':
             break;
@@ -251,7 +263,7 @@ Generated: ${new Date().toISOString()}
   
   await writeFile(path.join(DIST_DIR, '.gitignore'), gitignoreContent, 'utf8');
   console.log(chalk.green('✅ Created dist/.gitignore'));
-  
+
   console.log(chalk.green('\n🎉 Build completed successfully!'));
   console.log(chalk.cyan(`📁 Production files are in: ${DIST_DIR}`));
   console.log(chalk.cyan(`🚀 To preview: npm run preview`));
