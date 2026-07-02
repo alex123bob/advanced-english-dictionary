@@ -1,0 +1,112 @@
+name: Release Chrome Extension
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Compute next version
+        id: version
+        run: |
+          CURRENT=$(node -p "require('./clients/chrome-extension/package.json').version")
+          BUMP="${{ github.event.inputs.bump }}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          if [ "$BUMP" = "major" ]; then
+            NEXT="$((MAJOR + 1)).0.0"
+          elif [ "$BUMP" = "minor" ]; then
+            NEXT="${MAJOR}.$((MINOR + 1)).0"
+          else
+            NEXT="${MAJOR}.${MINOR}.$((PATCH + 1))"
+          fi
+          echo "current=$CURRENT" >> $GITHUB_OUTPUT
+          echo "next=$NEXT" >> $GITHUB_OUTPUT
+          echo "tag=v$NEXT" >> $GITHUB_OUTPUT
+
+      - name: Bump version in package.json and manifest.json
+        run: |
+          NEXT="${{ steps.version.outputs.next }}"
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('clients/chrome-extension/package.json', 'utf8'));
+            pkg.version = '$NEXT';
+            fs.writeFileSync('clients/chrome-extension/package.json', JSON.stringify(pkg, null, 2) + '\n');
+            const manifest = JSON.parse(fs.readFileSync('clients/chrome-extension/src/manifest.json', 'utf8'));
+            manifest.version = '$NEXT';
+            fs.writeFileSync('clients/chrome-extension/src/manifest.json', JSON.stringify(manifest, null, 2) + '\n');
+          "
+
+      - name: Build extension
+        run: node build.js
+        working-directory: clients/chrome-extension
+
+      - name: Verify version in dist/manifest.json
+        run: |
+          NEXT="${{ steps.version.outputs.next }}"
+          DIST_VER=$(node -p "require('./clients/chrome-extension/dist/manifest.json').version")
+          if [ "$DIST_VER" != "$NEXT" ]; then
+            echo "ERROR: dist/manifest.json version is $DIST_VER, expected $NEXT"
+            exit 1
+          fi
+          echo "dist/manifest.json version verified: $DIST_VER"
+
+      - name: Package dist.zip
+        run: |
+          rm -f dist.zip
+          cd dist && zip -r ../dist.zip .
+        working-directory: clients/chrome-extension
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add clients/chrome-extension/src/manifest.json \
+                  clients/chrome-extension/package.json \
+                  clients/chrome-extension/dist.zip
+          git commit -m "chore: bump chrome extension version to ${{ steps.version.outputs.next }}"
+
+      - name: Create and push tag
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          git tag -a "$TAG" -m "Chrome extension $TAG"
+          git push origin main --tags
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          PREV="${{ steps.version.outputs.current }}"
+          gh release create "$TAG" \
+            clients/chrome-extension/dist.zip \
+            --title "Chrome Extension $TAG" \
+            --notes "## Chrome Extension $TAG
+
+          Bumped from $PREV → ${{ steps.version.outputs.next }} (${{ github.event.inputs.bump }} release).
+
+          ### Changes since $PREV
+          $(git log v${PREV}..HEAD~1 --oneline 2>/dev/null || echo 'See commit history for details.')"
