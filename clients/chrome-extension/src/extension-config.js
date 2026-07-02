@@ -1,6 +1,6 @@
 const EXTENSION_SETTINGS_KEY = 'advancedDictionarySettings';
 const EXTENSION_PENDING_WORD_KEY = 'advancedDictionaryPendingWord';
-const DEFAULT_API_BASE_URL = 'http://localhost:8000';
+const DEFAULT_API_BASE_URL = 'https://www.lijialab.com';
 const DEFAULT_WEBSITE_URL = 'https://www.lijialab.com';
 
 const extensionConfig = {

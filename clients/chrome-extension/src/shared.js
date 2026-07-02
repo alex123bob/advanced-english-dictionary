@@ -1,5 +1,5 @@
 const DEFAULT_SETTINGS = {
-  apiBaseUrl: 'http://localhost:8000',
+  apiBaseUrl: 'https://www.lijialab.com',
   websiteUrl: 'https://www.lijialab.com'
 };
 

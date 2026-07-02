@@ -109,7 +109,7 @@ async function search(word) {
       return;
     }
 
-    setStatus(`${error.message} Check the extension options if your API is not running on localhost:8000.`, 'error');
+    setStatus(`${error.message} Check the extension options if the API URL is not configured correctly.`, 'error');
   }
 }
 
