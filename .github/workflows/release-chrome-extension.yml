@@ -85,8 +85,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add clients/chrome-extension/src/manifest.json \
-                  clients/chrome-extension/package.json \
-                  clients/chrome-extension/dist.zip
+                  clients/chrome-extension/package.json
           git commit -m "chore: bump chrome extension version to ${{ steps.version.outputs.next }}"
 
       - name: Create and push tag
