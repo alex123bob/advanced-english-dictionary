@@ -4,6 +4,7 @@
   "description": "Chrome extension client for Advanced English Dictionary",
   "private": true,
   "scripts": {
-    "build": "node build.js"
+    "build": "node build.js",
+    "release": "node release.js"
   }
 }
