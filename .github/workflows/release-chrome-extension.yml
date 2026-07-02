@@ -119,12 +119,10 @@ jobs:
           TAG="${{ steps.version.outputs.tag }}"
           PREV="${{ steps.version.outputs.current }}"
           CHANGELOG=$(git log "v${PREV}..HEAD~1" --oneline 2>/dev/null || echo 'See commit history for details.')
+          NOTES_FILE=$(mktemp)
+          printf '## Chrome Extension %s\n\nBumped from %s to %s (%s release).\n\n### Changes since %s\n%s\n' \
+            "$TAG" "$PREV" "$TAG" "${{ github.event.inputs.bump }}" "$PREV" "$CHANGELOG" > "$NOTES_FILE"
           gh release create "$TAG" \
             clients/chrome-extension/dist.zip \
             --title "Chrome Extension $TAG" \
-            --notes "## Chrome Extension $TAG
-
-Bumped from $PREV to ${{ steps.version.outputs.next }} (${{ github.event.inputs.bump }} release).
-
-### Changes since $PREV
-$CHANGELOG"
+            --notes-file "$NOTES_FILE"
