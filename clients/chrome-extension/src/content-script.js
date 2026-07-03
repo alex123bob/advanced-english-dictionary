@@ -669,6 +669,8 @@
   }
 
   async function init() {
+    setupAlwaysListeners(); // register unconditional listeners immediately, before async gap
+
     let settings;
     try {
       settings = await getSettings();
@@ -679,8 +681,6 @@
     const triggerMode = settings.triggerMode || 'text-selection';
     const modifierKey = settings.modifierKey || 'auto';
     const isModifierHeld = resolveModifierChecker(modifierKey);
-
-    setupAlwaysListeners();
 
     if (triggerMode === 'text-selection') {
       setupTextSelectionListeners();
