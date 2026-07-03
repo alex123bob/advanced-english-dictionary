@@ -63,8 +63,8 @@ function saveSettings(settings) {
     [STORAGE_KEYS.settings]: {
       apiBaseUrl: normalizeBaseUrl(settings.apiBaseUrl),
       websiteUrl: normalizeBaseUrl(settings.websiteUrl),
-      triggerMode: settings.triggerMode || 'text-selection',
-      modifierKey: settings.modifierKey || 'auto'
+      triggerMode: settings.triggerMode != null ? settings.triggerMode : DEFAULT_SETTINGS.triggerMode,
+      modifierKey: settings.modifierKey != null ? settings.modifierKey : DEFAULT_SETTINGS.modifierKey
     }
   });
 }
