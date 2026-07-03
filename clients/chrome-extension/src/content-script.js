@@ -547,11 +547,11 @@
 
     // Expand left to word boundary
     let start = offset;
-    while (start > 0 && /\w/.test(text[start - 1])) start--;
+    while (start > 0 && /[\w']/.test(text[start - 1])) start--;
 
     // Expand right to word boundary
     let end = offset;
-    while (end < text.length && /\w/.test(text[end])) end++;
+    while (end < text.length && /[\w']/.test(text[end])) end++;
 
     if (start === end) return null;
 
@@ -562,9 +562,7 @@
   function openDictionaryWord(word) {
     const clean = sanitizeWord(word);
     if (!clean) return;
-    activeWord = clean;
     sendOpenDictionaryMessage(clean);
-    activeWord = '';
   }
 
   function handleOutsidePointerDown(event) {
