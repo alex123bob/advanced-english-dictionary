@@ -76,3 +76,87 @@ h1 {
   color: #047857;
   font-weight: 700;
 }
+
+/* Trigger section */
+.trigger-fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.trigger-legend {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0;
+  margin-bottom: 4px;
+}
+
+.trigger-options {
+  display: grid;
+  gap: 8px;
+}
+
+.trigger-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.trigger-option input[type="radio"] {
+  margin: 3px 0 0;
+  accent-color: #1d4ed8;
+  cursor: pointer;
+  flex-shrink: 0;
+  width: auto;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+
+.trigger-label {
+  display: grid;
+  gap: 2px;
+}
+
+.trigger-name {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.trigger-desc {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.modifier-key-label {
+  display: grid;
+  gap: 8px;
+}
+
+.modifier-key-label span {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.settings-form select {
+  font: inherit;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: white;
+  cursor: pointer;
+}
+
+.settings-form select:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.reload-note {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 12px;
+}
