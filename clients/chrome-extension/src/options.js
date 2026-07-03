@@ -20,7 +20,7 @@ function applyTranslations() {
   document.querySelector('#modifierKey option[value="auto"]').textContent = t('extModifierAuto');
   document.querySelector('#modifierKey option[value="meta"]').textContent = t('extModifierMeta');
   document.querySelector('#modifierKey option[value="ctrl"]').textContent = t('extModifierCtrl');
-  document.querySelector('#modifierKey option[value="alt"]').textContent  = t('extModifierAlt');
+  document.querySelector('#modifierKey option[value="alt"]').textContent = t('extModifierAlt');
 
   // Update <html lang> for screen readers and browser font rendering
   document.documentElement.lang = i18n.getLanguageMeta().htmlLang;
