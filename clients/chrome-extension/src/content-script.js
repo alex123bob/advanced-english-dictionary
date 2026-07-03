@@ -6,11 +6,14 @@
   const lensHideMs = 2600;
   const hintDelayMs = 1200;
   const hintHideMs = 5600;
+  const hoverDwellMs = 300;
 
   let activeWord = '';
   let lensHideTimer = null;
   let selectionTimer = null;
   let hintTimer = null;
+  let hoverDwellTimer = null;
+  let hoverTrackedWord = null;
 
   function sanitizeWord(value) {
     return (value || '')
@@ -505,6 +508,63 @@
 
   function escapeAttribute(value) {
     return escapeHtml(value).replace(/`/g, '&#96;');
+  }
+
+  function resolveModifierChecker(modifierKey) {
+    if (modifierKey === 'auto') {
+      const platform = (navigator.userAgentData && navigator.userAgentData.platform)
+        || navigator.platform
+        || '';
+      const isMac = /mac/i.test(platform);
+      return isMac
+        ? event => event.metaKey
+        : event => event.ctrlKey;
+    }
+    if (modifierKey === 'meta') return event => event.metaKey;
+    if (modifierKey === 'ctrl') return event => event.ctrlKey;
+    if (modifierKey === 'alt') return event => event.altKey;
+    return event => event.ctrlKey; // safe fallback
+  }
+
+  function getWordAtPoint(x, y) {
+    let range = null;
+    if (document.caretRangeFromPoint) {
+      range = document.caretRangeFromPoint(x, y);
+    } else if (document.caretPositionFromPoint) {
+      const pos = document.caretPositionFromPoint(x, y);
+      if (pos) {
+        range = document.createRange();
+        range.setStart(pos.offsetNode, pos.offset);
+        range.setEnd(pos.offsetNode, pos.offset);
+      }
+    }
+
+    if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) return null;
+
+    const textNode = range.startContainer;
+    const offset = range.startOffset;
+    const text = textNode.textContent || '';
+
+    // Expand left to word boundary
+    let start = offset;
+    while (start > 0 && /\w/.test(text[start - 1])) start--;
+
+    // Expand right to word boundary
+    let end = offset;
+    while (end < text.length && /\w/.test(text[end])) end++;
+
+    if (start === end) return null;
+
+    const word = sanitizeWord(text.slice(start, end));
+    return word || null;
+  }
+
+  function openDictionaryWord(word) {
+    const clean = sanitizeWord(word);
+    if (!clean) return;
+    activeWord = clean;
+    sendOpenDictionaryMessage(clean);
+    activeWord = '';
   }
 
   function handleOutsidePointerDown(event) {
