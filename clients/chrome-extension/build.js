@@ -81,6 +81,7 @@ const webIndex = fs.readFileSync(path.join(webDir, 'index.html'), 'utf8');
 const popupHtml = webIndex
   .replace(/\s*<link rel="stylesheet" href="https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/font-awesome\/6\.4\.0\/css\/all\.min\.css"[^>]*>\n?/g, '\n    <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">\n')
   .replace(/\s*<link href="https:\/\/fonts\.googleapis\.com\/css2\?[^"]+"[^>]*>\n?/g, '')
+  .replace(/<link href="(https:\/\/fonts\.loli\.net\/css2\?[^"]+)"[^>]*>/, '<link href="$1" rel="stylesheet">')
   .replace(/\s*<noscript>[\s\S]*?<\/noscript>\n?/g, '')
   .replace(/\s*<script src="https:\/\/cdn\.jsdelivr\.net\/npm\/howler@2\.2\.4\/dist\/howler\.min\.js" defer><\/script>\n?/g, '')
   .replace('<script src="config.js"></script>', '<script src="extension-config.js"></script>')
