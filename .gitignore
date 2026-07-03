@@ -207,6 +207,8 @@ server.log
 # Build artifacts
 *.min.js
 *.min.css
+# Vendor exceptions — these are committed source files, not build artifacts
+!clients/chrome-extension/src/vendor/**/*.min.css
 # Deployment backups
 backups/
 # Test files (if you add tests later)
