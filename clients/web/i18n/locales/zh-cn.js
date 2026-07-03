@@ -139,7 +139,7 @@
             "senseSingular": "义项",
             "sensePlural": "义项",
             "extSettingsTitle": "扩展设置",
-            "extSettingsLede": "将扩展指向您的 API 和网站实例。",
+            "extSettingsLede": "将扩展指向你的 API 和网站实例。",
             "extLookupTrigger": "查词触发方式",
             "extTriggerTextSelection": "选中文本",
             "extTriggerTextSelectionDesc": "选中文本触发查词",
@@ -156,6 +156,6 @@
             "extWebsiteUrl": "网站地址",
             "extSaveSettings": "保存设置",
             "extSaved": "已保存。",
-            "extReloadNote": "更改将在下次页面加载后生效。"
+            "extReloadNote": "更改将在刷新页面后生效。"
     });
 })();
