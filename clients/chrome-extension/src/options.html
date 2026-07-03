@@ -15,6 +15,47 @@
     </header>
 
     <form id="optionsForm" class="settings-form">
+
+      <fieldset class="trigger-fieldset">
+        <legend class="trigger-legend">Lookup Trigger</legend>
+
+        <div class="trigger-options">
+          <label class="trigger-option">
+            <input type="radio" name="triggerMode" value="text-selection">
+            <span class="trigger-label">
+              <span class="trigger-name">Text selection</span>
+              <span class="trigger-desc">Select text to trigger lookup</span>
+            </span>
+          </label>
+
+          <label class="trigger-option">
+            <input type="radio" name="triggerMode" value="modifier-click">
+            <span class="trigger-label">
+              <span class="trigger-name">Modifier + click</span>
+              <span class="trigger-desc">Hold Cmd/Ctrl and click a word</span>
+            </span>
+          </label>
+
+          <label class="trigger-option">
+            <input type="radio" name="triggerMode" value="modifier-hover">
+            <span class="trigger-label">
+              <span class="trigger-name">Modifier + hover</span>
+              <span class="trigger-desc">Hold Cmd/Ctrl and hover over a word for 300ms</span>
+            </span>
+          </label>
+        </div>
+
+        <label class="modifier-key-label">
+          <span>Modifier key</span>
+          <select id="modifierKey">
+            <option value="auto">Auto-detect (Cmd on Mac, Ctrl on Windows)</option>
+            <option value="meta">Command (⌘)</option>
+            <option value="ctrl">Control (Ctrl)</option>
+            <option value="alt">Alt / Option</option>
+          </select>
+        </label>
+      </fieldset>
+
       <label>
         <span>Dictionary API base URL</span>
         <input id="apiBaseUrl" type="url" placeholder="https://www.lijialab.com" required>
@@ -27,6 +68,7 @@
 
       <button type="submit">Save settings</button>
       <p id="savedMessage" class="saved-message" hidden>Saved.</p>
+      <p class="reload-note">Changes take effect on the next page load.</p>
     </form>
   </main>
 
