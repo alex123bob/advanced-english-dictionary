@@ -35,7 +35,6 @@ triggerRadios.forEach(radio => {
   websiteUrlInput.value = settings.websiteUrl;
   setTriggerMode(settings.triggerMode || 'text-selection');
   modifierKeySelect.value = settings.modifierKey || 'auto';
-  updateModifierKeyState(settings.triggerMode || 'text-selection');
 })();
 
 optionsForm.addEventListener('submit', async event => {
