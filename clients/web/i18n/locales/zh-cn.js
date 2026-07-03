@@ -137,6 +137,25 @@
             "failedRetry": "失败 - 重试",
             "formLabel": "词条 {index}: {pos}（{count} 个义项）",
             "senseSingular": "义项",
-            "sensePlural": "义项"
+            "sensePlural": "义项",
+            "extSettingsTitle": "扩展设置",
+            "extSettingsLede": "将扩展指向您的 API 和网站实例。",
+            "extLookupTrigger": "查词触发方式",
+            "extTriggerTextSelection": "选中文本",
+            "extTriggerTextSelectionDesc": "选中文本触发查词",
+            "extTriggerModifierClick": "修饰键 + 点击",
+            "extTriggerModifierClickDesc": "按住 Cmd/Ctrl 点击单词",
+            "extTriggerModifierHover": "修饰键 + 悬停",
+            "extTriggerModifierHoverDesc": "按住 Cmd/Ctrl 悬停单词 300 毫秒",
+            "extModifierKey": "修饰键",
+            "extModifierAuto": "自动检测（Mac 用 Cmd，Windows 用 Ctrl）",
+            "extModifierMeta": "Command (⌘)",
+            "extModifierCtrl": "Control (Ctrl)",
+            "extModifierAlt": "Alt / Option",
+            "extApiBaseUrl": "词典 API 地址",
+            "extWebsiteUrl": "网站地址",
+            "extSaveSettings": "保存设置",
+            "extSaved": "已保存。",
+            "extReloadNote": "更改将在下次页面加载后生效。"
     });
 })();
