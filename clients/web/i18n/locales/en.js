@@ -136,6 +136,25 @@
             "failedRetry": "Failed - Retry",
             "formLabel": "Form {index}: {pos} ({count} {senseLabel})",
             "senseSingular": "sense",
-            "sensePlural": "senses"
+            "sensePlural": "senses",
+            "extSettingsTitle": "Extension settings",
+            "extSettingsLede": "Point the extension at your API and website instance.",
+            "extLookupTrigger": "Lookup Trigger",
+            "extTriggerTextSelection": "Text selection",
+            "extTriggerTextSelectionDesc": "Select text to trigger lookup",
+            "extTriggerModifierClick": "Modifier + click",
+            "extTriggerModifierClickDesc": "Hold Cmd/Ctrl and click a word",
+            "extTriggerModifierHover": "Modifier + hover",
+            "extTriggerModifierHoverDesc": "Hold Cmd/Ctrl and hover over a word for 300ms",
+            "extModifierKey": "Modifier key",
+            "extModifierAuto": "Auto-detect (Cmd on Mac, Ctrl on Windows)",
+            "extModifierMeta": "Command (⌘)",
+            "extModifierCtrl": "Control (Ctrl)",
+            "extModifierAlt": "Alt / Option",
+            "extApiBaseUrl": "Dictionary API base URL",
+            "extWebsiteUrl": "Website base URL",
+            "extSaveSettings": "Save settings",
+            "extSaved": "Saved.",
+            "extReloadNote": "Changes take effect on the next page load."
     });
 })();
