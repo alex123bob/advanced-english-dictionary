@@ -580,29 +580,117 @@
     }
   }
 
-  document.addEventListener('mouseup', scheduleSelectionLookup);
-  document.addEventListener('keyup', scheduleSelectionLookup);
-  document.addEventListener('touchend', scheduleSelectionLookup, { passive: true });
-  document.addEventListener('pointerdown', handleOutsidePointerDown, true);
-  document.addEventListener('mousedown', handleOutsidePointerDown, true);
+  function setupAlwaysListeners() {
+    document.addEventListener('pointerdown', handleOutsidePointerDown, true);
+    document.addEventListener('mousedown', handleOutsidePointerDown, true);
 
-  document.addEventListener('keydown', event => {
-    if (event.key === 'Escape') {
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {
+        window.clearTimeout(selectionTimer);
+        removeHint();
+        removeLens();
+      }
+    });
+
+    document.addEventListener('scroll', () => {
       window.clearTimeout(selectionTimer);
+      removeLens();
+    }, true);
+
+    window.addEventListener('pagehide', () => {
       removeHint();
       removeLens();
+    });
+  }
+
+  function setupTextSelectionListeners() {
+    document.addEventListener('mouseup', scheduleSelectionLookup);
+    document.addEventListener('keyup', scheduleSelectionLookup);
+    document.addEventListener('touchend', scheduleSelectionLookup, { passive: true });
+  }
+
+  function setupModifierClickListeners(isModifierHeld) {
+    document.addEventListener('click', event => {
+      if (!isModifierHeld(event)) return;
+
+      const word = getWordAtPoint(event.clientX, event.clientY);
+      if (!word) return;
+
+      // Prevent default for anchor clicks (suppresses open-in-new-tab)
+      let el = event.target;
+      while (el) {
+        if (el.tagName === 'A') {
+          event.preventDefault();
+          break;
+        }
+        el = el.parentElement;
+      }
+
+      openDictionaryWord(word);
+    }, true);
+  }
+
+  function setupModifierHoverListeners(isModifierHeld) {
+    document.addEventListener('mousemove', event => {
+      const word = getWordAtPoint(event.clientX, event.clientY);
+
+      // Word changed or left — cancel pending timer
+      if (word !== hoverTrackedWord) {
+        window.clearTimeout(hoverDwellTimer);
+        hoverDwellTimer = null;
+        hoverTrackedWord = word;
+
+        // Only start timer if modifier is currently held
+        if (word && isModifierHeld(event)) {
+          hoverDwellTimer = window.setTimeout(() => {
+            openDictionaryWord(hoverTrackedWord);
+          }, hoverDwellMs);
+        }
+      }
+    });
+
+    document.addEventListener('keydown', event => {
+      // Modifier pressed while hovering over a word — start dwell timer
+      if (hoverTrackedWord && isModifierHeld(event) && !hoverDwellTimer) {
+        hoverDwellTimer = window.setTimeout(() => {
+          openDictionaryWord(hoverTrackedWord);
+        }, hoverDwellMs);
+      }
+    });
+
+    document.addEventListener('keyup', event => {
+      // Modifier released — cancel pending timer
+      // Check all modifier keys; if none held, cancel
+      if (!event.metaKey && !event.ctrlKey && !event.altKey) {
+        window.clearTimeout(hoverDwellTimer);
+        hoverDwellTimer = null;
+      }
+    });
+  }
+
+  async function init() {
+    let settings;
+    try {
+      settings = await getSettings();
+    } catch (_) {
+      settings = { triggerMode: 'text-selection', modifierKey: 'auto' };
     }
-  });
 
-  document.addEventListener('scroll', () => {
-    window.clearTimeout(selectionTimer);
-    removeLens();
-  }, true);
+    const triggerMode = settings.triggerMode || 'text-selection';
+    const modifierKey = settings.modifierKey || 'auto';
+    const isModifierHeld = resolveModifierChecker(modifierKey);
 
-  window.addEventListener('pagehide', () => {
-    removeHint();
-    removeLens();
-  });
+    setupAlwaysListeners();
 
-  maybeShowSelectionHint();
+    if (triggerMode === 'text-selection') {
+      setupTextSelectionListeners();
+      maybeShowSelectionHint();
+    } else if (triggerMode === 'modifier-click') {
+      setupModifierClickListeners(isModifierHeld);
+    } else if (triggerMode === 'modifier-hover') {
+      setupModifierHoverListeners(isModifierHeld);
+    }
+  }
+
+  init();
 })();
