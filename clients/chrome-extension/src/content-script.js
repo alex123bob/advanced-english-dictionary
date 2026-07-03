@@ -610,6 +610,39 @@
   }
 
   function setupModifierClickListeners(isModifierHeld) {
+    let cursorStyleEl = null;
+
+    function setPointerCursor() {
+      if (cursorStyleEl) return;
+      cursorStyleEl = document.createElement('style');
+      cursorStyleEl.id = 'advanced-dictionary-cursor-override';
+      cursorStyleEl.textContent = '*, *::before, *::after { cursor: pointer !important; }';
+      document.documentElement.appendChild(cursorStyleEl);
+    }
+
+    function clearPointerCursor() {
+      if (cursorStyleEl) {
+        cursorStyleEl.remove();
+        cursorStyleEl = null;
+      }
+    }
+
+    // Show pointer cursor while modifier is held
+    document.addEventListener('keydown', event => {
+      if (isModifierHeld(event)) setPointerCursor();
+    });
+
+    document.addEventListener('keyup', event => {
+      if (!event.metaKey && !event.ctrlKey && !event.altKey) clearPointerCursor();
+    });
+
+    // Prevent text selection when modifier is held (mousedown fires before click)
+    document.addEventListener('mousedown', event => {
+      if (isModifierHeld(event)) {
+        event.preventDefault();
+      }
+    }, true);
+
     document.addEventListener('click', event => {
       if (!isModifierHeld(event)) return;
 
@@ -631,7 +664,104 @@
   }
 
   function setupModifierHoverListeners(isModifierHeld) {
+    const highlightHostId = 'advanced-dictionary-hover-highlight';
+
+    function removeHighlight() {
+      const existing = document.getElementById(highlightHostId);
+      if (existing) existing.remove();
+    }
+
+    function showHighlight(x, y) {
+      removeHighlight();
+
+      // Get the range for the tracked word to position the highlight
+      let range = null;
+      if (document.caretRangeFromPoint) {
+        range = document.caretRangeFromPoint(x, y);
+      } else if (document.caretPositionFromPoint) {
+        const pos = document.caretPositionFromPoint(x, y);
+        if (pos) {
+          range = document.createRange();
+          range.setStart(pos.offsetNode, pos.offset);
+          range.setEnd(pos.offsetNode, pos.offset);
+        }
+      }
+      if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) return;
+
+      const textNode = range.startContainer;
+      const offset = range.startOffset;
+      const text = textNode.textContent || '';
+      let start = offset;
+      while (start > 0 && /[\w']/.test(text[start - 1])) start--;
+      let end = offset;
+      while (end < text.length && /[\w']/.test(text[end])) end++;
+      if (start === end) return;
+
+      const wordRange = document.createRange();
+      wordRange.setStart(textNode, start);
+      wordRange.setEnd(textNode, end);
+      const rect = wordRange.getBoundingClientRect();
+      if (!rect.width) return;
+
+      const host = document.createElement('div');
+      host.id = highlightHostId;
+      host.style.cssText = `
+        position: fixed;
+        pointer-events: none;
+        z-index: 2147483646;
+        left: ${rect.left}px;
+        top: ${rect.top}px;
+        width: ${rect.width}px;
+        height: ${rect.height}px;
+      `;
+      const shadow = host.attachShadow({ mode: 'open' });
+      shadow.innerHTML = `
+        <style>
+          :host { display: block; }
+          .hl {
+            position: absolute;
+            inset: 0;
+            border-bottom: 2px dashed #14b8a6;
+            border-radius: 1px;
+            background: rgba(20, 184, 166, 0.08);
+            cursor: pointer;
+          }
+        </style>
+        <div class="hl"></div>
+      `;
+      document.documentElement.appendChild(host);
+    }
+
+    // Track last mouse position to show highlight on keydown
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+    let modifierCurrentlyHeld = false;
+    let cursorStyleEl = null;
+
+    function setPointerCursor() {
+      if (cursorStyleEl) return;
+      cursorStyleEl = document.createElement('style');
+      cursorStyleEl.id = 'advanced-dictionary-cursor-override';
+      cursorStyleEl.textContent = '*, *::before, *::after { cursor: pointer !important; }';
+      document.documentElement.appendChild(cursorStyleEl);
+    }
+
+    function clearPointerCursor() {
+      if (cursorStyleEl) {
+        cursorStyleEl.remove();
+        cursorStyleEl = null;
+      }
+    }
+
+    // Suppress text selection when modifier is held
+    document.addEventListener('mousedown', event => {
+      if (isModifierHeld(event)) event.preventDefault();
+    }, true);
+
     document.addEventListener('mousemove', event => {
+      lastMouseX = event.clientX;
+      lastMouseY = event.clientY;
+
       const word = getWordAtPoint(event.clientX, event.clientY);
 
       // Word changed or left — cancel pending timer
@@ -640,32 +770,57 @@
         hoverDwellTimer = null;
         hoverTrackedWord = word;
 
-        // Only start timer if modifier is currently held
-        if (word && isModifierHeld(event)) {
+        if (word && modifierCurrentlyHeld) {
+          showHighlight(event.clientX, event.clientY);
           hoverDwellTimer = window.setTimeout(() => {
+            removeHighlight();
             openDictionaryWord(hoverTrackedWord);
           }, hoverDwellMs);
+        } else {
+          removeHighlight();
         }
+      }
+
+      // If modifier held but no timer running (e.g. moved to same word), ensure highlight
+      if (word && modifierCurrentlyHeld && !hoverDwellTimer) {
+        showHighlight(event.clientX, event.clientY);
+        hoverDwellTimer = window.setTimeout(() => {
+          removeHighlight();
+          openDictionaryWord(hoverTrackedWord);
+        }, hoverDwellMs);
       }
     });
 
     document.addEventListener('keydown', event => {
-      // Modifier pressed while hovering over a word — start dwell timer
-      if (hoverTrackedWord && isModifierHeld(event) && !hoverDwellTimer) {
+      if (!isModifierHeld(event)) return;
+      modifierCurrentlyHeld = true;
+      setPointerCursor();
+      // Modifier pressed while hovering over a word — show highlight and start dwell timer
+      if (hoverTrackedWord && !hoverDwellTimer) {
+        showHighlight(lastMouseX, lastMouseY);
         hoverDwellTimer = window.setTimeout(() => {
+          removeHighlight();
           openDictionaryWord(hoverTrackedWord);
         }, hoverDwellMs);
       }
     });
 
     document.addEventListener('keyup', event => {
-      // Modifier released — cancel pending timer
-      // Check all modifier keys; if none held, cancel
+      // Modifier released — cancel pending timer and remove highlight
       if (!event.metaKey && !event.ctrlKey && !event.altKey) {
+        modifierCurrentlyHeld = false;
+        clearPointerCursor();
         window.clearTimeout(hoverDwellTimer);
         hoverDwellTimer = null;
+        removeHighlight();
       }
     });
+
+    // Clean up highlight and cursor on scroll
+    document.addEventListener('scroll', () => {
+      removeHighlight();
+      clearPointerCursor();
+    }, true);
   }
 
   async function init() {
