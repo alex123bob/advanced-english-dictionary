@@ -10,68 +10,71 @@
   <main class="options-shell">
     <header>
       <p class="eyebrow">Advanced English Dictionary</p>
-      <h1>Extension settings</h1>
-      <p class="lede">Point the extension at your API and website instance.</p>
+      <h1 data-i18n="extSettingsTitle"></h1>
+      <p class="lede" data-i18n="extSettingsLede"></p>
     </header>
 
     <form id="optionsForm" class="settings-form">
 
       <fieldset class="trigger-fieldset">
-        <legend class="trigger-legend">Lookup Trigger</legend>
+        <legend class="trigger-legend" data-i18n="extLookupTrigger"></legend>
 
         <div class="trigger-options">
           <label class="trigger-option">
             <input type="radio" name="triggerMode" value="text-selection">
             <span class="trigger-label">
-              <span class="trigger-name">Text selection</span>
-              <span class="trigger-desc">Select text to trigger lookup</span>
+              <span class="trigger-name" data-i18n="extTriggerTextSelection"></span>
+              <span class="trigger-desc" data-i18n="extTriggerTextSelectionDesc"></span>
             </span>
           </label>
 
           <label class="trigger-option">
             <input type="radio" name="triggerMode" value="modifier-click">
             <span class="trigger-label">
-              <span class="trigger-name">Modifier + click</span>
-              <span class="trigger-desc">Hold Cmd/Ctrl and click a word</span>
+              <span class="trigger-name" data-i18n="extTriggerModifierClick"></span>
+              <span class="trigger-desc" data-i18n="extTriggerModifierClickDesc"></span>
             </span>
           </label>
 
           <label class="trigger-option">
             <input type="radio" name="triggerMode" value="modifier-hover">
             <span class="trigger-label">
-              <span class="trigger-name">Modifier + hover</span>
-              <span class="trigger-desc">Hold Cmd/Ctrl and hover over a word for 300ms</span>
+              <span class="trigger-name" data-i18n="extTriggerModifierHover"></span>
+              <span class="trigger-desc" data-i18n="extTriggerModifierHoverDesc"></span>
             </span>
           </label>
         </div>
 
         <label class="modifier-key-label">
-          <span>Modifier key</span>
+          <span data-i18n="extModifierKey"></span>
           <select id="modifierKey">
-            <option value="auto">Auto-detect (Cmd on Mac, Ctrl on Windows)</option>
-            <option value="meta">Command (⌘)</option>
-            <option value="ctrl">Control (Ctrl)</option>
-            <option value="alt">Alt / Option</option>
+            <option value="auto"></option>
+            <option value="meta"></option>
+            <option value="ctrl"></option>
+            <option value="alt"></option>
           </select>
         </label>
       </fieldset>
 
       <label>
-        <span>Dictionary API base URL</span>
+        <span data-i18n="extApiBaseUrl"></span>
         <input id="apiBaseUrl" type="url" placeholder="https://www.lijialab.com" required>
       </label>
 
       <label>
-        <span>Website base URL</span>
+        <span data-i18n="extWebsiteUrl"></span>
         <input id="websiteUrl" type="url" placeholder="https://www.lijialab.com" required>
       </label>
 
-      <button type="submit">Save settings</button>
-      <p id="savedMessage" class="saved-message" hidden>Saved.</p>
-      <p class="reload-note">Changes take effect on the next page load.</p>
+      <button type="submit" data-i18n="extSaveSettings"></button>
+      <p id="savedMessage" class="saved-message" data-i18n="extSaved" hidden></p>
+      <p class="reload-note" data-i18n="extReloadNote"></p>
     </form>
   </main>
 
+  <script src="i18n/i18n.js"></script>
+  <script src="i18n/locales/en.js"></script>
+  <script src="i18n/locales/zh-cn.js"></script>
   <script src="shared.js"></script>
   <script src="options.js"></script>
 </body>
