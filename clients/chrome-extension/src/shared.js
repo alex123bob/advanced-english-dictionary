@@ -1,6 +1,8 @@
 const DEFAULT_SETTINGS = {
   apiBaseUrl: 'https://www.lijialab.com',
-  websiteUrl: 'https://www.lijialab.com'
+  websiteUrl: 'https://www.lijialab.com',
+  triggerMode: 'text-selection',
+  modifierKey: 'auto'
 };
 
 const STORAGE_KEYS = {
@@ -60,7 +62,9 @@ function saveSettings(settings) {
   return chrome.storage.sync.set({
     [STORAGE_KEYS.settings]: {
       apiBaseUrl: normalizeBaseUrl(settings.apiBaseUrl),
-      websiteUrl: normalizeBaseUrl(settings.websiteUrl)
+      websiteUrl: normalizeBaseUrl(settings.websiteUrl),
+      triggerMode: settings.triggerMode || 'text-selection',
+      modifierKey: settings.modifierKey || 'auto'
     }
   });
 }
