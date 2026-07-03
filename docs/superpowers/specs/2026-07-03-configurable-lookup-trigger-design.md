@@ -132,8 +132,8 @@ No lens button shown — lookup fires directly.
 
 | Event | Behavior |
 |---|---|
-| `mousemove` | Track current word under cursor; if word changes, cancel pending dwell timer and start new 300ms timer; if modifier not held, cancel timer. |
-| `keydown` | If modifier key pressed while a word is tracked, start/restart 300ms dwell timer. |
+| `mousemove` | Track current word under cursor. If modifier is held and word changes, cancel pending dwell timer and start new 300ms timer. If modifier is not held at mousemove time, cancel any pending timer and do not start a new one. |
+| `keydown` | If modifier key is pressed while a word is currently tracked under cursor, start a 300ms dwell timer. |
 | `keyup` | If modifier key released, cancel pending dwell timer. |
 
 Dwell timer fires → `openDictionary(word)` directly. No lens button.
