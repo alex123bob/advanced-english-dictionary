@@ -2644,10 +2644,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         currentSelectedEntry = entryIndex;
         
-        const options = entryTabsContainer.querySelectorAll('.dropdown-option');
+        // dropdownMenu is teleported to document.body, so query it there
+        const dropdownMenu = document.getElementById('dropdownMenu');
+        const options = dropdownMenu ? dropdownMenu.querySelectorAll('.dropdown-option') : [];
+        let selectedText = '';
+
         if (options.length > 0) {
-            let selectedText = '';
-            
             options.forEach(option => {
                 option.classList.remove('selected');
                 if (parseInt(option.dataset.index) === entryIndex) {
@@ -2655,21 +2657,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                     selectedText = option.textContent;
                 }
             });
-            
-            const selectedTextEl = entryTabsContainer.querySelector('.dropdown-selected');
-            if (selectedTextEl && selectedText) {
-                selectedTextEl.textContent = selectedText;
-            }
-            
-            const dropdownMenu = document.getElementById('dropdownMenu');
-            const dropdownContainer = entryTabsContainer.querySelector('.entry-dropdown-container');
-            
-            if (dropdownMenu) {
-                dropdownMenu.style.display = 'none';
-            }
-            if (dropdownContainer) {
-                dropdownContainer.classList.remove('active');
-            }
+        }
+
+        const selectedTextEl = entryTabsContainer.querySelector('.dropdown-selected');
+        if (selectedTextEl && selectedText) {
+            selectedTextEl.textContent = selectedText;
+        }
+
+        const dropdownContainer = entryTabsContainer.querySelector('.entry-dropdown-container');
+
+        if (dropdownMenu) {
+            dropdownMenu.style.display = 'none';
+        }
+        if (dropdownContainer) {
+            dropdownContainer.classList.remove('active');
         }
         
         updateHeadwordAndPronunciation(currentWordData, entryIndex);
