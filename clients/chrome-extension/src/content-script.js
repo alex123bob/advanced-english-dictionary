@@ -746,16 +746,6 @@
       const word = getWordAtPoint(event.clientX, event.clientY);
       if (!word) return;
 
-      // Prevent default for anchor clicks (suppresses open-in-new-tab)
-      let el = event.target;
-      while (el) {
-        if (el.tagName === 'A') {
-          event.preventDefault();
-          break;
-        }
-        el = el.parentElement;
-      }
-
       removeHighlight();
       openDictionaryWord(word);
     }, true);
