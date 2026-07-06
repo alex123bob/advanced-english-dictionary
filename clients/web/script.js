@@ -2582,7 +2582,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         const dropdownCustom = document.getElementById('entryDropdownCustom');
         const dropdownMenu = document.getElementById('dropdownMenu');
         const options = dropdownMenu.querySelectorAll('.dropdown-option');
-        
+
+        // Teleport dropdown to <body> to escape overflow:hidden on .word-header and body.
+        dropdownMenu.parentNode.removeChild(dropdownMenu);
+        dropdownMenu.style.position = 'fixed';
+        dropdownMenu.style.zIndex = '9999';
+        dropdownMenu.style.display = 'none';
+        document.body.appendChild(dropdownMenu);
+
+        function positionDropdownMenu() {
+            const rect = dropdownCustom.getBoundingClientRect();
+            const menuWidth = Math.min(rect.width, window.innerWidth - 16);
+            const top = rect.bottom + 8;
+            const left = Math.max(8, Math.min(rect.left, window.innerWidth - menuWidth - 8));
+            dropdownMenu.style.top = `${Math.round(top)}px`;
+            dropdownMenu.style.left = `${Math.round(left)}px`;
+            dropdownMenu.style.width = `${Math.round(menuWidth)}px`;
+        }
+
         dropdownCustom.addEventListener('click', (e) => {
             e.stopPropagation();
             const isVisible = dropdownMenu.style.display === 'block';
@@ -2591,6 +2608,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 dropdownContainer.classList.remove('active');
             } else {
                 dropdownContainer.classList.add('active');
+                positionDropdownMenu();
             }
         });
         
@@ -2607,11 +2625,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
         
         document.addEventListener('click', (e) => {
-            if (!dropdownContainer.contains(e.target)) {
+            if (!dropdownContainer.contains(e.target) && !dropdownMenu.contains(e.target)) {
                 dropdownMenu.style.display = 'none';
                 dropdownContainer.classList.remove('active');
             }
         });
+
+        window.addEventListener('scroll', () => {
+            if (dropdownMenu.style.display === 'block') {
+                dropdownMenu.style.display = 'none';
+                dropdownContainer.classList.remove('active');
+            }
+        }, { passive: true });
     }
     
     function switchToEntry(entryIndex) {
