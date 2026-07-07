@@ -2568,6 +2568,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             btn.addEventListener('click', async function(e) {
                 e.preventDefault();
                 const senseIndex = parseInt(this.dataset.senseIndex);
+                DeepLinks.updateHash(`definitions-${senseIndex}`);
                 const senseItem = this.closest('.sense-item-container');
                 const word = senseItem.dataset.word;
                 const entryIndex = parseInt(senseItem.dataset.entryIndex);
