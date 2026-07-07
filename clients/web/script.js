@@ -2950,6 +2950,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     }
+
+    // Update hash when user manually toggles an accordion section
+    accordionSections.forEach(section => {
+        section.addEventListener('toggle', () => {
+            const sectionId = section.getAttribute('id');
+            const token = DeepLinks.SECTION_TO_TOKEN[sectionId];
+            if (section.open && token) {
+                DeepLinks.updateHash(token);
+            } else if (!section.open) {
+                // Closing: only clear hash if this section owns the current hash
+                const currentToken = window.location.hash.replace(/^#/, '');
+                if (token && currentToken === token) {
+                    DeepLinks.updateHash('');
+                }
+            }
+        });
+    });
     
     // Adjust placeholder text for mobile
     function updatePlaceholder() {
