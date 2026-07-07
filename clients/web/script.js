@@ -138,6 +138,7 @@ const AudioManager = {
 
 // DeepLinks — read/write URL hash for sections, senses, and comparisons
 const DeepLinks = {
+    _suppressToggle: false,
     // Section id attribute → short hash token
     SECTION_TO_TOKEN: {
         'definitions-section': 'definitions',
@@ -2351,8 +2352,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             showSectionLoading(videoResourcesContent, 'default');
             
             if (accordionSections.length > 0) {
+                DeepLinks._suppressToggle = true;
                 accordionSections.forEach(section => section.open = false);
                 accordionSections[0].open = true;
+                DeepLinks._suppressToggle = false;
             }
             if (tabLinks.length > 0) {
                 activateTab('definitions-section');
@@ -2977,6 +2980,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Update hash when user manually toggles an accordion section
     accordionSections.forEach(section => {
         section.addEventListener('toggle', () => {
+            if (DeepLinks._suppressToggle) return;
             const sectionId = section.getAttribute('id');
             const token = DeepLinks.SECTION_TO_TOKEN[sectionId];
             if (section.open && token) {
