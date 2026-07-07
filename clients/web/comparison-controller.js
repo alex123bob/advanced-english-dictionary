@@ -67,6 +67,12 @@
         const fetchSection = options.fetchSection;
         const confusedWord = confusionChip.dataset.confusedWord;
         if (!confusedWord || !currentWord || typeof fetchSection !== 'function') return;
+
+        // Write deep link hash
+        if (window.DeepLinks) {
+            const token = 'compare-' + confusedWord.toLowerCase().replace(/\s+/g, '-');
+            window.DeepLinks.updateHash(token);
+        }
     
         const allChips = document.querySelectorAll('.confusion-chip');
         allChips.forEach(c => c.classList.remove('active'));
