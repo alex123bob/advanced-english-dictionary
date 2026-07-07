@@ -136,6 +136,129 @@ const AudioManager = {
     }
 };
 
+// DeepLinks — read/write URL hash for sections, senses, and comparisons
+const DeepLinks = {
+    // Section id attribute → short hash token
+    SECTION_TO_TOKEN: {
+        'definitions-section': 'definitions',
+        'etymology-section':   'etymology',
+        'synonyms-section':    'synonyms',
+        'cultural-section':    'culture',
+        'usage-section':       'usage',
+        'family-section':      'family',
+        'phrases-section':     'phrases',
+        'videos-section':      'videos'
+    },
+    // Short hash token → section id attribute
+    TOKEN_TO_SECTION: {
+        'definitions': 'definitions-section',
+        'etymology':   'etymology-section',
+        'synonyms':    'synonyms-section',
+        'culture':     'cultural-section',
+        'usage':       'usage-section',
+        'family':      'family-section',
+        'phrases':     'phrases-section',
+        'videos':      'videos-section'
+    },
+
+    updateHash(token) {
+        const url = new URL(window.location.href);
+        if (token) {
+            url.hash = token;
+        } else {
+            url.hash = '';
+        }
+        // replaceState so sub-item navigation doesn't pollute Back stack
+        history.replaceState(history.state, '', url.toString().replace(/#$/, ''));
+    },
+
+    parseHash() {
+        const raw = window.location.hash.replace(/^#/, '').trim();
+        if (!raw) return null;
+
+        // Comparison: compare-<word>
+        const compareMatch = raw.match(/^compare-(.+)$/);
+        if (compareMatch) {
+            return { type: 'compare', word: compareMatch[1] };
+        }
+
+        // Sense: definitions-<N>
+        const senseMatch = raw.match(/^definitions-(\d+)$/);
+        if (senseMatch) {
+            return { type: 'sense', index: parseInt(senseMatch[1], 10) };
+        }
+
+        // Section only
+        if (DeepLinks.TOKEN_TO_SECTION[raw]) {
+            return { type: 'section', token: raw };
+        }
+
+        return null;
+    },
+
+    // Called after render completes. stickyTabsFn activates a tab by section id.
+    restoreFromHash(stickyTabsFn) {
+        const parsed = DeepLinks.parseHash();
+        if (!parsed) return;
+
+        if (parsed.type === 'section') {
+            const sectionId = DeepLinks.TOKEN_TO_SECTION[parsed.token];
+            const el = document.getElementById(sectionId);
+            if (!el) return;
+            el.open = true;
+            if (typeof stickyTabsFn === 'function') stickyTabsFn(sectionId);
+            requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+        }
+
+        if (parsed.type === 'sense') {
+            const definitionsEl = document.getElementById('definitions-section');
+            if (definitionsEl) {
+                definitionsEl.open = true;
+                if (typeof stickyTabsFn === 'function') stickyTabsFn('definitions-section');
+            }
+            // Trigger click on the matching sense-detail-btn after a short delay
+            // to allow the senses list to be in the DOM
+            requestAnimationFrame(() => {
+                const btn = document.querySelector(
+                    `.sense-detail-btn[data-sense-index="${parsed.index}"]`
+                );
+                if (btn) {
+                    btn.click();
+                    setTimeout(() => {
+                        const senseItem = document.querySelector(
+                            `.sense-item-container[data-sense-index="${parsed.index}"]`
+                        );
+                        if (senseItem) senseItem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 300);
+                }
+            });
+        }
+
+        if (parsed.type === 'compare') {
+            const usageEl = document.getElementById('usage-section');
+            if (usageEl) {
+                usageEl.open = true;
+                if (typeof stickyTabsFn === 'function') stickyTabsFn('usage-section');
+            }
+            // Trigger click on the matching confusion chip after usage content renders
+            requestAnimationFrame(() => {
+                const chip = document.querySelector(
+                    `.confusion-chip[data-confused-word="${CSS.escape(parsed.word)}"]`
+                );
+                if (chip) {
+                    chip.click();
+                    setTimeout(() => {
+                        const container = document.querySelector('.confusion-detail-container');
+                        if (container) container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 200);
+                }
+            });
+        }
+    }
+};
+
+window.DeepLinks = DeepLinks;
+
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', async () => {
     if (window.advancedDictionaryConfigReady) {
