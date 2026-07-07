@@ -2359,6 +2359,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             loadEntryContent(query, 0, basicData);
+            // Restore section-only hash tokens immediately (accordion open + scroll)
+            // Sense and compare restoration happens after their respective sections load
+            const _parsedHash = DeepLinks.parseHash();
+            if (_parsedHash && _parsedHash.type === 'section') {
+                // Wait one frame for DOM to update after showResults
+                requestAnimationFrame(() => DeepLinks.restoreFromHash(activateTab));
+            }
             
             searchInput.blur();
             
@@ -2450,9 +2457,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else {
                 usageContent.innerHTML = `<div class="no-data">${t('noUsageContext')}</div>`;
             }
+            // Restore comparison deep link if present
+            const _compareParsed = DeepLinks.parseHash();
+            if (_compareParsed && _compareParsed.type === 'compare') {
+                requestAnimationFrame(() => DeepLinks.restoreFromHash(activateTab));
+            }
         }).catch(err => {
             console.error('Error fetching usage_context:', err);
             usageContent.innerHTML = `<div class="error-message">${t('failedUsageContext')}</div>`;
+            // Still attempt restore in case usage loaded but chip wasn't found
+            const _compareParsed = DeepLinks.parseHash();
+            if (_compareParsed && _compareParsed.type === 'compare') {
+                requestAnimationFrame(() => DeepLinks.restoreFromHash(activateTab));
+            }
         });
         
         fetchSection(word, 'word_family', entryIndex).then(result => {
@@ -2561,6 +2578,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateSynonymsSection(allSynonyms, allAntonyms);
         
         attachDetailButtonHandlers();
+        // Restore sense deep link if present
+        const _senseParsed = DeepLinks.parseHash();
+        if (_senseParsed && _senseParsed.type === 'sense') {
+            requestAnimationFrame(() => DeepLinks.restoreFromHash(activateTab));
+        }
     }
     
     function attachDetailButtonHandlers() {
