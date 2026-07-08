@@ -139,6 +139,7 @@ const AudioManager = {
 // DeepLinks — read/write URL hash for sections, senses, and comparisons
 const DeepLinks = {
     _suppressToggle: false,
+    _pendingHash: null, // preserved hash before pushState/replaceState strips it
     // Section id attribute → short hash token
     SECTION_TO_TOKEN: {
         'definitions-section': 'definitions',
@@ -174,7 +175,8 @@ const DeepLinks = {
     },
 
     parseHash() {
-        const raw = window.location.hash.replace(/^#/, '').trim();
+        const source = DeepLinks._pendingHash !== null ? DeepLinks._pendingHash : window.location.hash;
+        const raw = source.replace(/^#/, '').trim();
         if (!raw) return null;
 
         // Comparison: compare-<word>
@@ -200,6 +202,8 @@ const DeepLinks = {
     // Called after render completes. stickyTabsFn activates a tab by section id.
     restoreFromHash(stickyTabsFn) {
         const parsed = DeepLinks.parseHash();
+        // Consume the pending hash so it isn't re-used after restore
+        DeepLinks._pendingHash = null;
         if (!parsed) return;
 
         if (parsed.type === 'section') {
@@ -2295,6 +2299,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         prepareSearchSubmit();
+        
+        // Capture hash NOW before pushState/replaceState wipes it
+        DeepLinks._pendingHash = window.location.hash || null;
         
         showEmptyState(false);
         showResults(false);
