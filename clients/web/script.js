@@ -2308,8 +2308,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         prepareSearchSubmit();
         
-        // Capture hash NOW before pushState/replaceState wipes it
-        DeepLinks._pendingHash = window.location.hash || null;
+        // Clear any stale hash — each new word lookup starts fresh
+        DeepLinks._pendingHash = null;
         
         showEmptyState(false);
         showResults(false);
