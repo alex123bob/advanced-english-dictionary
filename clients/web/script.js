@@ -252,10 +252,18 @@ const DeepLinks = {
                 );
                 if (chip) {
                     chip.click();
-                    setTimeout(() => {
+                    // Poll until the comparison card scaffold has rendered (non-zero height),
+                    // then scroll — avoids racing against entry animations and async card fetch
+                    const startTime = Date.now();
+                    const pollScroll = () => {
                         const container = document.querySelector('.confusion-detail-container');
-                        if (container) container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 200);
+                        if (container && container.offsetHeight > 0) {
+                            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        } else if (Date.now() - startTime < 2000) {
+                            requestAnimationFrame(pollScroll);
+                        }
+                    };
+                    requestAnimationFrame(pollScroll);
                 }
             });
         }
