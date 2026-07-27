@@ -1,0 +1,33 @@
+[
+  {
+    "word": "serendipity",
+    "date": "2026-07-27",
+    "status": "published",
+    "published_at": null,
+    "difficulty": "intermediate",
+    "category": "literary"
+  },
+  {
+    "word": "ubiquitous",
+    "date": "2026-07-28",
+    "status": "published",
+    "published_at": null,
+    "difficulty": "intermediate",
+    "category": "academic"
+  },
+  {
+    "word": "ephemeral",
+    "date": "2026-07-29",
+    "status": "published",
+    "published_at": null,
+    "difficulty": "intermediate",
+    "category": "literary"
+  },
+  {
+    "word": "pipe",
+    "date": "2026-07-30",
+    "status": "pending",
+    "difficulty": "beginner",
+    "category": "everyday"
+  }
+]
