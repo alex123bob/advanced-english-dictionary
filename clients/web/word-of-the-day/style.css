@@ -258,6 +258,10 @@ body {
     .wotd-loading, .wotd-error { display: none !important; }
 }
 
+.wotd-export-clone .wotd-export-actions {
+    display: none;
+}
+
 .wotd-export-clone .wotd-export-footer {
     display: flex;
 }
