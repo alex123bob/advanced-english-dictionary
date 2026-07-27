@@ -108,14 +108,18 @@
         return json;
     }
 
+    async function apiSection(word, section) {
+        return apiPost({ word: word, section: section, entry_index: 0 });
+    }
+
     async function fetchWordData(word) {
-        var basic = await apiPost({ word: word, section: 'basic' });
+        var basic = await apiPost({ word: word, section: 'basic', entry_index: 0 });
 
         var sections = await Promise.allSettled([
-            apiPost({ word: word, section: 'cultural_notes' }),
-            apiPost({ word: word, section: 'usage_context' }),
-            apiPost({ word: word, section: 'word_family' }),
-            apiPost({ word: word, section: 'frequency' })
+            apiSection(word, 'cultural_notes'),
+            apiSection(word, 'usage_context'),
+            apiSection(word, 'word_family'),
+            apiSection(word, 'frequency')
         ]);
 
         var merged = Object.assign({}, basic);
