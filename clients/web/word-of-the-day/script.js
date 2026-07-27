@@ -198,7 +198,7 @@
 
     function getCoreSense() {
         var s = firstSense();
-        return s ? (s.short_definition || s.definition || '') : '';
+        return s ? (s.definition || '') : '';
     }
 
     function getPronunciation() {
@@ -220,30 +220,25 @@
     }
 
     function getVideoData(data) {
-        var videos = data.video_resources || data.bilibili_videos || null;
-        if (videos && videos.length > 0) {
-            var v = videos[0];
-            return { quote: v.context || v.example || '', source: v.title || v.source || '' };
-        }
         var s = firstSense();
-        if (s && s.examples && s.examples.length > 0) {
-            return { quote: s.examples[0], source: 'Example usage' };
+        if (s && s.example) return { quote: s.example, source: 'Example usage' };
+        if (data.common_phrases && data.common_phrases.length > 0) {
+            var ph = data.common_phrases[0];
+            if (typeof ph === 'string') return { quote: ph, source: 'Common phrase' };
         }
         return null;
     }
 
     function getConfusables(data) {
-        if (data.confusion_pairs && data.confusion_pairs.length > 0) {
-            return data.confusion_pairs.slice(0, 3).map(p => ({
-                word: p.word || p.confused_word || '',
-                tip: p.tip || p.differentiation || ''
-            }));
+        if (data.usage_context && data.usage_context.common_confusions) {
+            return data.usage_context.common_confusions.slice(0, 4).map(function (w) {
+                return { word: w, tip: '' };
+            });
         }
-        if (data.common_misused_words) {
-            return data.common_misused_words.slice(0, 3).map(w => ({
-                word: typeof w === 'string' ? w : w.word || '',
-                tip: w.tip || w.note || ''
-            }));
+        if (data.confusion_pairs && data.confusion_pairs.length > 0) {
+            return data.confusion_pairs.slice(0, 3).map(function (p) {
+                return { word: p.word || p.confused_word || '', tip: p.tip || p.differentiation || '' };
+            });
         }
         return null;
     }
@@ -263,27 +258,30 @@
 
     function getCultureData(data) {
         var noteData = data.cultural_notes || null;
+        var note = '';
+        if (noteData) {
+            if (typeof noteData === 'object') {
+                note = noteData.historical_context || noteData.notes || noteData.note || '';
+            } else {
+                note = String(noteData);
+            }
+        }
         var usageData = data.usage_context || null;
-        return {
-            note: noteData ? (typeof noteData === 'object' ? (noteData.notes || noteData.note || '') : String(noteData)) : '',
-            formality: usageData ? (usageData.formality || usageData.formality_level || '') : ''
-        };
+        var formality = usageData ? (usageData.formality || usageData.formality_level || usageData.modern_relevance || '') : '';
+        return { note: note, formality: formality };
     }
 
     function getGrammarData(data) {
         if (data.usage_context && data.usage_context.grammar_notes) {
             var gn = data.usage_context.grammar_notes;
-            return {
-                pattern: gn.pattern || '',
-                tip: gn.common_mistake || gn.tip || ''
-            };
+            return { pattern: gn.pattern || '', tip: gn.common_mistake || gn.tip || '' };
         }
         var s = firstSense();
         if (s && (s.grammar_note || s.usage_note)) {
-            return {
-                pattern: s.grammar_note || '',
-                tip: s.usage_note || ''
-            };
+            return { pattern: s.grammar_note || '', tip: s.usage_note || '' };
+        }
+        if (data.usage_context && data.usage_context.modern_relevance) {
+            return { pattern: '', tip: data.usage_context.modern_relevance };
         }
         return null;
     }
@@ -291,12 +289,25 @@
     function getFamilyData(data) {
         var wf = data.word_family || null;
         if (!wf) return null;
-        var forms = [];
-        if (wf.noun) forms.push({ pos: 'noun', word: wf.noun });
-        if (wf.verb) forms.push({ pos: 'verb', word: wf.verb });
-        if (wf.adjective) forms.push({ pos: 'adjective', word: wf.adjective });
-        if (wf.adverb) forms.push({ pos: 'adverb', word: wf.adverb });
-        return forms.length > 0 ? forms : null;
+        if (wf.noun || wf.verb || wf.adjective || wf.adverb) {
+            var forms = [];
+            if (wf.noun) forms.push({ pos: 'noun', word: wf.noun });
+            if (wf.verb) forms.push({ pos: 'verb', word: wf.verb });
+            if (wf.adjective) forms.push({ pos: 'adjective', word: wf.adjective });
+            if (wf.adverb) forms.push({ pos: 'adverb', word: wf.adverb });
+            return forms.length > 0 ? forms : null;
+        }
+        if (Array.isArray(wf.word_family) && wf.word_family.length > 0) {
+            return wf.word_family.map(function (w) {
+                return { pos: 'related', word: w };
+            });
+        }
+        if (Array.isArray(wf)) {
+            return wf.map(function (w) {
+                return { pos: 'related', word: typeof w === 'string' ? w : '' };
+            });
+        }
+        return null;
     }
 
     function renderWord(data) {
