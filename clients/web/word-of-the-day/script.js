@@ -86,11 +86,39 @@
         return res.json();
     }
 
+    async function apiPost(body) {
+        var res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        if (!res.ok) throw new Error('API returned ' + res.status);
+        var json = await res.json();
+        if (!json.success) throw new Error(json.error || 'API error');
+        return json;
+    }
+
     async function fetchWordData(word) {
-        const url = `${API_URL}?q=${encodeURIComponent(word)}`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`API returned ${res.status}`);
-        return res.json();
+        var basic = await apiPost({ word: word, section: 'basic' });
+
+        var sections = await Promise.allSettled([
+            apiPost({ word: word, section: 'cultural_notes' }),
+            apiPost({ word: word, section: 'usage_context' }),
+            apiPost({ word: word, section: 'word_family' }),
+            apiPost({ word: word, section: 'frequency' })
+        ]);
+
+        var merged = Object.assign({}, basic);
+
+        var sectionKeys = ['cultural_notes', 'usage_context', 'word_family', 'frequency'];
+        sections.forEach(function (result, i) {
+            if (result.status === 'fulfilled' && result.value) {
+                var val = result.value[sectionKeys[i]];
+                if (val) merged[sectionKeys[i]] = val;
+            }
+        });
+
+        return merged;
     }
 
     // ---- Render ----
