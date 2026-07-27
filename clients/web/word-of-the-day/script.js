@@ -14,33 +14,19 @@
         error: $('errorDisplay'),
         errorMsg: $('errorMessage'),
         retryBtn: $('retryBtn'),
-        date: $('wotdDate'),
-        word: $('wordDisplay'),
-        pronunciation: $('pronunciationDisplay'),
-        posBadge: $('posBadge'),
-        frequency: $('frequencyDisplay'),
-        coreSense: $('coreSenseDisplay'),
-        audioBtn: $('audioBtn'),
-        videoQuote: $('videoQuote'),
-        videoSource: $('videoSource'),
-        videoBlock: $('videoBlock'),
-        confusablesBody: $('confusablesBody'),
-        confusablesBlock: $('confusablesBlock'),
-        collocationsBody: $('collocationsBody'),
-        collocationsBlock: $('collocationsBlock'),
-        cultureBody: $('cultureBody'),
-        cultureBlock: $('cultureBlock'),
-        grammarBody: $('grammarBody'),
-        grammarBlock: $('grammarBlock'),
-        familyBody: $('familyBody'),
-        familyBlock: $('familyBlock'),
-        exportPngBtn: $('exportPngBtn'),
-        exportPdfBtn: $('exportPdfBtn'),
+        page: $('wotdPage'),
         card: $('wotdCard'),
+        cardInner: $('wotdCardInner'),
+        word: $('wordDisplay'),
+        pos: $('posDisplay'),
+        example: $('exampleDisplay'),
         qrContainer: $('qrContainer'),
         qrUrl: $('qrUrlDisplay'),
-        page: $('wotdPage'),
+        exportPngBtn: $('exportPngBtn'),
+        exportPdfBtn: $('exportPdfBtn'),
     };
+
+    var backgroundClasses = ['bg-1','bg-2','bg-3','bg-4','bg-5','bg-6','bg-7','bg-8'];
 
     function entry() {
         return currentData && currentData.entries && currentData.entries[0] ? currentData.entries[0] : null;
@@ -56,43 +42,30 @@
         return s && s.senses && s.senses[0] ? s.senses[0] : null;
     }
 
-    // ---- Audio ----
-    let currentSound = null;
-
-    function playAudio(url) {
-        if (!url) return;
-
-        if (currentSound) {
-            currentSound.pause();
-            currentSound = null;
-            el.audioBtn.classList.remove('playing');
-            return;
+    function getPos() {
+        var e = entry();
+        if (e && e.meanings_summary && e.meanings_summary.length > 0) {
+            return e.meanings_summary[0].part_of_speech || '';
         }
-
-        const audio = new Audio(url);
-        audio.volume = 0.8;
-        audio.addEventListener('play', () => el.audioBtn.classList.add('playing'));
-        audio.addEventListener('ended', () => {
-            el.audioBtn.classList.remove('playing');
-            currentSound = null;
-        });
-        audio.addEventListener('error', () => {
-            el.audioBtn.classList.remove('playing');
-            currentSound = null;
-        });
-        currentSound = audio;
-        audio.play().catch(() => {
-            el.audioBtn.classList.remove('playing');
-            currentSound = null;
-        });
+        return '';
     }
 
-    el.audioBtn.addEventListener('click', () => {
-        var e = entry();
-        if (e && e.pronunciation) {
-            playAudio(e.pronunciation);
-        }
-    });
+    function getExample() {
+        var s = firstSense();
+        if (s && s.example) return s.example;
+        if (s && s.definition) return s.definition;
+        return '';
+    }
+
+    function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.textContent = str || '';
+        return div.innerHTML;
+    }
+
+    function getTodayString() {
+        return new Date().toISOString().slice(0, 10);
+    }
 
     // ---- Data fetching ----
     async function fetchSchedule() {
@@ -113,306 +86,62 @@
         return json;
     }
 
-    async function apiSection(word, section) {
-        return apiPost({ word: word, section: section, entry_index: 0 });
-    }
-
     async function fetchWordData(word) {
         var basic = await apiPost({ word: word, section: 'basic', entry_index: 0 });
-        console.log('[WOTD] basic response root keys:', Object.keys(basic));
-        if (basic.entries && basic.entries[0]) {
-            console.log('[WOTD] entry[0] keys:', Object.keys(basic.entries[0]));
-            var e0 = basic.entries[0];
-            if (e0.senses && e0.senses[0]) {
-                console.log('[WOTD] first sense keys:', Object.keys(e0.senses[0]));
-            }
-        }
-
         var sections = await Promise.allSettled([
-            apiSection(word, 'cultural_notes'),
-            apiSection(word, 'usage_context'),
-            apiSection(word, 'word_family'),
-            apiSection(word, 'frequency'),
-            apiSection(word, 'common_phrases')
+            apiPost({ word: word, section: 'frequency', entry_index: 0 })
         ]);
-
-        var sectionDefs = [
-            { name: 'cultural_notes' },
-            { name: 'usage_context' },
-            { name: 'word_family' },
-            { name: 'frequency' },
-            { name: 'common_phrases' }
-        ];
-
-        sections.forEach(function (result, i) {
-            var name = sectionDefs[i].name;
-            if (result.status === 'fulfilled') {
-                console.log('[WOTD] ' + name + ' root keys:', Object.keys(result.value));
-                var val = result.value[name];
-                if (val) {
-                    basic[name] = val;
-                    console.log('[WOTD] ' + name + ' value:', JSON.stringify(val).slice(0, 300));
-                } else {
-                    console.log('[WOTD] ' + name + ' has no key "' + name + '"');
-                }
-            } else {
-                console.error('[WOTD] ' + name + ' failed:', result.reason);
+        sections.forEach(function (result) {
+            if (result.status === 'fulfilled' && result.value.frequency) {
+                basic.frequency = result.value.frequency;
             }
         });
-
-        console.log('[WOTD] cultural_notes val:', JSON.stringify(basic.cultural_notes).slice(0, 300));
-        console.log('[WOTD] usage_context val:', JSON.stringify(basic.usage_context).slice(0, 300));
-        console.log('[WOTD] word_family val:', JSON.stringify(basic.word_family).slice(0, 300));
-        console.log('[WOTD] common_phrases val:', JSON.stringify(basic.common_phrases).slice(0, 300));
-        console.log('[WOTD] frequency val:', basic.frequency);
-        if (basic.entries && basic.entries[0]) {
-            var ms = basic.entries[0].meanings_summary;
-            if (ms && ms[0]) {
-                console.log('[WOTD] meanings_summary[0] keys:', Object.keys(ms[0]));
-                console.log('[WOTD] meanings_summary[0] has senses?', Array.isArray(ms[0].senses));
-                if (ms[0].senses && ms[0].senses[0]) {
-                    console.log('[WOTD] first sense keys:', Object.keys(ms[0].senses[0]));
-                    console.log('[WOTD] first sense short_definition:', ms[0].senses[0].short_definition);
-                    console.log('[WOTD] first sense has examples?', Array.isArray(ms[0].senses[0].examples));
-                }
-            }
-        }
-
         return basic;
     }
 
     // ---- Render ----
-    function getTodayString() {
-        return new Date().toISOString().slice(0, 10);
-    }
-
-    function formatDate(dateStr) {
-        const d = new Date(dateStr + 'T00:00:00');
-        return d.toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    }
-
-    function getCoreSense() {
-        var s = firstSense();
-        return s ? (s.definition || '') : '';
-    }
-
-    function getPronunciation() {
-        var e = entry();
-        return e ? (e.ipa || '') : '';
-    }
-
-    function getPos() {
-        var e = entry();
-        if (e && e.meanings_summary && e.meanings_summary.length > 0) {
-            return e.meanings_summary[0].part_of_speech || '';
-        }
-        return '';
-    }
-
-    function getAudioUrl() {
-        var e = entry();
-        return e ? (e.pronunciation || '') : '';
-    }
-
-    function getVideoData(data) {
-        var s = firstSense();
-        if (s && s.example) return { quote: s.example, source: 'Example usage' };
-        if (s && s.definition) return { quote: s.definition, source: 'Definition in context' };
-        if (data.common_phrases && data.common_phrases.length > 1) {
-            var ph = data.common_phrases[1];
-            if (typeof ph === 'string') return { quote: ph, source: 'Common phrase' };
-        }
-        return null;
-    }
-
-    function getConfusables(data) {
-        if (data.usage_context && data.usage_context.common_confusions) {
-            return data.usage_context.common_confusions.slice(0, 4).map(function (w) {
-                return { word: w, tip: '' };
-            });
-        }
-        if (data.confusion_pairs && data.confusion_pairs.length > 0) {
-            return data.confusion_pairs.slice(0, 3).map(function (p) {
-                return { word: p.word || p.confused_word || '', tip: p.tip || p.differentiation || '' };
-            });
-        }
-        return null;
-    }
-
-    function getCollocations(data) {
-        if (data.collocations && data.collocations.length > 0) {
-            return data.collocations;
-        }
-        if (data.common_phrases && data.common_phrases.length > 0) {
-            return data.common_phrases.slice(0, 8);
-        }
-        if (data.word_family && data.word_family.collocations) {
-            return data.word_family.collocations;
-        }
-        return null;
-    }
-
-    function getCultureData(data) {
-        var noteData = data.cultural_notes || null;
-        var note = '';
-        if (noteData) {
-            if (typeof noteData === 'object') {
-                note = noteData.historical_context || noteData.notes || noteData.note || '';
-            } else {
-                note = String(noteData);
-            }
-        }
-        var usageData = data.usage_context || null;
-        var formality = usageData ? (usageData.formality || usageData.formality_level || usageData.modern_relevance || '') : '';
-        return { note: note, formality: formality };
-    }
-
-    function getGrammarData(data) {
-        if (data.usage_context && data.usage_context.grammar_notes) {
-            var gn = data.usage_context.grammar_notes;
-            return { pattern: gn.pattern || '', tip: gn.common_mistake || gn.tip || '' };
-        }
-        var s = firstSense();
-        if (s && (s.grammar_note || s.usage_note)) {
-            return { pattern: s.grammar_note || '', tip: s.usage_note || '' };
-        }
-        if (data.usage_context && data.usage_context.modern_relevance) {
-            return { pattern: '', tip: data.usage_context.modern_relevance };
-        }
-        return null;
-    }
-
-    function getFamilyData(data) {
-        var wf = data.word_family || null;
-        if (!wf) return null;
-        if (wf.noun || wf.verb || wf.adjective || wf.adverb) {
-            var forms = [];
-            if (wf.noun) forms.push({ pos: 'noun', word: wf.noun });
-            if (wf.verb) forms.push({ pos: 'verb', word: wf.verb });
-            if (wf.adjective) forms.push({ pos: 'adjective', word: wf.adjective });
-            if (wf.adverb) forms.push({ pos: 'adverb', word: wf.adverb });
-            return forms.length > 0 ? forms : null;
-        }
-        if (Array.isArray(wf.word_family) && wf.word_family.length > 0) {
-            return wf.word_family.map(function (w) {
-                return { pos: 'related', word: w };
-            });
-        }
-        if (Array.isArray(wf)) {
-            return wf.map(function (w) {
-                return { pos: 'related', word: typeof w === 'string' ? w : '' };
-            });
-        }
-        return null;
-    }
-
     function renderWord(data) {
         currentData = data;
         el.loading.hidden = true;
         el.error.hidden = true;
         el.page.hidden = false;
 
-        el.word.textContent = data.headword || currentWord;
-        el.pronunciation.textContent = getPronunciation();
+        var word = data.headword || currentWord;
+        var url = 'https://www.lijialab.com/?q=' + encodeURIComponent(word);
+
+        el.word.textContent = word;
+        el.word.href = url;
+
         var pos = getPos();
-        el.posBadge.textContent = pos;
-        el.posBadge.style.display = pos ? '' : 'none';
+        el.pos.textContent = pos;
+        el.pos.style.display = pos ? '' : 'none';
 
-        if (data.frequency) {
-            el.frequency.textContent = data.frequency;
-            el.frequency.style.display = '';
-        } else {
-            el.frequency.style.display = 'none';
-        }
+        var example = getExample();
+        el.example.textContent = example;
+        el.example.style.display = example ? '' : 'none';
 
-        el.coreSense.textContent = getCoreSense();
+        // Random background
+        var prevBg = el.card.dataset.bg;
+        var available = backgroundClasses.filter(function (c) { return c !== prevBg; });
+        var picked = available[Math.floor(Math.random() * available.length)];
+        backgroundClasses.forEach(function (c) { el.card.classList.remove(c); });
+        el.card.classList.add(picked);
+        el.card.dataset.bg = picked;
 
-        var audioUrl = getAudioUrl();
-        el.audioBtn.style.display = audioUrl ? '' : 'none';
-
-        const video = getVideoData(data);
-        if (video) {
-            el.videoQuote.textContent = video.quote;
-            el.videoSource.textContent = video.source;
-            el.videoBlock.hidden = false;
-        } else {
-            el.videoBlock.hidden = true;
-        }
-
-        const confusables = getConfusables(data);
-        if (confusables) {
-            el.confusablesBody.innerHTML = confusables.map(c => '\n                <div class="wotd-confusable-item">\n                    <div class="wotd-confusable-word">' + escapeHtml(c.word) + '</div>\n                    <div class="wotd-confusable-tip">' + escapeHtml(c.tip) + '</div>\n                </div>\n            ').join('');
-            el.confusablesBlock.hidden = false;
-        } else {
-            el.confusablesBlock.hidden = true;
-        }
-
-        const collocations = getCollocations(data);
-        if (collocations) {
-            el.collocationsBody.innerHTML = collocations.map(function (c) {
-                return '\n                <span class="wotd-chip">' + escapeHtml(typeof c === 'string' ? c : c.word || c) + '</span>\n            ';
-            }).join('');
-            el.collocationsBlock.hidden = false;
-        } else {
-            el.collocationsBlock.hidden = true;
-        }
-
-        const culture = getCultureData(data);
-        if (culture && (culture.note || culture.formality)) {
-            var html = '';
-            if (culture.note) {
-                html += '<p class="wotd-culture-note">' + escapeHtml(culture.note) + '</p>';
-            }
-            if (culture.formality) {
-                var cls = culture.formality.toLowerCase().includes('casual') ? 'casual'
-                    : culture.formality.toLowerCase().includes('formal') ? 'formal'
-                    : 'neutral';
-                html += '<span class="wotd-formality-badge ' + cls + '">' + escapeHtml(culture.formality) + '</span>';
-            }
-            el.cultureBody.innerHTML = html;
-            el.cultureBlock.hidden = false;
-        } else {
-            el.cultureBlock.hidden = true;
-        }
-
-        const grammar = getGrammarData(data);
-        if (grammar && (grammar.pattern || grammar.tip)) {
-            html = '';
-            if (grammar.pattern) {
-                html += '<p class="wotd-grammar-pattern">' + escapeHtml(grammar.pattern) + '</p>';
-            }
-            if (grammar.tip) {
-                html += '<div class="wotd-grammar-tip"><span class="wotd-grammar-tip-icon">&#x1f4a1;</span><span>' + escapeHtml(grammar.tip) + '</span></div>';
-            }
-            el.grammarBody.innerHTML = html;
-            el.grammarBlock.hidden = false;
-        } else {
-            el.grammarBlock.hidden = true;
-        }
-
-        const family = getFamilyData(data);
-        if (family) {
-            el.familyBody.innerHTML = family.map(function (f) {
-                return '\n                <div class="wotd-family-item">\n                    <div class="wotd-family-pos">' + escapeHtml(f.pos) + '</div>\n                    <div class="wotd-family-word">' + escapeHtml(f.word) + '</div>\n                </div>\n            ';
-            }).join('');
-            el.familyBlock.hidden = false;
-        } else {
-            el.familyBlock.hidden = true;
-        }
+        // QR code
+        el.qrContainer.innerHTML = '';
+        new QRCode(el.qrContainer, {
+            text: url,
+            width: 48,
+            height: 48,
+            colorDark: '#9ca3af',
+            colorLight: 'transparent',
+            correctLevel: QRCode.CorrectLevel.M
+        });
+        el.qrUrl.textContent = url;
 
         el.exportPngBtn.disabled = false;
         el.exportPdfBtn.disabled = false;
-    }
-
-    function escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str || '';
-        return div.innerHTML;
     }
 
     // ---- Main ----
@@ -423,27 +152,12 @@
 
         try {
             const today = getTodayString();
-            el.date.textContent = formatDate(today);
-
             const schedule = await fetchSchedule();
-            const entry = schedule.find(e => e.date === today);
-
+            const entry = schedule.find(function (e) { return e.date === today; });
             const word = entry ? entry.word : 'serendipity';
             currentWord = word;
-
             const data = await fetchWordData(word);
             renderWord(data);
-
-            const qrUrl = 'https://www.lijialab.com/?q=' + encodeURIComponent(word);
-            el.qrUrl.textContent = qrUrl;
-            new QRCode(el.qrContainer, {
-                text: qrUrl,
-                width: 72,
-                height: 72,
-                colorDark: '#111827',
-                colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.M
-            });
         } catch (err) {
             console.error('WOTD error:', err);
             el.loading.hidden = true;
@@ -459,21 +173,17 @@
         var clone = null;
         try {
             el.exportPngBtn.disabled = true;
-            el.exportPngBtn.textContent = 'Rendering...';
-
             clone = el.card.cloneNode(true);
             clone.classList.add('wotd-export-clone');
             clone.style.position = 'absolute';
             clone.style.left = '-9999px';
             clone.style.top = '0';
-            clone.style.width = '800px';
-            clone.style.background = '#ffffff';
-
+            clone.style.width = '340px';
             document.body.appendChild(clone);
 
             var canvas = await html2canvas(clone, {
                 scale: 2,
-                backgroundColor: '#ffffff',
+                backgroundColor: null,
                 logging: false,
                 useCORS: true,
             });
@@ -488,12 +198,10 @@
                     URL.revokeObjectURL(url);
                 }
                 el.exportPngBtn.disabled = false;
-                el.exportPngBtn.textContent = 'PNG';
             }, 'image/png');
         } catch (err) {
             console.error('PNG export failed:', err);
             el.exportPngBtn.disabled = false;
-            el.exportPngBtn.textContent = 'PNG';
         } finally {
             if (clone && clone.parentNode) {
                 clone.parentNode.removeChild(clone);
