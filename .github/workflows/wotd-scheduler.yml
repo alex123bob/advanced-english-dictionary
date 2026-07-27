@@ -1,0 +1,59 @@
+name: WOTD Scheduler
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      manual_review:
+        description: 'Create a PR instead of committing directly'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-schedule:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run scheduler
+        id: scheduler
+        run: python3 .github/workflows/wotd-scheduler.py
+
+      - name: Check for changes
+        id: diff
+        run: |
+          if git diff --quiet data/wotd-schedule.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push
+        if: steps.diff.outputs.changed == 'true' && inputs.manual_review != true
+        run: |
+          git config user.name "wotd-bot"
+          git config user.email "wotd-bot@users.noreply.github.com"
+          git add data/wotd-schedule.json
+          git commit -m "chore: update WOTD schedule [skip ci]"
+          git push
+
+      - name: Create PR for review
+        if: steps.diff.outputs.changed == 'true' && inputs.manual_review == true
+        uses: peter-evans/create-pull-request@v6
+        with:
+          title: "chore: update WOTD schedule"
+          body: "Automated WOTD schedule update. Review before merging."
+          branch: wotd-schedule-update
+          delete-branch: true
