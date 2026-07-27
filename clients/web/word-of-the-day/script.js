@@ -18,7 +18,6 @@
         card: $('wotdCard'),
         cardInner: $('wotdCardInner'),
         word: $('wordDisplay'),
-        pos: $('posDisplay'),
         example: $('exampleDisplay'),
         qrContainer: $('qrContainer'),
         qrUrl: $('qrUrlDisplay'),
@@ -40,14 +39,6 @@
     function firstSense() {
         var s = firstSummary();
         return s && s.senses && s.senses[0] ? s.senses[0] : null;
-    }
-
-    function getPos() {
-        var e = entry();
-        if (e && e.meanings_summary && e.meanings_summary.length > 0) {
-            return e.meanings_summary[0].part_of_speech || '';
-        }
-        return '';
     }
 
     function getExample() {
@@ -111,10 +102,6 @@
 
         el.word.textContent = word;
         el.word.href = url;
-
-        var pos = getPos();
-        el.pos.textContent = pos;
-        el.pos.style.display = pos ? '' : 'none';
 
         var example = getExample();
         el.example.textContent = example;
