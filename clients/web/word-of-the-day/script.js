@@ -46,9 +46,14 @@
         return currentData && currentData.entries && currentData.entries[0] ? currentData.entries[0] : null;
     }
 
-    function firstSense() {
+    function firstSummary() {
         var e = entry();
-        return e && e.senses && e.senses[0] ? e.senses[0] : null;
+        return e && e.meanings_summary && e.meanings_summary[0] ? e.meanings_summary[0] : null;
+    }
+
+    function firstSense() {
+        var s = firstSummary();
+        return s && s.senses && s.senses[0] ? s.senses[0] : null;
     }
 
     // ---- Audio ----
@@ -128,38 +133,29 @@
             apiSection(word, 'usage_context'),
             apiSection(word, 'word_family'),
             apiSection(word, 'frequency'),
-            apiSection(word, 'common_phrases'),
-            apiSection(word, 'bilibili_videos')
+            apiSection(word, 'common_phrases')
         ]);
 
         var sectionDefs = [
-            { name: 'cultural_notes', target: ['cultural_notes', 'data'] },
-            { name: 'usage_context',   target: ['usage_context', 'data'] },
-            { name: 'word_family',     target: ['word_family', 'data'] },
-            { name: 'frequency',       target: ['frequency'] },
-            { name: 'common_phrases',  target: ['common_phrases'] },
-            { name: 'bilibili_videos', target: ['bilibili_videos', 'videos', 'video_resources'] }
+            { name: 'cultural_notes' },
+            { name: 'usage_context' },
+            { name: 'word_family' },
+            { name: 'frequency' },
+            { name: 'common_phrases' }
         ];
 
         sections.forEach(function (result, i) {
-            var def = sectionDefs[i];
+            var name = sectionDefs[i].name;
             if (result.status === 'fulfilled') {
-                console.log('[WOTD] ' + def.name + ' root keys:', Object.keys(result.value));
-                var found = false;
-                for (var t = 0; t < def.target.length; t++) {
-                    var key = def.target[t];
-                    var val = result.value[key];
-                    if (val) {
-                        basic[key] = val;
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    console.log('[WOTD] ' + def.name + ' no matching key from ' + JSON.stringify(def.target));
+                console.log('[WOTD] ' + name + ' root keys:', Object.keys(result.value));
+                var val = result.value[name];
+                if (val) {
+                    basic[name] = val;
+                } else {
+                    console.log('[WOTD] ' + name + ' has no key "' + name + '"');
                 }
             } else {
-                console.error('[WOTD] ' + def.name + ' failed:', result.reason);
+                console.error('[WOTD] ' + name + ' failed:', result.reason);
             }
         });
 
