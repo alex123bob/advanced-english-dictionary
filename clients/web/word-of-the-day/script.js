@@ -151,6 +151,7 @@
                 var val = result.value[name];
                 if (val) {
                     basic[name] = val;
+                    console.log('[WOTD] ' + name + ' value:', JSON.stringify(val).slice(0, 300));
                 } else {
                     console.log('[WOTD] ' + name + ' has no key "' + name + '"');
                 }
@@ -158,6 +159,24 @@
                 console.error('[WOTD] ' + name + ' failed:', result.reason);
             }
         });
+
+        console.log('[WOTD] cultural_notes val:', JSON.stringify(basic.cultural_notes).slice(0, 300));
+        console.log('[WOTD] usage_context val:', JSON.stringify(basic.usage_context).slice(0, 300));
+        console.log('[WOTD] word_family val:', JSON.stringify(basic.word_family).slice(0, 300));
+        console.log('[WOTD] common_phrases val:', JSON.stringify(basic.common_phrases).slice(0, 300));
+        console.log('[WOTD] frequency val:', basic.frequency);
+        if (basic.entries && basic.entries[0]) {
+            var ms = basic.entries[0].meanings_summary;
+            if (ms && ms[0]) {
+                console.log('[WOTD] meanings_summary[0] keys:', Object.keys(ms[0]));
+                console.log('[WOTD] meanings_summary[0] has senses?', Array.isArray(ms[0].senses));
+                if (ms[0].senses && ms[0].senses[0]) {
+                    console.log('[WOTD] first sense keys:', Object.keys(ms[0].senses[0]));
+                    console.log('[WOTD] first sense short_definition:', ms[0].senses[0].short_definition);
+                    console.log('[WOTD] first sense has examples?', Array.isArray(ms[0].senses[0].examples));
+                }
+            }
+        }
 
         return basic;
     }
