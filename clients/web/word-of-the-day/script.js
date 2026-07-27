@@ -2,9 +2,8 @@
     'use strict';
 
     const SCHEDULE_URL = 'https://raw.githubusercontent.com/alex123bob/advanced-english-dictionary/main/data/wotd-schedule.json';
-    const API_URL = window.location.hostname === 'localhost'
-        ? 'http://localhost:8000/api/dictionary'
-        : '/api/dictionary';
+    var configApiHost = window.config && window.config.api ? window.config.api.host : '';
+    var API_URL = (configApiHost || '') + '/api/dictionary';
 
     let currentWord = '';
     let currentData = null;
