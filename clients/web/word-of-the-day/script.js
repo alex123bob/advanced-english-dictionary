@@ -220,18 +220,13 @@
     }
 
     function getVideoData(data) {
-        console.log('[WOTD] getVideoData called, common_phrases:', JSON.stringify(data.common_phrases).slice(0, 100));
         var s = firstSense();
-        if (s) {
-            console.log('[WOTD] first sense example:', JSON.stringify(s.example));
-            if (s.example) return { quote: s.example, source: 'Example usage' };
-        }
-        if (data.common_phrases && data.common_phrases.length > 0) {
-            console.log('[WOTD] using common_phrases[0]');
-            var ph = data.common_phrases[0];
+        if (s && s.example) return { quote: s.example, source: 'Example usage' };
+        if (s && s.definition) return { quote: s.definition, source: 'Definition in context' };
+        if (data.common_phrases && data.common_phrases.length > 1) {
+            var ph = data.common_phrases[1];
             if (typeof ph === 'string') return { quote: ph, source: 'Common phrase' };
         }
-        console.log('[WOTD] getVideoData: no data found');
         return null;
     }
 
