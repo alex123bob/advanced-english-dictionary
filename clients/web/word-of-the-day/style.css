@@ -1,7 +1,7 @@
 :root {
     --font: 'Inter', system-ui, -apple-system, sans-serif;
     --radius: 20px;
-    --card-w: 340px;
+    --card-w: min(440px, calc(100vw - 40px));
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -48,10 +48,10 @@ body {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border-radius: 16px;
-    padding: 32px 28px;
-    margin: 24px;
+    padding: 36px 30px;
+    margin: 28px;
     text-align: center;
-    width: calc(100% - 48px);
+    width: calc(100% - 56px);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -94,7 +94,7 @@ body {
     color: #6b7280;
     font-style: italic;
     margin-top: 4px;
-    max-width: 260px;
+    max-width: 320px;
 }
 
 .wotd-example::before { content: '\201C'; }

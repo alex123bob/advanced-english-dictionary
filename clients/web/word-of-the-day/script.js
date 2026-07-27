@@ -178,7 +178,6 @@
             clone.style.position = 'absolute';
             clone.style.left = '-9999px';
             clone.style.top = '0';
-            clone.style.width = '340px';
             document.body.appendChild(clone);
 
             var canvas = await html2canvas(clone, {
