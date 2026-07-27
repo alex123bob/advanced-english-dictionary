@@ -114,25 +114,56 @@
 
     async function fetchWordData(word) {
         var basic = await apiPost({ word: word, section: 'basic', entry_index: 0 });
+        console.log('[WOTD] basic response root keys:', Object.keys(basic));
+        if (basic.entries && basic.entries[0]) {
+            console.log('[WOTD] entry[0] keys:', Object.keys(basic.entries[0]));
+            var e0 = basic.entries[0];
+            if (e0.senses && e0.senses[0]) {
+                console.log('[WOTD] first sense keys:', Object.keys(e0.senses[0]));
+            }
+        }
 
         var sections = await Promise.allSettled([
             apiSection(word, 'cultural_notes'),
             apiSection(word, 'usage_context'),
             apiSection(word, 'word_family'),
-            apiSection(word, 'frequency')
+            apiSection(word, 'frequency'),
+            apiSection(word, 'common_phrases'),
+            apiSection(word, 'bilibili_videos')
         ]);
 
-        var merged = Object.assign({}, basic);
+        var sectionDefs = [
+            { name: 'cultural_notes', target: ['cultural_notes', 'data'] },
+            { name: 'usage_context',   target: ['usage_context', 'data'] },
+            { name: 'word_family',     target: ['word_family', 'data'] },
+            { name: 'frequency',       target: ['frequency'] },
+            { name: 'common_phrases',  target: ['common_phrases'] },
+            { name: 'bilibili_videos', target: ['bilibili_videos', 'videos', 'video_resources'] }
+        ];
 
-        var sectionKeys = ['cultural_notes', 'usage_context', 'word_family', 'frequency'];
         sections.forEach(function (result, i) {
-            if (result.status === 'fulfilled' && result.value) {
-                var val = result.value[sectionKeys[i]];
-                if (val) merged[sectionKeys[i]] = val;
+            var def = sectionDefs[i];
+            if (result.status === 'fulfilled') {
+                console.log('[WOTD] ' + def.name + ' root keys:', Object.keys(result.value));
+                var found = false;
+                for (var t = 0; t < def.target.length; t++) {
+                    var key = def.target[t];
+                    var val = result.value[key];
+                    if (val) {
+                        basic[key] = val;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    console.log('[WOTD] ' + def.name + ' no matching key from ' + JSON.stringify(def.target));
+                }
+            } else {
+                console.error('[WOTD] ' + def.name + ' failed:', result.reason);
             }
         });
 
-        return merged;
+        return basic;
     }
 
     // ---- Render ----
@@ -174,8 +205,9 @@
     }
 
     function getVideoData(data) {
-        if (data.video_resources && data.video_resources.length > 0) {
-            const v = data.video_resources[0];
+        var videos = data.video_resources || data.bilibili_videos || null;
+        if (videos && videos.length > 0) {
+            var v = videos[0];
             return { quote: v.context || v.example || '', source: v.title || v.source || '' };
         }
         var s = firstSense();
@@ -204,6 +236,9 @@
     function getCollocations(data) {
         if (data.collocations && data.collocations.length > 0) {
             return data.collocations;
+        }
+        if (data.common_phrases && data.common_phrases.length > 0) {
+            return data.common_phrases.slice(0, 8);
         }
         if (data.word_family && data.word_family.collocations) {
             return data.word_family.collocations;
