@@ -119,10 +119,10 @@
         el.qrContainer.innerHTML = '';
         new QRCode(el.qrContainer, {
             text: url,
-            width: 48,
-            height: 48,
-            colorDark: '#9ca3af',
-            colorLight: 'transparent',
+            width: 72,
+            height: 72,
+            colorDark: '#111827',
+            colorLight: '#ffffff',
             correctLevel: QRCode.CorrectLevel.M
         });
         el.qrUrl.textContent = url;

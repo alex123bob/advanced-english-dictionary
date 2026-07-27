@@ -89,12 +89,12 @@ body {
 .wotd-example::after { content: '\201D'; }
 
 .wotd-export-actions {
-    position: fixed;
-    top: 16px;
-    right: 16px;
+    position: absolute;
+    top: 12px;
+    right: 12px;
     display: flex;
-    gap: 8px;
-    z-index: 10;
+    gap: 6px;
+    z-index: 2;
 }
 
 .wotd-export-btn {
@@ -135,8 +135,8 @@ body {
 .wotd-qr canvas,
 .wotd-qr img {
     display: block;
-    width: 48px;
-    height: 48px;
+    width: 72px;
+    height: 72px;
 }
 
 .wotd-qr-url {
