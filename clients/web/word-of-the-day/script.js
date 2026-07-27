@@ -21,7 +21,7 @@
         example: $('exampleDisplay'),
         qrContainer: $('qrContainer'),
         qrUrl: $('qrUrlDisplay'),
-        exportPngBtn: $('exportPngBtn'),
+        exportSvgBtn: $('exportSvgBtn'),
         exportPdfBtn: $('exportPdfBtn'),
     };
 
@@ -127,7 +127,7 @@
         });
         el.qrUrl.textContent = url;
 
-        el.exportPngBtn.disabled = false;
+        el.exportSvgBtn.disabled = false;
         el.exportPdfBtn.disabled = false;
     }
 
@@ -156,16 +156,19 @@
     el.retryBtn.addEventListener('click', loadWordOfTheDay);
 
     // ---- Export ----
-    async function exportPng() {
+    async function exportSvg() {
         var clone = null;
         try {
-            el.exportPngBtn.disabled = true;
+            el.exportSvgBtn.disabled = true;
             clone = el.card.cloneNode(true);
             clone.classList.add('wotd-export-clone');
             clone.style.position = 'absolute';
             clone.style.left = '-9999px';
             clone.style.top = '0';
             document.body.appendChild(clone);
+
+            var w = clone.offsetWidth;
+            var h = clone.offsetHeight;
 
             var canvas = await html2canvas(clone, {
                 scale: 2,
@@ -174,20 +177,22 @@
                 useCORS: true,
             });
 
-            canvas.toBlob(function (blob) {
-                if (blob) {
-                    var url = URL.createObjectURL(blob);
-                    var a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'wotd-' + currentWord + '.png';
-                    a.click();
-                    URL.revokeObjectURL(url);
-                }
-                el.exportPngBtn.disabled = false;
-            }, 'image/png');
+            var imgData = canvas.toDataURL('image/png');
+            var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '">' +
+                '<image href="' + imgData + '" width="' + w + '" height="' + h + '"/>' +
+                '</svg>';
+
+            var blob = new Blob([svg], { type: 'image/svg+xml' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'wotd-' + currentWord + '.svg';
+            a.click();
+            URL.revokeObjectURL(url);
+            el.exportSvgBtn.disabled = false;
         } catch (err) {
-            console.error('PNG export failed:', err);
-            el.exportPngBtn.disabled = false;
+            console.error('SVG export failed:', err);
+            el.exportSvgBtn.disabled = false;
         } finally {
             if (clone && clone.parentNode) {
                 clone.parentNode.removeChild(clone);
@@ -199,7 +204,7 @@
         window.print();
     }
 
-    el.exportPngBtn.addEventListener('click', exportPng);
+    el.exportSvgBtn.addEventListener('click', exportSvg);
     el.exportPdfBtn.addEventListener('click', exportPdf);
 
     loadWordOfTheDay();
