@@ -50,16 +50,22 @@ def main():
 
     if needed > 0:
         import random
-        used_in_90d = {
+        from datetime import datetime, timedelta, timezone
+
+        today_dt = datetime.now(timezone.utc)
+        cooldown_cutoff = today_dt - timedelta(days=SKIPPED_REUSE_DAYS)
+
+        skipped_in_cooldown = {
             e['word'].lower()
             for e in schedule
-            if e['status'] in ('published', 'skipped')
+            if e['status'] == 'skipped'
+            and e.get('published_at')
+            and datetime.fromisoformat(e['published_at']) > cooldown_cutoff
         }
 
         candidates = [w for w in pool if w.lower() not in existing_words]
 
-        available = [w for w in candidates if w.lower() not in used_in_90d or
-                     w.lower() not in {e['word'].lower() for e in schedule}]
+        available = [w for w in candidates if w.lower() not in skipped_in_cooldown]
 
         random.shuffle(available)
 
