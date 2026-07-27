@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word of the Day — Advanced English Dictionary</title>
+    <meta name="description" content="Daily English learning card with video examples, confusables, collocations, cultural notes, grammar tips, and word family.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="wotd-page" id="wotdPage">
+
+    <header class="wotd-topbar">
+        <span class="wotd-date" id="wotdDate"></span>
+        <div class="wotd-export-bar">
+            <button class="wotd-export-btn" data-format="png" id="exportPngBtn" title="Export as PNG">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.3"/><circle cx="5.5" cy="5.5" r="1" fill="currentColor"/><path d="M2 11l3.5-3.5L8 10l2-2 4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                PNG
+            </button>
+            <button class="wotd-export-btn" data-format="pdf" id="exportPdfBtn" title="Export as PDF">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 1h6l4 4v10H3V1z" stroke="currentColor" stroke-width="1.3"/><path d="M9 1v4h4" stroke="currentColor" stroke-width="1.3"/></svg>
+                PDF
+            </button>
+        </div>
+    </header>
+
+    <article class="wotd-card" id="wotdCard">
+
+        <!-- Hero -->
+        <section class="wotd-hero">
+            <div class="wotd-hero-top">
+                <span class="wotd-pos-badge" id="posBadge"></span>
+                <button class="wotd-audio-btn" id="audioBtn" title="Listen to pronunciation" aria-label="Listen to pronunciation">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M9 3L4 7H1v6h3l5 4V3z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M13 6.5a5 5 0 010 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M15.5 4a8 8 0 010 12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                </button>
+            </div>
+            <h1 class="wotd-word" id="wordDisplay"></h1>
+            <div class="wotd-hero-meta">
+                <span class="wotd-pronunciation" id="pronunciationDisplay"></span>
+                <span class="wotd-frequency" id="frequencyDisplay"></span>
+            </div>
+            <p class="wotd-core-sense" id="coreSenseDisplay"></p>
+        </section>
+
+        <!-- Grid -->
+        <div class="wotd-grid">
+
+            <!-- In the Wild -->
+            <section class="wotd-block wotd-block-video" id="videoBlock">
+                <div class="wotd-block-header">
+                    <span class="wotd-block-icon">📺</span>
+                    <h2 class="wotd-block-title">In the Wild</h2>
+                </div>
+                <div class="wotd-block-body" id="videoBody">
+                    <div class="wotd-video-card" id="videoCard">
+                        <div class="wotd-video-quote" id="videoQuote"></div>
+                        <div class="wotd-video-source" id="videoSource"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Don't Confuse -->
+            <section class="wotd-block" id="confusablesBlock">
+                <div class="wotd-block-header">
+                    <span class="wotd-block-icon">⚡</span>
+                    <h2 class="wotd-block-title">Don't Confuse</h2>
+                </div>
+                <div class="wotd-block-body" id="confusablesBody"></div>
+            </section>
+
+            <!-- Collocations -->
+            <section class="wotd-block" id="collocationsBlock">
+                <div class="wotd-block-header">
+                    <span class="wotd-block-icon">🤝</span>
+                    <h2 class="wotd-block-title">Natural Partners</h2>
+                </div>
+                <div class="wotd-block-body wotd-chips-container" id="collocationsBody"></div>
+            </section>
+
+            <!-- Vibe Check -->
+            <section class="wotd-block" id="cultureBlock">
+                <div class="wotd-block-header">
+                    <span class="wotd-block-icon">🌍</span>
+                    <h2 class="wotd-block-title">Vibe Check</h2>
+                </div>
+                <div class="wotd-block-body" id="cultureBody"></div>
+            </section>
+
+            <!-- Grammar Lab -->
+            <section class="wotd-block" id="grammarBlock">
+                <div class="wotd-block-header">
+                    <span class="wotd-block-icon">🔬</span>
+                    <h2 class="wotd-block-title">Grammar Lab</h2>
+                </div>
+                <div class="wotd-block-body" id="grammarBody"></div>
+            </section>
+
+            <!-- Word Family -->
+            <section class="wotd-block" id="familyBlock">
+                <div class="wotd-block-header">
+                    <span class="wotd-block-icon">🌳</span>
+                    <h2 class="wotd-block-title">Word Family</h2>
+                </div>
+                <div class="wotd-block-body" id="familyBody"></div>
+            </section>
+
+        </div>
+
+        <!-- QR footer — only visible in export -->
+        <div class="wotd-export-footer" id="exportFooter">
+            <div class="wotd-qr" id="qrContainer"></div>
+            <div class="wotd-export-footer-text">
+                <strong>Advanced English Dictionary</strong>
+                <span id="qrUrlDisplay"></span>
+            </div>
+        </div>
+
+    </article>
+
+    <footer class="wotd-footer">
+        <a href="/">Advanced English Dictionary</a>
+    </footer>
+
+</div>
+
+<div class="wotd-error" id="errorDisplay" hidden>
+    <div class="wotd-error-content">
+        <span class="wotd-error-icon">📭</span>
+        <h2>Word of the Day Unavailable</h2>
+        <p id="errorMessage">Check back tomorrow.</p>
+        <button class="wotd-retry-btn" id="retryBtn">Retry</button>
+    </div>
+</div>
+
+<div class="wotd-loading" id="loadingDisplay">
+    <div class="wotd-loading-spinner"></div>
+    <p>Loading today's word...</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
