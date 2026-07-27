@@ -62,11 +62,14 @@ body {
     font-size: clamp(36px, 8vw, 52px);
     font-weight: 800;
     letter-spacing: -0.02em;
-    line-height: 1;
+    line-height: 1.1;
     color: #1f2937;
     text-decoration: none;
     text-transform: uppercase;
     transition: color 0.15s;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    max-width: 100%;
 }
 
 .wotd-word:hover {
