@@ -42,6 +42,15 @@
         page: $('wotdPage'),
     };
 
+    function entry() {
+        return currentData && currentData.entries && currentData.entries[0] ? currentData.entries[0] : null;
+    }
+
+    function firstSense() {
+        var e = entry();
+        return e && e.senses && e.senses[0] ? e.senses[0] : null;
+    }
+
     // ---- Audio ----
     let currentSound = null;
 
@@ -74,8 +83,9 @@
     }
 
     el.audioBtn.addEventListener('click', () => {
-        if (currentData && currentData.pronunciation_audio) {
-            playAudio(currentData.pronunciation_audio);
+        var e = entry();
+        if (e && e.pronunciation) {
+            playAudio(e.pronunciation);
         }
     });
 
@@ -136,12 +146,27 @@
         });
     }
 
-    function getCoreSense(data) {
-        if (data.detailed_senses && data.detailed_senses.length > 0) {
-            const sense = data.detailed_senses[0];
-            return sense.short_definition || sense.definition || '';
+    function getCoreSense() {
+        var s = firstSense();
+        return s ? (s.short_definition || s.definition || '') : '';
+    }
+
+    function getPronunciation() {
+        var e = entry();
+        return e ? (e.ipa || '') : '';
+    }
+
+    function getPos() {
+        var e = entry();
+        if (e && e.meanings_summary && e.meanings_summary.length > 0) {
+            return e.meanings_summary[0].part_of_speech || '';
         }
         return '';
+    }
+
+    function getAudioUrl() {
+        var e = entry();
+        return e ? (e.pronunciation || '') : '';
     }
 
     function getVideoData(data) {
@@ -149,11 +174,9 @@
             const v = data.video_resources[0];
             return { quote: v.context || v.example || '', source: v.title || v.source || '' };
         }
-        if (data.detailed_senses && data.detailed_senses.length > 0) {
-            const examples = data.detailed_senses[0].examples || [];
-            if (examples.length > 0) {
-                return { quote: examples[0], source: 'Example usage' };
-            }
+        var s = firstSense();
+        if (s && s.examples && s.examples.length > 0) {
+            return { quote: s.examples[0], source: 'Example usage' };
         }
         return null;
     }
@@ -185,38 +208,36 @@
     }
 
     function getCultureData(data) {
-        const note = data.cultural_notes_info || data.cultural_notes || null;
-        const usage = data.usage_context_info || data.usage_context || null;
+        var noteData = data.cultural_notes || null;
+        var usageData = data.usage_context || null;
         return {
-            note: note ? (note.notes || note.note || '') : '',
-            formality: usage ? (usage.formality || usage.formality_level || '') : ''
+            note: noteData ? (typeof noteData === 'object' ? (noteData.notes || noteData.note || '') : String(noteData)) : '',
+            formality: usageData ? (usageData.formality || usageData.formality_level || '') : ''
         };
     }
 
     function getGrammarData(data) {
-        if (data.usage_context_info && data.usage_context_info.grammar_notes) {
+        if (data.usage_context && data.usage_context.grammar_notes) {
+            var gn = data.usage_context.grammar_notes;
             return {
-                pattern: data.usage_context_info.grammar_notes.pattern || '',
-                tip: data.usage_context_info.grammar_notes.common_mistake || data.usage_context_info.grammar_notes.tip || ''
+                pattern: gn.pattern || '',
+                tip: gn.common_mistake || gn.tip || ''
             };
         }
-        if (data.detailed_senses && data.detailed_senses.length > 0) {
-            for (const sense of data.detailed_senses) {
-                if (sense.grammar_note || sense.usage_note) {
-                    return {
-                        pattern: sense.grammar_note || '',
-                        tip: sense.usage_note || ''
-                    };
-                }
-            }
+        var s = firstSense();
+        if (s && (s.grammar_note || s.usage_note)) {
+            return {
+                pattern: s.grammar_note || '',
+                tip: s.usage_note || ''
+            };
         }
         return null;
     }
 
     function getFamilyData(data) {
-        const wf = data.word_family_info || data.word_family || null;
+        var wf = data.word_family || null;
         if (!wf) return null;
-        const forms = [];
+        var forms = [];
         if (wf.noun) forms.push({ pos: 'noun', word: wf.noun });
         if (wf.verb) forms.push({ pos: 'verb', word: wf.verb });
         if (wf.adjective) forms.push({ pos: 'adjective', word: wf.adjective });
@@ -231,9 +252,10 @@
         el.page.hidden = false;
 
         el.word.textContent = data.headword || currentWord;
-        el.pronunciation.textContent = data.pronunciation || '';
-        el.posBadge.textContent = data.part_of_speech || data.pos || '';
-        el.posBadge.style.display = data.part_of_speech || data.pos ? '' : 'none';
+        el.pronunciation.textContent = getPronunciation();
+        var pos = getPos();
+        el.posBadge.textContent = pos;
+        el.posBadge.style.display = pos ? '' : 'none';
 
         if (data.frequency) {
             el.frequency.textContent = data.frequency;
@@ -242,8 +264,10 @@
             el.frequency.style.display = 'none';
         }
 
-        el.coreSense.textContent = getCoreSense(data);
-        el.audioBtn.style.display = data.pronunciation_audio ? '' : 'none';
+        el.coreSense.textContent = getCoreSense();
+
+        var audioUrl = getAudioUrl();
+        el.audioBtn.style.display = audioUrl ? '' : 'none';
 
         const video = getVideoData(data);
         if (video) {
@@ -256,12 +280,7 @@
 
         const confusables = getConfusables(data);
         if (confusables) {
-            el.confusablesBody.innerHTML = confusables.map(c => `
-                <div class="wotd-confusable-item">
-                    <div class="wotd-confusable-word">${escapeHtml(c.word)}</div>
-                    <div class="wotd-confusable-tip">${escapeHtml(c.tip)}</div>
-                </div>
-            `).join('');
+            el.confusablesBody.innerHTML = confusables.map(c => '\n                <div class="wotd-confusable-item">\n                    <div class="wotd-confusable-word">' + escapeHtml(c.word) + '</div>\n                    <div class="wotd-confusable-tip">' + escapeHtml(c.tip) + '</div>\n                </div>\n            ').join('');
             el.confusablesBlock.hidden = false;
         } else {
             el.confusablesBlock.hidden = true;
@@ -269,9 +288,9 @@
 
         const collocations = getCollocations(data);
         if (collocations) {
-            el.collocationsBody.innerHTML = collocations.map(c => `
-                <span class="wotd-chip">${escapeHtml(typeof c === 'string' ? c : c.word || c)}</span>
-            `).join('');
+            el.collocationsBody.innerHTML = collocations.map(function (c) {
+                return '\n                <span class="wotd-chip">' + escapeHtml(typeof c === 'string' ? c : c.word || c) + '</span>\n            ';
+            }).join('');
             el.collocationsBlock.hidden = false;
         } else {
             el.collocationsBlock.hidden = true;
@@ -279,12 +298,12 @@
 
         const culture = getCultureData(data);
         if (culture && (culture.note || culture.formality)) {
-            let html = '';
+            var html = '';
             if (culture.note) {
                 html += '<p class="wotd-culture-note">' + escapeHtml(culture.note) + '</p>';
             }
             if (culture.formality) {
-                const cls = culture.formality.toLowerCase().includes('casual') ? 'casual'
+                var cls = culture.formality.toLowerCase().includes('casual') ? 'casual'
                     : culture.formality.toLowerCase().includes('formal') ? 'formal'
                     : 'neutral';
                 html += '<span class="wotd-formality-badge ' + cls + '">' + escapeHtml(culture.formality) + '</span>';
@@ -297,7 +316,7 @@
 
         const grammar = getGrammarData(data);
         if (grammar && (grammar.pattern || grammar.tip)) {
-            let html = '';
+            html = '';
             if (grammar.pattern) {
                 html += '<p class="wotd-grammar-pattern">' + escapeHtml(grammar.pattern) + '</p>';
             }
@@ -312,12 +331,9 @@
 
         const family = getFamilyData(data);
         if (family) {
-            el.familyBody.innerHTML = family.map(f => `
-                <div class="wotd-family-item">
-                    <div class="wotd-family-pos">${escapeHtml(f.pos)}</div>
-                    <div class="wotd-family-word">${escapeHtml(f.word)}</div>
-                </div>
-            `).join('');
+            el.familyBody.innerHTML = family.map(function (f) {
+                return '\n                <div class="wotd-family-item">\n                    <div class="wotd-family-pos">' + escapeHtml(f.pos) + '</div>\n                    <div class="wotd-family-word">' + escapeHtml(f.word) + '</div>\n                </div>\n            ';
+            }).join('');
             el.familyBlock.hidden = false;
         } else {
             el.familyBlock.hidden = true;
