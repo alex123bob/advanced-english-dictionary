@@ -347,11 +347,12 @@
 
     // ---- Export ----
     async function exportPng() {
+        var clone = null;
         try {
             el.exportPngBtn.disabled = true;
             el.exportPngBtn.textContent = 'Rendering...';
 
-            const clone = el.card.cloneNode(true);
+            clone = el.card.cloneNode(true);
             clone.classList.add('wotd-export-clone');
             clone.style.position = 'absolute';
             clone.style.left = '-9999px';
@@ -361,22 +362,22 @@
 
             document.body.appendChild(clone);
 
-            const canvas = await html2canvas(clone, {
+            var canvas = await html2canvas(clone, {
                 scale: 2,
                 backgroundColor: '#ffffff',
                 logging: false,
                 useCORS: true,
             });
 
-            document.body.removeChild(clone);
-
             canvas.toBlob(function (blob) {
-                var url = URL.createObjectURL(blob);
-                var a = document.createElement('a');
-                a.href = url;
-                a.download = 'wotd-' + currentWord + '.png';
-                a.click();
-                URL.revokeObjectURL(url);
+                if (blob) {
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'wotd-' + currentWord + '.png';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
                 el.exportPngBtn.disabled = false;
                 el.exportPngBtn.textContent = 'PNG';
             }, 'image/png');
@@ -384,6 +385,10 @@
             console.error('PNG export failed:', err);
             el.exportPngBtn.disabled = false;
             el.exportPngBtn.textContent = 'PNG';
+        } finally {
+            if (clone && clone.parentNode) {
+                clone.parentNode.removeChild(clone);
+            }
         }
     }
 
