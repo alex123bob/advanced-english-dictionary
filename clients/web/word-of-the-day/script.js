@@ -221,7 +221,10 @@
 
     function getVideoData(data) {
         var s = firstSense();
-        if (s && s.example) return { quote: s.example, source: 'Example usage' };
+        if (s) {
+            console.log('[WOTD] first sense example:', JSON.stringify(s.example));
+            if (s.example) return { quote: s.example, source: 'Example usage' };
+        }
         if (data.common_phrases && data.common_phrases.length > 0) {
             var ph = data.common_phrases[0];
             if (typeof ph === 'string') return { quote: ph, source: 'Common phrase' };
