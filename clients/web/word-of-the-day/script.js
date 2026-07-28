@@ -101,7 +101,7 @@
                 basic.frequency = result.value.frequency;
             }
             if (i === 1) {
-                basic._basicZh = result.value;
+                basic.zhData = result.value;
             }
         });
         return basic;
@@ -124,7 +124,7 @@
         el.example.textContent = example;
         el.example.hidden = !example;
 
-        var exampleZh = getExampleZh(data._basicZh);
+        var exampleZh = getExampleZh(data.zhData);
         el.exampleZh.textContent = exampleZh;
         el.exampleZh.hidden = !exampleZh;
 
