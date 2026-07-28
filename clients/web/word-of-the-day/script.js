@@ -189,7 +189,7 @@
             document.body.appendChild(clone);
 
             var canvas = await html2canvas(clone, {
-                scale: 2,
+                scale: 3,
                 backgroundColor: null,
                 logging: false,
                 useCORS: true,
