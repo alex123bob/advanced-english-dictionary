@@ -88,6 +88,15 @@ body {
 .wotd-example::before { content: '\201C'; }
 .wotd-example::after { content: '\201D'; }
 
+.wotd-example-zh {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #9ca3af;
+    font-style: normal;
+    margin-top: 2px;
+    max-width: 320px;
+}
+
 .wotd-export-actions {
     position: absolute;
     top: 12px;
