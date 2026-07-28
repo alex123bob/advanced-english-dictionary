@@ -99,8 +99,12 @@ const server = http.createServer((req, res) => {
     pathname = '/index.html';
   } else if (pathname === '/home' || pathname === '/home/') {
     pathname = '/home/index.html';
-  } else if (pathname === '/word-of-the-day' || pathname === '/word-of-the-day/') {
+  } else if (pathname === '/word-of-the-day/') {
     pathname = '/word-of-the-day/index.html';
+  } else if (pathname === '/word-of-the-day') {
+    res.writeHead(301, { Location: '/word-of-the-day/' });
+    res.end();
+    return;
   }
   
   // Remove leading slash

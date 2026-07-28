@@ -66,7 +66,11 @@ const server = http.createServer((req, res) => {
 
   if (pathname === '/') pathname = '/index.html';
   if (pathname === '/home' || pathname === '/home/') pathname = '/home/index.html';
-  if (pathname === '/word-of-the-day' || pathname === '/word-of-the-day/') pathname = '/word-of-the-day/index.html';
+  if (pathname === '/word-of-the-day/') pathname = '/word-of-the-day/index.html';
+  if (pathname === '/word-of-the-day') {
+    send(res, 301, '', { Location: '/word-of-the-day/' });
+    return;
+  }
 
   const requestedPath = path.normalize(path.join(DIST_DIR, pathname));
   if (!requestedPath.startsWith(DIST_DIR)) {

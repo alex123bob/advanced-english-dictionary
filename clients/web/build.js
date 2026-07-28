@@ -36,6 +36,13 @@ const FILES_TO_PROCESS = [
   'favicon.ico'
 ];
 
+// WOTD page: separate assets processed independently of the main app bundle.
+const WOTD_FILES = [
+  'word-of-the-day/index.html',
+  'word-of-the-day/script.js',
+  'word-of-the-day/style.css'
+];
+
 const SCRIPT_MODULES = [
   'i18n/i18n.js',
   'i18n/locales/en.js',
@@ -119,6 +126,21 @@ async function optimizeHTML(html, cssHashed, jsHashed, homeCssHashed) {
   return html
     .replace(/\s+/g, ' ') // Collapse whitespace
     .replace(/>\s+</g, '><') // Remove spaces between tags
+    .trim();
+}
+
+// Optimize the Word-of-the-Day page independently.
+// Its relative `style.css` / `script.js` references are rewritten to hashed
+// filenames under /word-of-the-day/, and the parent `../config.js` reference
+// is converted to the absolute `/config.js` served from the dist root.
+async function optimizeWotdHTML(html, wotdCssHashed, wotdJsHashed) {
+  html = html.replace(/href="style\.css"/g, `href="${wotdCssHashed}"`);
+  html = html.replace(/src="script\.js"/g, `src="${wotdJsHashed}"`);
+  html = html.replace(/src="\.\.\/config\.js"/g, `src="/config.js"`);
+  html = html.replace(/<script>[^<]*live reload[^<]*<\/script>/gi, '');
+  return html
+    .replace(/\s+/g, ' ')
+    .replace(/>\s+</g, '><')
     .trim();
 }
 
@@ -230,6 +252,30 @@ async function createProductionBundle() {
     }
   }
   
+  // ─── Word of the Day bundle ───────────────────────────────────────────
+  const wotdDir = 'word-of-the-day';
+  await mkdir(path.join(DIST_DIR, wotdDir), { recursive: true });
+
+  const wotdCss = await readFile(path.join(SOURCE_DIR, wotdDir, 'style.css'), 'utf8');
+  const wotdJs = await readFile(path.join(SOURCE_DIR, wotdDir, 'script.js'), 'utf8');
+  const minifiedWotdCss = await minifyCSS(wotdCss);
+  const minifiedWotdJs = (await minify(wotdJs)).code;
+  const wotdCssHash = getHash(minifiedWotdCss);
+  const wotdJsHash = getHash(minifiedWotdJs);
+  const wotdCssHashed = `style.${wotdCssHash}.css`;
+  const wotdJsHashed = `script.${wotdJsHash}.js`;
+
+  await writeFile(path.join(DIST_DIR, wotdDir, wotdCssHashed), minifiedWotdCss, 'utf8');
+  console.log(chalk.green(`✅ Minified & Hashed WOTD CSS: ${wotdDir}/${wotdCssHashed}`));
+  await writeFile(path.join(DIST_DIR, wotdDir, wotdJsHashed), minifiedWotdJs, 'utf8');
+  console.log(chalk.green(`✅ Minified & Hashed WOTD JS: ${wotdDir}/${wotdJsHashed}`));
+
+  const wotdHtml = await readFile(path.join(SOURCE_DIR, wotdDir, 'index.html'), 'utf8');
+  const processedWotdHtml = await optimizeWotdHTML(wotdHtml, wotdCssHashed, wotdJsHashed);
+  await writeFile(path.join(DIST_DIR, wotdDir, 'index.html'), processedWotdHtml, 'utf8');
+  console.log(chalk.green(`✅ Processed: ${wotdDir}/index.html`));
+
+  // ─── README ───────────────────────────────────────────────────────────
   // Create a simple README for the dist folder
   const readmeContent = `# Production Build
   
