@@ -4,6 +4,7 @@
     const SCHEDULE_URL = 'https://raw.githubusercontent.com/alex123bob/advanced-english-dictionary/main/data/wotd-schedule.json';
     var configApiHost = window.config && window.config.api ? window.config.api.host : '';
     var API_URL = (configApiHost || '') + '/api/dictionary';
+    var TRANSLATE_URL = (configApiHost || '') + '/api/translate';
 
     let currentWord = '';
     let currentData = null;
@@ -49,15 +50,17 @@
         return '';
     }
 
-    function getExampleZh(basicZhData) {
-        if (!basicZhData) return '';
-        var entries = basicZhData.entries;
-        if (!entries || !entries[0]) return '';
-        var ms = entries[0].meanings_summary;
-        if (!ms || !ms[0]) return '';
-        var senses = ms[0].senses;
-        if (!senses || !senses[0]) return '';
-        return senses[0].example_zh || '';
+    async function translateText(text, targetLang) {
+        if (!text) return '';
+        var res = await fetch(TRANSLATE_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ text: text, target_lang: targetLang })
+        });
+        if (!res.ok) throw new Error('Translate API returned ' + res.status);
+        var json = await res.json();
+        if (!json.success) throw new Error(json.error || 'Translate API error');
+        return json.translation || '';
     }
 
     function escapeHtml(str) {
@@ -92,23 +95,18 @@
     async function fetchWordData(word) {
         var basic = await apiPost({ word: word, section: 'basic', entry_index: 0 });
         var sections = await Promise.allSettled([
-            apiPost({ word: word, section: 'frequency', entry_index: 0 }),
-            apiPost({ word: word, section: 'basic', lang: 'zh-cn', entry_index: 0 })
+            apiPost({ word: word, section: 'frequency', entry_index: 0 })
         ]);
-        sections.forEach(function (result, i) {
-            if (result.status !== 'fulfilled') return;
-            if (i === 0 && result.value.frequency) {
+        sections.forEach(function (result) {
+            if (result.status === 'fulfilled' && result.value.frequency) {
                 basic.frequency = result.value.frequency;
-            }
-            if (i === 1) {
-                basic.zhData = result.value;
             }
         });
         return basic;
     }
 
     // ---- Render ----
-    function renderWord(data) {
+    function renderWord(data, exampleZh) {
         currentData = data;
         el.loading.hidden = true;
         el.error.hidden = true;
@@ -124,9 +122,9 @@
         el.example.textContent = example;
         el.example.hidden = !example;
 
-        var exampleZh = getExampleZh(data.zhData);
-        el.exampleZh.textContent = exampleZh;
-        el.exampleZh.hidden = !exampleZh;
+        var exampleZhText = exampleZh || '';
+        el.exampleZh.textContent = exampleZhText;
+        el.exampleZh.hidden = !exampleZhText;
 
         // Random background
         var prevBg = el.card.dataset.bg;
@@ -165,7 +163,14 @@
             const word = entry ? entry.word : 'serendipity';
             currentWord = word;
             const data = await fetchWordData(word);
-            renderWord(data);
+            // Get the English example, translate it, then render
+            currentData = data; // needed so getExample() can read it
+            var englishExample = getExample();
+            var translateResult = await Promise.allSettled([
+                translateText(englishExample, 'zh-cn')
+            ]);
+            var exampleZh = (translateResult[0].status === 'fulfilled') ? translateResult[0].value : '';
+            renderWord(data, exampleZh);
         } catch (err) {
             console.error('WOTD error:', err);
             el.loading.hidden = true;
