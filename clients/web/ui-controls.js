@@ -111,7 +111,7 @@
 
     function initStyleMode() {
         const saved = localStorage.getItem(STYLE_MODE_KEY);
-        const resolved = STYLE_MODES.has(saved) ? saved : 'adventure';
+        const resolved = STYLE_MODES.has(saved) ? saved : 'professional';
         const toggleBtn = document.getElementById('styleModeToggleBtn');
 
         applyStyleMode(resolved);
