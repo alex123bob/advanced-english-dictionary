@@ -58,6 +58,7 @@
             "clearAllHistoryConfirm": "清空全部搜索历史？",
             "actions": "操作",
             "scrollTop": "回到顶部",
+            "wotdLabel": "每日一词",
             "themeOptions": "主题选项",
             "chooseTheme": "选择主题",
             "searchPlaceholderMobile": "单词或短语",

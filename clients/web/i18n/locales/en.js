@@ -57,6 +57,7 @@
             "clearAllHistoryConfirm": "Clear all search history?",
             "actions": "Actions",
             "scrollTop": "Scroll to top",
+            "wotdLabel": "Word of the Day",
             "themeOptions": "Theme options",
             "chooseTheme": "Choose theme",
             "searchPlaceholderMobile": "Word or phrase",

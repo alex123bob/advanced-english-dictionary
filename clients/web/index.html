@@ -32,10 +32,10 @@
                     <span class="orbit-shape orbit-shape-moon"></span>
                 </div>
                 <div class="launcher-topline">
-                    <div class="header-brand">
-                        <i class="fas fa-book-open"></i>
-                        <span data-i18n="launcherBrand">Word Adventure</span>
-                    </div>
+                    <a href="/word-of-the-day" class="wotd-header-link" title="Word of the Day" aria-label="Word of the Day">
+                        <i class="fas fa-calendar"></i>
+                        <span data-i18n="wotdLabel">Word of the Day</span>
+                    </a>
                     <div class="launcher-actions">
                         <div id="languageSelector" class="language-selector">
                             <button id="languageSelectorBtn" class="language-selector-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Response language">
@@ -249,6 +249,12 @@
                     <i class="fas fa-history"></i>
                     <span class="history-badge" id="historyBadge" style="display: none;">0</span>
                 </button>
+            </div>
+            <div class="speed-dial-item" style="--i:2">
+                <span class="speed-dial-label" data-i18n="wotdLabel">Word of the Day</span>
+                <a href="/word-of-the-day" class="speed-dial-child-btn" title="Word of the Day" aria-label="Word of the Day">
+                    <i class="fas fa-sun"></i>
+                </a>
             </div>
         </div>
         <button class="speed-dial-main-btn" id="speedDialBtn" title="Actions" aria-label="Actions" aria-expanded="false" data-i18n-title="actions" data-i18n-aria-label="actions">

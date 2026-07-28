@@ -251,6 +251,38 @@ body::before {
     color: var(--primary-color);
 }
 
+/* WOTD link inherits the header-brand badge style */
+.wotd-header-link {
+    width: fit-content;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.5rem 0.75rem;
+    border: 3px solid var(--ink);
+    border-radius: 999px;
+    background: #fff;
+    box-shadow: 4px 4px 0 var(--ink);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.wotd-header-link i {
+    color: var(--primary-color);
+}
+
+.wotd-header-link:hover,
+.wotd-header-link:focus-visible {
+    background: #facc15;
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0 var(--ink);
+}
+
 .style-mode-toggle {
     min-height: 42px;
     display: inline-flex;

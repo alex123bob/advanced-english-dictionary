@@ -212,6 +212,36 @@
     background: #3b82f6;
 }
 
+.wotd-header-link {
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--primary-color) 24%, var(--border-color));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--primary-color) 7%, var(--card-bg));
+    color: var(--text-color);
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 800;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    box-shadow: 0 8px 18px color-mix(in srgb, var(--primary-color) 10%, transparent);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.wotd-header-link i {
+    color: var(--primary-color);
+}
+
+.wotd-header-link:hover,
+.wotd-header-link:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px color-mix(in srgb, var(--primary-color) 14%, transparent);
+}
+
 .scroll-top-btn {
     position: fixed;
     right: clamp(1rem, 2vw, 1.5rem);
