@@ -19,6 +19,7 @@
         cardInner: $('wotdCardInner'),
         word: $('wordDisplay'),
         example: $('exampleDisplay'),
+        exampleZh: $('exampleZhDisplay'),
         qrContainer: $('qrContainer'),
         qrUrl: $('qrUrlDisplay'),
         exportPngBtn: $('exportPngBtn'),
@@ -46,6 +47,17 @@
         if (s && s.example) return s.example;
         if (s && s.definition) return s.definition;
         return '';
+    }
+
+    function getExampleZh(basicZhData) {
+        if (!basicZhData) return '';
+        var entries = basicZhData.entries;
+        if (!entries || !entries[0]) return '';
+        var ms = entries[0].meanings_summary;
+        if (!ms || !ms[0]) return '';
+        var senses = ms[0].senses;
+        if (!senses || !senses[0]) return '';
+        return senses[0].example_zh || '';
     }
 
     function escapeHtml(str) {
@@ -80,11 +92,16 @@
     async function fetchWordData(word) {
         var basic = await apiPost({ word: word, section: 'basic', entry_index: 0 });
         var sections = await Promise.allSettled([
-            apiPost({ word: word, section: 'frequency', entry_index: 0 })
+            apiPost({ word: word, section: 'frequency', entry_index: 0 }),
+            apiPost({ word: word, section: 'basic', lang: 'zh-cn', entry_index: 0 })
         ]);
-        sections.forEach(function (result) {
-            if (result.status === 'fulfilled' && result.value.frequency) {
+        sections.forEach(function (result, i) {
+            if (result.status !== 'fulfilled') return;
+            if (i === 0 && result.value.frequency) {
                 basic.frequency = result.value.frequency;
+            }
+            if (i === 1) {
+                basic._basicZh = result.value;
             }
         });
         return basic;
@@ -105,7 +122,11 @@
 
         var example = getExample();
         el.example.textContent = example;
-        el.example.style.display = example ? '' : 'none';
+        el.example.hidden = !example;
+
+        var exampleZh = getExampleZh(data._basicZh);
+        el.exampleZh.textContent = exampleZh;
+        el.exampleZh.hidden = !exampleZh;
 
         // Random background
         var prevBg = el.card.dataset.bg;
