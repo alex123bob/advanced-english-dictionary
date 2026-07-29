@@ -199,6 +199,17 @@
     el.retryBtn.addEventListener('click', loadWordOfTheDay);
 
     // ---- Export ----
+    function downloadBlob(blob, filename) {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }
+
     async function exportPng() {
         var clone = null;
         try {
@@ -217,21 +228,19 @@
                 useCORS: true,
             });
 
-            canvas.toBlob(function (blob) {
-                if (blob) {
-                    var url = URL.createObjectURL(blob);
-                    var a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'wotd-' + currentWord + '.png';
-                    a.click();
-                    URL.revokeObjectURL(url);
-                }
-                el.exportPngBtn.disabled = false;
-            }, 'image/png');
+            var blob = await new Promise(function (resolve) {
+                canvas.toBlob(resolve, 'image/png');
+            });
+
+            if (!blob) {
+                throw new Error('Failed to create image blob');
+            }
+
+            downloadBlob(blob, 'wotd-' + currentWord + '.png');
         } catch (err) {
             console.error('PNG export failed:', err);
-            el.exportPngBtn.disabled = false;
         } finally {
+            el.exportPngBtn.disabled = false;
             if (clone && clone.parentNode) {
                 clone.parentNode.removeChild(clone);
             }
