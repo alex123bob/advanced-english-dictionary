@@ -46,7 +46,16 @@
     function getExample() {
         var s = firstSense();
         if (s && s.example) return s.example;
-        if (s && s.definition) return s.definition;
+        return '';
+    }
+
+    // When the first sense has no inline example, load the dedicated `examples`
+    // section (entry 0, sense 0) the same way the main dictionary does, and
+    // return its first example sentence. Returns '' if none is available.
+    async function fetchFirstSenseExample(word) {
+        var json = await apiPost({ word: word, section: 'examples', entry_index: 0, sense_index: 0 });
+        var examples = json.examples;
+        if (examples && examples.length) return examples[0];
         return '';
     }
 
@@ -106,7 +115,7 @@
     }
 
     // ---- Render ----
-    function renderWord(data, exampleZh) {
+    function renderWord(data, example, exampleZh) {
         currentData = data;
         el.loading.hidden = true;
         el.error.hidden = true;
@@ -118,8 +127,7 @@
         el.word.textContent = word;
         el.word.href = url;
 
-        var example = getExample();
-        el.example.textContent = example;
+        el.example.textContent = example || '';
         el.example.hidden = !example;
 
         var exampleZhText = exampleZh || '';
@@ -166,11 +174,20 @@
             // Get the English example, translate it, then render
             currentData = data; // needed so getExample() can read it
             var englishExample = getExample();
+            // If the first sense has no inline example, load the dedicated
+            // examples section (as the main dictionary does) before rendering.
+            if (!englishExample) {
+                try {
+                    englishExample = await fetchFirstSenseExample(word);
+                } catch (exErr) {
+                    console.warn('WOTD: failed to load examples section:', exErr);
+                }
+            }
             var translateResult = await Promise.allSettled([
                 translateText(englishExample, 'zh-cn')
             ]);
             var exampleZh = (translateResult[0].status === 'fulfilled') ? translateResult[0].value : '';
-            renderWord(data, exampleZh);
+            renderWord(data, englishExample, exampleZh);
         } catch (err) {
             console.error('WOTD error:', err);
             el.loading.hidden = true;
