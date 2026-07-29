@@ -3,6 +3,7 @@
 
 import json
 import os
+import random
 from datetime import datetime, timedelta, timezone
 
 SCHEDULE_PATH = 'data/wotd-schedule.json'
@@ -11,6 +12,9 @@ WORD_POOL = [
     'serendipity', 'ubiquitous', 'ephemeral', 'pipe',
 ]
 POOL_FILE = 'data/wotd-word-pool.json'
+# Published words cannot be reused within this many days
+PUBLISHED_REUSE_DAYS = 180
+# Skipped words cannot be reused within this many days
 SKIPPED_REUSE_DAYS = 90
 
 
@@ -31,42 +35,47 @@ def today_str():
 
 def main():
     schedule = load_json(SCHEDULE_PATH)
-
     pool = load_json(POOL_FILE) if os.path.exists(POOL_FILE) else WORD_POOL
 
-    existing_words = {e['word'].lower() for e in schedule}
-
     today = today_str()
+    now = datetime.now(timezone.utc)
 
-    pending = [e for e in schedule if e['status'] == 'pending']
-
+    # Mark pending entries whose date has arrived as published
     for entry in schedule:
         if entry['status'] == 'pending' and entry['date'] <= today:
             entry['status'] = 'published'
-            entry['published_at'] = datetime.now(timezone.utc).isoformat()
+            entry['published_at'] = now.isoformat()
 
     pending = [e for e in schedule if e['status'] == 'pending']
     needed = MIN_PENDING - len(pending)
 
     if needed > 0:
-        import random
-        from datetime import datetime, timedelta, timezone
+        published_cutoff = now - timedelta(days=PUBLISHED_REUSE_DAYS)
+        skipped_cutoff = now - timedelta(days=SKIPPED_REUSE_DAYS)
 
-        today_dt = datetime.now(timezone.utc)
-        cooldown_cutoff = today_dt - timedelta(days=SKIPPED_REUSE_DAYS)
+        # Words already in the pending queue must not be scheduled again
+        already_pending = {e['word'].lower() for e in pending}
 
-        skipped_in_cooldown = {
+        # Recently published words are on cooldown
+        recently_published = {
+            e['word'].lower()
+            for e in schedule
+            if e['status'] == 'published'
+            and e.get('published_at')
+            and datetime.fromisoformat(e['published_at']) > published_cutoff
+        }
+
+        # Recently skipped words are on cooldown
+        recently_skipped = {
             e['word'].lower()
             for e in schedule
             if e['status'] == 'skipped'
             and e.get('published_at')
-            and datetime.fromisoformat(e['published_at']) > cooldown_cutoff
+            and datetime.fromisoformat(e['published_at']) > skipped_cutoff
         }
 
-        candidates = [w for w in pool if w.lower() not in existing_words]
-
-        available = [w for w in candidates if w.lower() not in skipped_in_cooldown]
-
+        blocked = already_pending | recently_published | recently_skipped
+        available = [w for w in pool if w.lower() not in blocked]
         random.shuffle(available)
 
         last_date = max(
@@ -74,19 +83,21 @@ def main():
             default=today
         )
 
-        for i in range(min(needed, len(available))):
-            word = available[i]
-            last_date = (datetime.strptime(last_date, '%Y-%m-%d') + timedelta(days=1)).strftime('%Y-%m-%d')
+        for word in available[:needed]:
+            last_date = (
+                datetime.strptime(last_date, '%Y-%m-%d') + timedelta(days=1)
+            ).strftime('%Y-%m-%d')
             schedule.append({
                 'word': word,
                 'date': last_date,
                 'status': 'pending',
+                'published_at': None,
                 'difficulty': None,
-                'category': None
+                'category': None,
             })
 
     save_json(SCHEDULE_PATH, schedule)
-    print(f'Schedule updated. Total entries: {len(schedule)}')
+    print(f'Schedule updated. Total entries: {len(schedule)}, pending: {len([e for e in schedule if e["status"] == "pending"])}')
 
 
 if __name__ == '__main__':

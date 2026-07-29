@@ -18,8 +18,8 @@
   {
     "word": "ephemeral",
     "date": "2026-07-29",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-07-29T06:34:27.513288+00:00",
     "difficulty": "intermediate",
     "category": "literary"
   },
@@ -29,5 +29,237 @@
     "status": "pending",
     "difficulty": "beginner",
     "category": "everyday"
+  },
+  {
+    "word": "legitimate",
+    "date": "2026-07-31",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "profound",
+    "date": "2026-08-01",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "perseverance",
+    "date": "2026-08-02",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "sublime",
+    "date": "2026-08-03",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "methodology",
+    "date": "2026-08-04",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "resilient",
+    "date": "2026-08-05",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "irony",
+    "date": "2026-08-06",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "ambivalent",
+    "date": "2026-08-07",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "mundane",
+    "date": "2026-08-08",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "impartial",
+    "date": "2026-08-09",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "precarious",
+    "date": "2026-08-10",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "specify",
+    "date": "2026-08-11",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "brevity",
+    "date": "2026-08-12",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "reinforce",
+    "date": "2026-08-13",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "preliminary",
+    "date": "2026-08-14",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "validate",
+    "date": "2026-08-15",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "vivid",
+    "date": "2026-08-16",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "ideology",
+    "date": "2026-08-17",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "comprehensive",
+    "date": "2026-08-18",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "delegate",
+    "date": "2026-08-19",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "neutral",
+    "date": "2026-08-20",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "paradox",
+    "date": "2026-08-21",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "monitor",
+    "date": "2026-08-22",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "astute",
+    "date": "2026-08-23",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "hypothesis",
+    "date": "2026-08-24",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "coherent",
+    "date": "2026-08-25",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "implication",
+    "date": "2026-08-26",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "optimize",
+    "date": "2026-08-27",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "indicate",
+    "date": "2026-08-28",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
   }
 ]
