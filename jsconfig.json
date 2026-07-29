@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "checkJs": false,
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "maxNodeModuleJsDepth": 0
+  },
+  "include": [
+    "clients/web/**/*.js",
+    "clients/chrome-extension/**/*.js",
+    "clients/pwa/**/*.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/node_modules",
+    "**/dist",
+    "clients/*/dist"
+  ]
+}
