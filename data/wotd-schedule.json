@@ -26,9 +26,10 @@
   {
     "word": "pipe",
     "date": "2026-07-30",
-    "status": "pending",
+    "status": "published",
     "difficulty": "beginner",
-    "category": "everyday"
+    "category": "everyday",
+    "published_at": "2026-07-30T01:16:11.891869+00:00"
   },
   {
     "word": "legitimate",
@@ -257,6 +258,14 @@
   {
     "word": "indicate",
     "date": "2026-08-28",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "paradigm",
+    "date": "2026-08-29",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
