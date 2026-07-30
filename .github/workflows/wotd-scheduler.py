@@ -40,6 +40,10 @@ def main():
     today = today_str()
     now = datetime.now(timezone.utc)
 
+    # Normalize all entries to have consistent keys
+    for entry in schedule:
+        entry.setdefault('published_at', None)
+
     # Mark pending entries whose date has arrived as published
     for entry in schedule:
         if entry['status'] == 'pending' and entry['date'] <= today:
