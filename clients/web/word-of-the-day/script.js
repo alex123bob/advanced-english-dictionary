@@ -4,7 +4,7 @@
     const SCHEDULE_URL = 'https://raw.githubusercontent.com/alex123bob/advanced-english-dictionary/main/data/wotd-schedule.json';
     var configApiHost = window.config && window.config.api ? window.config.api.host : '';
     var API_URL = (configApiHost || '') + '/api/dictionary';
-    var TRANSLATE_URL = (configApiHost || '') + '/api/translate';
+    var WOTD_TRANSLATE_URL = (configApiHost || '') + '/api/wotd/translate';
 
     let currentWord = '';
     let currentData = null;
@@ -59,17 +59,16 @@
         return '';
     }
 
-    async function translateText(text, targetLang) {
-        if (!text) return '';
-        var res = await fetch(TRANSLATE_URL, {
+    async function translateWotd(word, targetLang) {
+        var res = await fetch(WOTD_TRANSLATE_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({ text: text, target_lang: targetLang })
+            body: JSON.stringify({ word: word, target_lang: targetLang })
         });
-        if (!res.ok) throw new Error('Translate API returned ' + res.status);
+        if (!res.ok) throw new Error('WOTD translate API returned ' + res.status);
         var json = await res.json();
-        if (!json.success) throw new Error(json.error || 'Translate API error');
-        return json.translation || '';
+        if (!json.success) throw new Error(json.error || 'WOTD translate API error');
+        return { example: json.example_sentence || '', translation: json.translation || '' };
     }
 
     function escapeHtml(str) {
@@ -171,22 +170,16 @@
             const word = entry ? entry.word : 'serendipity';
             currentWord = word;
             const data = await fetchWordData(word);
-            // Get the English example, translate it, then render
-            currentData = data; // needed so getExample() can read it
-            var englishExample = getExample();
-            // If the first sense has no inline example, load the dedicated
-            // examples section (as the main dictionary does) before rendering.
-            if (!englishExample) {
-                try {
-                    englishExample = await fetchFirstSenseExample(word);
-                } catch (exErr) {
-                    console.warn('WOTD: failed to load examples section:', exErr);
-                }
-            }
+            currentData = data;
+            var englishExample = '';
+            var exampleZh = '';
             var translateResult = await Promise.allSettled([
-                translateText(englishExample, 'zh-cn')
+                translateWotd(word, 'zh-cn')
             ]);
-            var exampleZh = (translateResult[0].status === 'fulfilled') ? translateResult[0].value : '';
+            if (translateResult[0].status === 'fulfilled') {
+                englishExample = translateResult[0].value.example;
+                exampleZh = translateResult[0].value.translation;
+            }
             renderWord(data, englishExample, exampleZh);
         } catch (err) {
             console.error('WOTD error:', err);
