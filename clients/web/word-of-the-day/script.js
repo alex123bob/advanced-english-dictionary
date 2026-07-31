@@ -201,6 +201,15 @@
     // ---- Export ----
     function downloadBlob(blob, filename) {
         var url = URL.createObjectURL(blob);
+        // iOS Safari ignores the `download` attribute on <a> tags and does not
+        // support programmatic .click() triggered downloads. Opening the blob
+        // URL directly gives users the share/save sheet instead.
+        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        if (isIOS) {
+            window.open(url, '_blank');
+            setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+            return;
+        }
         var a = document.createElement('a');
         a.href = url;
         a.download = filename;
@@ -208,6 +217,24 @@
         a.click();
         a.remove();
         setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }
+
+    // Strip SVG data: URI layers from an element's computed background so that
+    // html2canvas (which cannot reliably render inline SVG images on iOS Safari)
+    // only sees the CSS gradient layer. Recurses into child elements.
+    function stripSvgBackgrounds(el) {
+        var computed = window.getComputedStyle(el).backgroundImage;
+        if (computed && computed.indexOf('data:image/svg+xml') !== -1) {
+            // Split multi-layer background-image and keep only non-SVG layers
+            var layers = computed.split(/,(?![^(]*\))/);
+            var filtered = layers.filter(function (layer) {
+                return layer.indexOf('data:image/svg+xml') === -1;
+            });
+            el.style.backgroundImage = filtered.length ? filtered.join(', ') : 'none';
+        }
+        for (var i = 0; i < el.children.length; i++) {
+            stripSvgBackgrounds(el.children[i]);
+        }
     }
 
     async function exportPng() {
@@ -220,6 +247,11 @@
             clone.style.left = '-9999px';
             clone.style.top = '0';
             document.body.appendChild(clone);
+
+            // Remove SVG data: URI backgrounds before rendering — html2canvas
+            // cannot reliably load inline SVG images on iOS Safari, causing the
+            // canvas to be blank. The gradient layer alone looks fine in exports.
+            stripSvgBackgrounds(clone);
 
             var canvas = await html2canvas(clone, {
                 scale: 3,
