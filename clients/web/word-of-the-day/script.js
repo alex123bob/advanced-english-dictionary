@@ -173,12 +173,12 @@
             currentData = data;
             var englishExample = '';
             var exampleZh = '';
-            var translateResult = await Promise.allSettled([
-                translateWotd(word, 'zh-cn')
-            ]);
-            if (translateResult[0].status === 'fulfilled') {
-                englishExample = translateResult[0].value.example;
-                exampleZh = translateResult[0].value.translation;
+            try {
+                var wotdResult = await translateWotd(word, 'zh-cn');
+                englishExample = wotdResult.example;
+                exampleZh = wotdResult.translation;
+            } catch (translateErr) {
+                console.warn('WOTD: failed to translate example:', translateErr);
             }
             renderWord(data, englishExample, exampleZh);
         } catch (err) {
