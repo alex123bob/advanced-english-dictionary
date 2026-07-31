@@ -201,15 +201,6 @@
     // ---- Export ----
     function downloadBlob(blob, filename) {
         var url = URL.createObjectURL(blob);
-        // iOS Safari ignores the `download` attribute on <a> tags and does not
-        // support programmatic .click() triggered downloads. Opening the blob
-        // URL directly gives users the share/save sheet instead.
-        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        if (isIOS) {
-            window.open(url, '_blank');
-            setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
-            return;
-        }
         var a = document.createElement('a');
         a.href = url;
         a.download = filename;
