@@ -34,8 +34,8 @@
   {
     "word": "legitimate",
     "date": "2026-07-31",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-07-31T08:49:25.765506+00:00",
     "difficulty": null,
     "category": null
   },
@@ -266,6 +266,14 @@
   {
     "word": "paradigm",
     "date": "2026-08-29",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "lucid",
+    "date": "2026-08-30",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
