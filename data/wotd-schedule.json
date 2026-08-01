@@ -42,8 +42,8 @@
   {
     "word": "profound",
     "date": "2026-08-01",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-01T08:20:22.151537+00:00",
     "difficulty": null,
     "category": null
   },
@@ -274,6 +274,14 @@
   {
     "word": "lucid",
     "date": "2026-08-30",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "implicit",
+    "date": "2026-08-31",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
