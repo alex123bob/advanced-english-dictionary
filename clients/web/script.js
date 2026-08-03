@@ -3055,23 +3055,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     function positionSuggestionsDropdown() {
         if (!suggestionsDropdown || !suggestionsAnchor || !suggestionsDropdown.classList.contains('active')) return;
 
-        // `position: fixed` elements are painted relative to the visual viewport on
-        // mobile browsers (e.g. iOS Safari with the keyboard open), but
-        // getBoundingClientRect()/innerWidth/innerHeight report layout-viewport
-        // coordinates. Convert into visual-viewport space so the two agree.
-        const vv = window.visualViewport;
         const anchorRect = suggestionsAnchor.getBoundingClientRect();
-        const viewportWidth = vv ? vv.width : (window.innerWidth || document.documentElement.clientWidth);
-        const viewportHeight = vv ? vv.height : (window.innerHeight || document.documentElement.clientHeight);
-        const anchorTop = anchorRect.top - (vv ? vv.offsetTop : 0);
-        const anchorLeft = anchorRect.left - (vv ? vv.offsetLeft : 0);
-        const anchorBottom = anchorRect.bottom - (vv ? vv.offsetTop : 0);
+        const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
         const edgeGap = viewportWidth < 640 ? 8 : 12;
         const dropdownGap = viewportWidth < 640 ? 6 : 8;
         const width = Math.min(Math.max(anchorRect.width, 260), viewportWidth - edgeGap * 2);
-        const left = clampNumber(anchorLeft, edgeGap, viewportWidth - width - edgeGap);
-        const belowSpace = viewportHeight - anchorBottom - dropdownGap - edgeGap;
-        const aboveSpace = anchorTop - dropdownGap - edgeGap;
+        const left = clampNumber(anchorRect.left, edgeGap, viewportWidth - width - edgeGap);
+        const belowSpace = viewportHeight - anchorRect.bottom - dropdownGap - edgeGap;
+        const aboveSpace = anchorRect.top - dropdownGap - edgeGap;
         const preferredHeight = Math.min(440, Math.max(300, suggestionsDropdown.scrollHeight || 300));
         const placeAbove = belowSpace < Math.min(260, preferredHeight) && aboveSpace > belowSpace;
         // Never exceed the space actually available on the chosen side — doing so
@@ -3079,8 +3071,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const availableHeight = Math.max(0, placeAbove ? aboveSpace : belowSpace);
         const maxHeight = Math.min(preferredHeight, availableHeight);
         const top = placeAbove
-            ? anchorTop - dropdownGap - maxHeight
-            : anchorBottom + dropdownGap;
+            ? anchorRect.top - dropdownGap - maxHeight
+            : anchorRect.bottom + dropdownGap;
 
         suggestionsDropdown.style.setProperty('--suggestions-left', `${Math.round(left)}px`);
         suggestionsDropdown.style.setProperty('--suggestions-top', `${Math.round(top)}px`);
