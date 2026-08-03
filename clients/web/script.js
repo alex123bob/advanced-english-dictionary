@@ -3066,11 +3066,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const aboveSpace = anchorRect.top - dropdownGap - edgeGap;
         const preferredHeight = Math.min(440, Math.max(300, suggestionsDropdown.scrollHeight || 300));
         const placeAbove = belowSpace < Math.min(260, preferredHeight) && aboveSpace > belowSpace;
-        const availableHeight = Math.max(180, placeAbove ? aboveSpace : belowSpace);
+        // Never exceed the space actually available on the chosen side — doing so
+        // pushes `top` past the anchor's edge and overlaps the search input.
+        const availableHeight = Math.max(0, placeAbove ? aboveSpace : belowSpace);
         const maxHeight = Math.min(preferredHeight, availableHeight);
         const top = placeAbove
-            ? Math.max(edgeGap, anchorRect.top - dropdownGap - maxHeight)
-            : Math.min(anchorRect.bottom + dropdownGap, viewportHeight - edgeGap - Math.min(maxHeight, 180));
+            ? anchorRect.top - dropdownGap - maxHeight
+            : anchorRect.bottom + dropdownGap;
 
         suggestionsDropdown.style.setProperty('--suggestions-left', `${Math.round(left)}px`);
         suggestionsDropdown.style.setProperty('--suggestions-top', `${Math.round(top)}px`);
