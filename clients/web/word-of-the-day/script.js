@@ -101,16 +101,7 @@
     }
 
     async function fetchWordData(word) {
-        var basic = await apiPost({ word: word, section: 'basic', entry_index: 0 });
-        var sections = await Promise.allSettled([
-            apiPost({ word: word, section: 'frequency', entry_index: 0 })
-        ]);
-        sections.forEach(function (result) {
-            if (result.status === 'fulfilled' && result.value.frequency) {
-                basic.frequency = result.value.frequency;
-            }
-        });
-        return basic;
+        return await apiPost({ word: word, section: 'basic', entry_index: 0 });
     }
 
     // ---- Render ----
