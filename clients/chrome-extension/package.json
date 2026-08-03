@@ -1,6 +1,6 @@
 {
   "name": "@advanced-english-dictionary/chrome-extension",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Chrome extension client for Advanced English Dictionary",
   "private": true,
   "scripts": {
