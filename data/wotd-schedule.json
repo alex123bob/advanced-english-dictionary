@@ -66,8 +66,8 @@
   {
     "word": "methodology",
     "date": "2026-08-04",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-04T08:35:38.797890+00:00",
     "difficulty": null,
     "category": null
   },
@@ -298,6 +298,14 @@
   {
     "word": "mechanism",
     "date": "2026-09-02",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "succinct",
+    "date": "2026-09-03",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
