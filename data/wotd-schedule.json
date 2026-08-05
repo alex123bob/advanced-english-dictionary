@@ -74,8 +74,8 @@
   {
     "word": "resilient",
     "date": "2026-08-05",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-05T08:35:15.229838+00:00",
     "difficulty": null,
     "category": null
   },
@@ -306,6 +306,14 @@
   {
     "word": "succinct",
     "date": "2026-09-03",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "rhetoric",
+    "date": "2026-09-04",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
