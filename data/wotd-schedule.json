@@ -82,8 +82,8 @@
   {
     "word": "irony",
     "date": "2026-08-06",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-06T08:35:38.885689+00:00",
     "difficulty": null,
     "category": null
   },
@@ -314,6 +314,14 @@
   {
     "word": "rhetoric",
     "date": "2026-09-04",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "simulate",
+    "date": "2026-09-05",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
