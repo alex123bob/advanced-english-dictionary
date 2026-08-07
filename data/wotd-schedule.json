@@ -90,8 +90,8 @@
   {
     "word": "ambivalent",
     "date": "2026-08-07",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-07T07:14:52.061721+00:00",
     "difficulty": null,
     "category": null
   },
@@ -322,6 +322,14 @@
   {
     "word": "simulate",
     "date": "2026-09-05",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "culminate",
+    "date": "2026-09-06",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
