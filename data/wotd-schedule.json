@@ -106,8 +106,8 @@
   {
     "word": "impartial",
     "date": "2026-08-09",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-09T06:55:41.440654+00:00",
     "difficulty": null,
     "category": null
   },
@@ -338,6 +338,14 @@
   {
     "word": "redundant",
     "date": "2026-09-07",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "elaborate",
+    "date": "2026-09-08",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
