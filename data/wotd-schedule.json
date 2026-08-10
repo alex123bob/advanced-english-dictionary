@@ -114,8 +114,8 @@
   {
     "word": "precarious",
     "date": "2026-08-10",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-10T07:40:38.035604+00:00",
     "difficulty": null,
     "category": null
   },
@@ -346,6 +346,14 @@
   {
     "word": "elaborate",
     "date": "2026-09-08",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "undermine",
+    "date": "2026-09-09",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
