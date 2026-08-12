@@ -130,8 +130,8 @@
   {
     "word": "brevity",
     "date": "2026-08-12",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-12T07:23:55.487126+00:00",
     "difficulty": null,
     "category": null
   },
@@ -362,6 +362,14 @@
   {
     "word": "subsequent",
     "date": "2026-09-10",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "notion",
+    "date": "2026-09-11",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
