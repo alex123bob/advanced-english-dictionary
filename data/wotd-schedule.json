@@ -138,8 +138,8 @@
   {
     "word": "reinforce",
     "date": "2026-08-13",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-13T07:25:56.432256+00:00",
     "difficulty": null,
     "category": null
   },
@@ -370,6 +370,14 @@
   {
     "word": "notion",
     "date": "2026-09-11",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "zealous",
+    "date": "2026-09-12",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
