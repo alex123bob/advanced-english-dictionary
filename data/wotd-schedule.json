@@ -146,8 +146,8 @@
   {
     "word": "preliminary",
     "date": "2026-08-14",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-14T07:24:00.961287+00:00",
     "difficulty": null,
     "category": null
   },
@@ -378,6 +378,14 @@
   {
     "word": "zealous",
     "date": "2026-09-12",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "perspective",
+    "date": "2026-09-13",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
