@@ -154,8 +154,8 @@
   {
     "word": "validate",
     "date": "2026-08-15",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-15T06:36:43.218085+00:00",
     "difficulty": null,
     "category": null
   },
@@ -386,6 +386,14 @@
   {
     "word": "perspective",
     "date": "2026-09-13",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "sustain",
+    "date": "2026-09-14",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
