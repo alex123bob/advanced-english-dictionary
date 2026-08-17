@@ -170,8 +170,8 @@
   {
     "word": "ideology",
     "date": "2026-08-17",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-17T06:54:20.728919+00:00",
     "difficulty": null,
     "category": null
   },
@@ -402,6 +402,14 @@
   {
     "word": "innovative",
     "date": "2026-09-15",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "arduous",
+    "date": "2026-09-16",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
