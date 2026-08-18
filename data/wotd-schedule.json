@@ -178,8 +178,8 @@
   {
     "word": "comprehensive",
     "date": "2026-08-18",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-18T06:41:41.418285+00:00",
     "difficulty": null,
     "category": null
   },
@@ -410,6 +410,14 @@
   {
     "word": "arduous",
     "date": "2026-09-16",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "manifest",
+    "date": "2026-09-17",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
