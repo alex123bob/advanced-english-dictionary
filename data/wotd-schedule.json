@@ -186,8 +186,8 @@
   {
     "word": "delegate",
     "date": "2026-08-19",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-19T06:42:05.109160+00:00",
     "difficulty": null,
     "category": null
   },
@@ -418,6 +418,14 @@
   {
     "word": "manifest",
     "date": "2026-09-17",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "mitigate",
+    "date": "2026-09-18",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
