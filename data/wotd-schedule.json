@@ -194,8 +194,8 @@
   {
     "word": "neutral",
     "date": "2026-08-20",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-20T06:44:02.007104+00:00",
     "difficulty": null,
     "category": null
   },
@@ -426,6 +426,14 @@
   {
     "word": "mitigate",
     "date": "2026-09-18",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "pessimist",
+    "date": "2026-09-19",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
