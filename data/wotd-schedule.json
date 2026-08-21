@@ -202,8 +202,8 @@
   {
     "word": "paradox",
     "date": "2026-08-21",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-21T06:45:18.476178+00:00",
     "difficulty": null,
     "category": null
   },
@@ -434,6 +434,14 @@
   {
     "word": "pessimist",
     "date": "2026-09-19",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "versatile",
+    "date": "2026-09-20",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
