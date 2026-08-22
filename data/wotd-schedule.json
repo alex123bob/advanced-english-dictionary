@@ -210,8 +210,8 @@
   {
     "word": "monitor",
     "date": "2026-08-22",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-22T06:38:53.527903+00:00",
     "difficulty": null,
     "category": null
   },
@@ -442,6 +442,14 @@
   {
     "word": "versatile",
     "date": "2026-09-20",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "sophisticated",
+    "date": "2026-09-21",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
