@@ -218,8 +218,8 @@
   {
     "word": "astute",
     "date": "2026-08-23",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-23T06:39:25.566750+00:00",
     "difficulty": null,
     "category": null
   },
@@ -450,6 +450,14 @@
   {
     "word": "sophisticated",
     "date": "2026-09-21",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "dominant",
+    "date": "2026-09-22",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
