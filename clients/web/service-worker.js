@@ -14,11 +14,19 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
+  const request = event.request;
+  if (request.method !== 'GET') return;
+  // Let the browser handle media byte-range requests (audio playback/seeking) directly —
+  // the Cache API cannot store 206 Partial Content responses.
+  if (request.headers.has('range')) return;
+  if (new URL(request.url).origin !== self.location.origin) return;
+
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
-      const copy = response.clone();
-      caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+    caches.match(request).then(cached => cached || fetch(request).then(response => {
+      if (response.ok && response.type === 'basic') {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+      }
       return response;
     }).catch(() => caches.match('/index.html')))
   );
