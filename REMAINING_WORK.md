@@ -60,10 +60,11 @@ Recommended follow-up:
 - Add a settings migration path if extension storage keys change in future versions.
 - Consider an inline popup result plus an “open full website” action for selected text, instead of always opening the website from page selection.
 
-## PWA Polish
+## Web Client PWA Polish
 
-- Add deployment configuration if the PWA will be served separately from the existing website.
-- Add a custom install prompt UX.
+The website is installable directly (manifest + service worker in `clients/web/`) rather than through a separate PWA client.
+
+- Add a custom install prompt UX (`beforeinstallprompt`) instead of relying solely on browser/OS install affordances.
 - Expand offline support beyond app-shell caching if dictionary data should be available offline.
 - Add update prompts when a new service worker version is available.
 - Add Lighthouse/PWA checks to CI.
@@ -76,7 +77,7 @@ Recommended follow-up:
 
 ## Testing And CI
 
-- Add automated smoke tests for the static web, PWA, and Chrome extension builds.
+- Add automated smoke tests for the static web (including PWA installability) and Chrome extension builds.
 - Add linting/formatting once the repo has chosen cross-client tooling.
 - Add CI jobs for `npm run build` and `npm audit --audit-level=moderate`.
 - Add native build jobs only after the native starter folders become full IDE/build-system projects.

@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Advanced Dictionary">
-  <rect width="512" height="512" rx="112" fill="#123c69"/>
-  <path d="M134 140c0-22 18-40 40-40h184c22 0 40 18 40 40v252c0 11-9 20-20 20H170c-20 0-36-16-36-36V140Z" fill="#fffaf0"/>
-  <path d="M170 100h190v272H170c-20 0-36 16-36 36V140c0-22 14-40 36-40Z" fill="#f4c56f"/>
-  <path d="M202 184h112M202 236h148M202 288h104" stroke="#123c69" stroke-width="28" stroke-linecap="round"/>
-</svg>

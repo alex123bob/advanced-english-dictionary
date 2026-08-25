@@ -33,7 +33,10 @@ const FILES_TO_PROCESS = [
   'script.js',
   'config.js',
   'opensearch.xml',
-  'favicon.ico'
+  'favicon.ico',
+  'manifest.webmanifest',
+  'service-worker.js',
+  'apple-touch-icon.png'
 ];
 
 // WOTD page: separate assets processed independently of the main app bundle.
@@ -232,6 +235,7 @@ async function createProductionBundle() {
           case '.js':
             break;
           case '.json':
+          case '.webmanifest':
             try {
               const jsonData = JSON.parse(content);
               processedContent = JSON.stringify(jsonData);

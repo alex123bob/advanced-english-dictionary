@@ -28,13 +28,12 @@ The dictionary currently includes:
 ```
 advanced-english-dictionary/
 ├── clients/
-│   ├── web/            # Existing browser website and build system
+│   ├── web/            # Existing browser website and build system (also installable as a PWA)
 │   ├── chrome-extension/ # Chrome extension client
 │   ├── macos-native/   # SwiftUI macOS starter
 │   ├── windows-native/  # WinUI-style Windows starter
 │   ├── ios-app/        # SwiftUI iOS starter
-│   ├── android-app/    # Jetpack Compose Android starter
-│   └── pwa/            # Installable PWA starter
+│   └── android-app/    # Jetpack Compose Android starter
 ├── package.json        # Workspace-level scripts
 ├── LICENSE             # MIT License
 ├── README.md           # This file
@@ -76,7 +75,7 @@ Create optimized production bundles for all shipped clients:
 ```bash
 npm run build
 ```
-The website build will be in `clients/web/dist/`, the extension build will be in `clients/chrome-extension/dist/`, and the PWA build will be in `clients/pwa/dist/`.
+The website build will be in `clients/web/dist/` (installable as a PWA) and the extension build will be in `clients/chrome-extension/dist/`.
 
 ### Production Server
 

@@ -79,6 +79,12 @@ copyDirectory(path.join(sourceDir, 'vendor'), path.join(distDir, 'vendor'));
 
 const webIndex = fs.readFileSync(path.join(webDir, 'index.html'), 'utf8');
 const popupHtml = webIndex
+  .replace(/\s*<link rel="manifest" href="manifest\.webmanifest">\n?/g, '\n')
+  .replace(/\s*<meta name="theme-color"[^>]*>\n?/g, '\n')
+  .replace(/\s*<meta name="apple-mobile-web-app-capable"[^>]*>\n?/g, '\n')
+  .replace(/\s*<meta name="apple-mobile-web-app-title"[^>]*>\n?/g, '\n')
+  .replace(/\s*<link rel="apple-touch-icon"[^>]*>\n?/g, '\n')
+  .replace(/\s*<script>\s*if \('serviceWorker' in navigator\)[\s\S]*?<\/script>\n?/g, '\n')
   .replace(/\s*<link rel="stylesheet" href="https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/font-awesome\/6\.4\.0\/css\/all\.min\.css"[^>]*>\n?/g, '\n    <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">\n')
   .replace(/\s*<link href="https:\/\/fonts\.googleapis\.com\/css2\?[^"]+"[^>]*>\n?/g, '')
   .replace(/<link href="(https:\/\/fonts\.loli\.net\/css2\?[^"]+)"[^>]*>/, '<link href="$1" rel="stylesheet">')

@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Advanced English Dictionary</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#123c69">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Dictionary">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <link rel="stylesheet" href="style.css">
     <link id="adventureStyleLink" rel="stylesheet" href="styles/11-adventure-lab.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
@@ -344,5 +349,10 @@
     <script src="comparison-export.js"></script>
     <script src="comparison-controller.js"></script>
     <script src="script.js" onload="console.log('script.js loaded successfully')" onerror="console.error('Failed to load script.js')"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => navigator.serviceWorker.register('service-worker.js'));
+      }
+    </script>
 </body>
 </html>
