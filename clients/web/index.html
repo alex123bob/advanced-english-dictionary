@@ -11,6 +11,20 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <link rel="stylesheet" href="style.css">
     <link id="adventureStyleLink" rel="stylesheet" href="styles/11-adventure-lab.css">
+    <script>
+        (function () {
+            try {
+                var STYLE_MODES = ['adventure', 'professional'];
+                var saved = localStorage.getItem('dict_style_mode');
+                var resolved = STYLE_MODES.indexOf(saved) !== -1 ? saved : 'professional';
+                document.documentElement.setAttribute('data-style-mode', resolved);
+                var adventureLink = document.getElementById('adventureStyleLink');
+                if (adventureLink) {
+                    adventureLink.disabled = (resolved === 'professional');
+                }
+            } catch (e) {}
+        })();
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
     <link href="https://fonts.loli.net/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript>
@@ -50,9 +64,9 @@
                             </button>
                             <div id="languageSelectorMenu" class="language-selector-menu" role="listbox" aria-label="Response language"></div>
                         </div>
-                        <button id="styleModeToggleBtn" class="style-mode-toggle" type="button" title="Switch visual style" aria-label="Switch visual style">
-                            <i class="fas fa-store"></i>
-                            <span>Professional</span>
+                        <button id="styleModeToggleBtn" class="style-mode-toggle" type="button" title="Switch to Adventure style" aria-label="Switch to Adventure style" aria-pressed="true">
+                            <i class="fas fa-wand-magic-sparkles"></i>
+                            <span>Adventure</span>
                         </button>
                     </div>
                 </div>
@@ -350,8 +364,17 @@
     <script src="comparison-controller.js"></script>
     <script src="script.js" onload="console.log('script.js loaded successfully')" onerror="console.error('Failed to load script.js')"></script>
     <script>
+      var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => navigator.serviceWorker.register('service-worker.js'));
+        if (isIOS) {
+          window.addEventListener('load', () => navigator.serviceWorker.register('service-worker.js'));
+        } else {
+          navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(reg => reg.unregister()));
+          if ('caches' in window) {
+            caches.keys().then(keys => keys.forEach(key => caches.delete(key)));
+          }
+        }
       }
     </script>
 </body>
