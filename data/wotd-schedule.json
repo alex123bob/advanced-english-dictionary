@@ -258,8 +258,8 @@
   {
     "word": "indicate",
     "date": "2026-08-28",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-28T18:15:08.385045+00:00",
     "difficulty": null,
     "category": null
   },
@@ -490,6 +490,14 @@
   {
     "word": "scrutinize",
     "date": "2026-09-26",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "unprecedented",
+    "date": "2026-09-27",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
