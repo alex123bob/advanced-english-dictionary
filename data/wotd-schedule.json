@@ -266,8 +266,8 @@
   {
     "word": "paradigm",
     "date": "2026-08-29",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-29T12:22:57.153141+00:00",
     "difficulty": null,
     "category": null
   },
@@ -498,6 +498,14 @@
   {
     "word": "unprecedented",
     "date": "2026-09-27",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "cynical",
+    "date": "2026-09-28",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
