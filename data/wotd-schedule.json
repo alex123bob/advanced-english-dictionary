@@ -274,8 +274,8 @@
   {
     "word": "lucid",
     "date": "2026-08-30",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-30T11:21:38.163180+00:00",
     "difficulty": null,
     "category": null
   },
@@ -506,6 +506,14 @@
   {
     "word": "cynical",
     "date": "2026-09-28",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "anomaly",
+    "date": "2026-09-29",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
