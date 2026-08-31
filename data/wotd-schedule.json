@@ -282,8 +282,8 @@
   {
     "word": "implicit",
     "date": "2026-08-31",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-08-31T12:50:48.949003+00:00",
     "difficulty": null,
     "category": null
   },
@@ -514,6 +514,14 @@
   {
     "word": "anomaly",
     "date": "2026-09-29",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "leverage",
+    "date": "2026-09-30",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
