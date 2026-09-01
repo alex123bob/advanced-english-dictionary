@@ -290,8 +290,8 @@
   {
     "word": "deficit",
     "date": "2026-09-01",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-09-01T11:11:11.591359+00:00",
     "difficulty": null,
     "category": null
   },
@@ -522,6 +522,14 @@
   {
     "word": "leverage",
     "date": "2026-09-30",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "assumption",
+    "date": "2026-10-01",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
