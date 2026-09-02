@@ -298,8 +298,8 @@
   {
     "word": "mechanism",
     "date": "2026-09-02",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-09-02T10:44:24.929776+00:00",
     "difficulty": null,
     "category": null
   },
@@ -530,6 +530,14 @@
   {
     "word": "assumption",
     "date": "2026-10-01",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "implement",
+    "date": "2026-10-02",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
