@@ -306,8 +306,8 @@
   {
     "word": "succinct",
     "date": "2026-09-03",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-09-03T10:45:28.646030+00:00",
     "difficulty": null,
     "category": null
   },
@@ -538,6 +538,14 @@
   {
     "word": "implement",
     "date": "2026-10-02",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "inherent",
+    "date": "2026-10-03",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
