@@ -322,8 +322,8 @@
   {
     "word": "simulate",
     "date": "2026-09-05",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-09-05T10:01:38.597924+00:00",
     "difficulty": null,
     "category": null
   },
@@ -554,6 +554,14 @@
   {
     "word": "interpret",
     "date": "2026-10-04",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "mutual",
+    "date": "2026-10-05",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
