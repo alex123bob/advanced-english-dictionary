@@ -330,8 +330,8 @@
   {
     "word": "culminate",
     "date": "2026-09-06",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-09-06T10:21:38.849965+00:00",
     "difficulty": null,
     "category": null
   },
@@ -562,6 +562,14 @@
   {
     "word": "mutual",
     "date": "2026-10-05",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "illuminate",
+    "date": "2026-10-06",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
