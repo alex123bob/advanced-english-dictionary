@@ -338,8 +338,8 @@
   {
     "word": "redundant",
     "date": "2026-09-07",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-09-07T11:42:30.724769+00:00",
     "difficulty": null,
     "category": null
   },
@@ -570,6 +570,14 @@
   {
     "word": "illuminate",
     "date": "2026-10-06",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "obsolete",
+    "date": "2026-10-07",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
