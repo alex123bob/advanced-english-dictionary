@@ -346,8 +346,8 @@
   {
     "word": "elaborate",
     "date": "2026-09-08",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-09-08T10:41:21.764580+00:00",
     "difficulty": null,
     "category": null
   },
@@ -578,6 +578,14 @@
   {
     "word": "obsolete",
     "date": "2026-10-07",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "trivial",
+    "date": "2026-10-08",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
