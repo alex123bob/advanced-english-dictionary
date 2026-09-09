@@ -354,8 +354,8 @@
   {
     "word": "undermine",
     "date": "2026-09-09",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-09-09T10:50:30.603408+00:00",
     "difficulty": null,
     "category": null
   },
@@ -586,6 +586,14 @@
   {
     "word": "trivial",
     "date": "2026-10-08",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "contradict",
+    "date": "2026-10-09",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
