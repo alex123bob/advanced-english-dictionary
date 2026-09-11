@@ -370,8 +370,8 @@
   {
     "word": "notion",
     "date": "2026-09-11",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-09-11T10:41:58.986969+00:00",
     "difficulty": null,
     "category": null
   },
@@ -602,6 +602,14 @@
   {
     "word": "exhaustive",
     "date": "2026-10-10",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "candid",
+    "date": "2026-10-11",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
