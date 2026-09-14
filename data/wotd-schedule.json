@@ -394,8 +394,8 @@
   {
     "word": "sustain",
     "date": "2026-09-14",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-09-14T11:56:50.371338+00:00",
     "difficulty": null,
     "category": null
   },
@@ -626,6 +626,14 @@
   {
     "word": "principle",
     "date": "2026-10-13",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "magnitude",
+    "date": "2026-10-14",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
