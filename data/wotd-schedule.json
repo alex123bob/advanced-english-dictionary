@@ -402,8 +402,8 @@
   {
     "word": "innovative",
     "date": "2026-09-15",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-09-15T11:12:34.929248+00:00",
     "difficulty": null,
     "category": null
   },
@@ -634,6 +634,14 @@
   {
     "word": "magnitude",
     "date": "2026-10-14",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "enforce",
+    "date": "2026-10-15",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
