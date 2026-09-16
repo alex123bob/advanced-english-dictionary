@@ -410,8 +410,8 @@
   {
     "word": "arduous",
     "date": "2026-09-16",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-09-16T10:55:57.479552+00:00",
     "difficulty": null,
     "category": null
   },
@@ -642,6 +642,14 @@
   {
     "word": "enforce",
     "date": "2026-10-15",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "stable",
+    "date": "2026-10-16",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
