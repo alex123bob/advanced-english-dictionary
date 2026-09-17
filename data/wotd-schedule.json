@@ -418,8 +418,8 @@
   {
     "word": "manifest",
     "date": "2026-09-17",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-09-17T11:04:18.665362+00:00",
     "difficulty": null,
     "category": null
   },
@@ -650,6 +650,14 @@
   {
     "word": "stable",
     "date": "2026-10-16",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "fastidious",
+    "date": "2026-10-17",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
