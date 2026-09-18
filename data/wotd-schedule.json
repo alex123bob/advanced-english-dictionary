@@ -426,8 +426,8 @@
   {
     "word": "mitigate",
     "date": "2026-09-18",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-09-18T10:39:44.355808+00:00",
     "difficulty": null,
     "category": null
   },
@@ -658,6 +658,14 @@
   {
     "word": "fastidious",
     "date": "2026-10-17",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "increment",
+    "date": "2026-10-18",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
