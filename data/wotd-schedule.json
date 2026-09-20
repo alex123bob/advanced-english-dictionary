@@ -442,8 +442,8 @@
   {
     "word": "versatile",
     "date": "2026-09-20",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-09-20T10:44:05.261574+00:00",
     "difficulty": null,
     "category": null
   },
@@ -674,6 +674,14 @@
   {
     "word": "conundrum",
     "date": "2026-10-19",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "articulate",
+    "date": "2026-10-20",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
