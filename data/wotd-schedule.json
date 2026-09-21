@@ -450,8 +450,8 @@
   {
     "word": "sophisticated",
     "date": "2026-09-21",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-09-21T12:07:50.905655+00:00",
     "difficulty": null,
     "category": null
   },
@@ -682,6 +682,14 @@
   {
     "word": "articulate",
     "date": "2026-10-20",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "inevitable",
+    "date": "2026-10-21",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
