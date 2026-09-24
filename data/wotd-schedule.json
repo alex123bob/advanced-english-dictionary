@@ -474,8 +474,8 @@
   {
     "word": "tenacious",
     "date": "2026-09-24",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-09-24T11:12:15.221502+00:00",
     "difficulty": null,
     "category": null
   },
@@ -706,6 +706,14 @@
   {
     "word": "ubiquitous",
     "date": "2026-10-23",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "plausible",
+    "date": "2026-10-24",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
