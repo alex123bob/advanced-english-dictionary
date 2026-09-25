@@ -482,8 +482,8 @@
   {
     "word": "expedient",
     "date": "2026-09-25",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-09-25T11:16:41.084788+00:00",
     "difficulty": null,
     "category": null
   },
@@ -714,6 +714,14 @@
   {
     "word": "plausible",
     "date": "2026-10-24",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "gregarious",
+    "date": "2026-10-25",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
