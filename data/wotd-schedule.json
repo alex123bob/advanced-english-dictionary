@@ -498,8 +498,8 @@
   {
     "word": "unprecedented",
     "date": "2026-09-27",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-09-27T11:30:05.880651+00:00",
     "difficulty": null,
     "category": null
   },
@@ -730,6 +730,14 @@
   {
     "word": "jeopardize",
     "date": "2026-10-26",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "diverse",
+    "date": "2026-10-27",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
