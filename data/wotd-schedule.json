@@ -514,8 +514,8 @@
   {
     "word": "anomaly",
     "date": "2026-09-29",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-09-29T12:13:38.768004+00:00",
     "difficulty": null,
     "category": null
   },
@@ -746,6 +746,14 @@
   {
     "word": "pragmatic",
     "date": "2026-10-28",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "quirky",
+    "date": "2026-10-29",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
