@@ -522,8 +522,8 @@
   {
     "word": "leverage",
     "date": "2026-09-30",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-09-30T12:00:11.820002+00:00",
     "difficulty": null,
     "category": null
   },
@@ -754,6 +754,14 @@
   {
     "word": "quirky",
     "date": "2026-10-29",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "clandestine",
+    "date": "2026-10-30",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
