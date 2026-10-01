@@ -530,8 +530,8 @@
   {
     "word": "assumption",
     "date": "2026-10-01",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-01T12:32:35.114240+00:00",
     "difficulty": null,
     "category": null
   },
@@ -762,6 +762,14 @@
   {
     "word": "clandestine",
     "date": "2026-10-30",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "cogent",
+    "date": "2026-10-31",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
