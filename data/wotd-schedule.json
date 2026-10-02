@@ -538,8 +538,8 @@
   {
     "word": "implement",
     "date": "2026-10-02",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-02T11:58:08.111703+00:00",
     "difficulty": null,
     "category": null
   },
@@ -770,6 +770,14 @@
   {
     "word": "cogent",
     "date": "2026-10-31",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "intervene",
+    "date": "2026-11-01",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
