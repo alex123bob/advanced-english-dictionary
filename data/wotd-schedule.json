@@ -546,8 +546,8 @@
   {
     "word": "inherent",
     "date": "2026-10-03",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-03T11:11:20.602368+00:00",
     "difficulty": null,
     "category": null
   },
@@ -778,6 +778,14 @@
   {
     "word": "intervene",
     "date": "2026-11-01",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "ominous",
+    "date": "2026-11-02",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
