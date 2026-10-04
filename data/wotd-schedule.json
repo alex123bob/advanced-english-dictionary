@@ -554,8 +554,8 @@
   {
     "word": "interpret",
     "date": "2026-10-04",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-04T11:51:01.850066+00:00",
     "difficulty": null,
     "category": null
   },
@@ -786,6 +786,14 @@
   {
     "word": "ominous",
     "date": "2026-11-02",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "prioritize",
+    "date": "2026-11-03",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
