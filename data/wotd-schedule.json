@@ -562,8 +562,8 @@
   {
     "word": "mutual",
     "date": "2026-10-05",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-05T13:45:15.540398+00:00",
     "difficulty": null,
     "category": null
   },
@@ -794,6 +794,14 @@
   {
     "word": "prioritize",
     "date": "2026-11-03",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "labyrinth",
+    "date": "2026-11-04",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
