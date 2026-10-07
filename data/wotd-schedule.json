@@ -578,8 +578,8 @@
   {
     "word": "obsolete",
     "date": "2026-10-07",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-07T12:44:52.959169+00:00",
     "difficulty": null,
     "category": null
   },
@@ -810,6 +810,14 @@
   {
     "word": "erudite",
     "date": "2026-11-05",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "exemplary",
+    "date": "2026-11-06",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
