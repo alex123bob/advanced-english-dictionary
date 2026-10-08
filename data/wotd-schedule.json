@@ -586,8 +586,8 @@
   {
     "word": "trivial",
     "date": "2026-10-08",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-08T12:54:04.905051+00:00",
     "difficulty": null,
     "category": null
   },
@@ -818,6 +818,14 @@
   {
     "word": "exemplary",
     "date": "2026-11-06",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "paramount",
+    "date": "2026-11-07",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
