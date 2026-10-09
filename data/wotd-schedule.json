@@ -594,8 +594,8 @@
   {
     "word": "contradict",
     "date": "2026-10-09",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-09T12:39:53.893203+00:00",
     "difficulty": null,
     "category": null
   },
@@ -826,6 +826,14 @@
   {
     "word": "paramount",
     "date": "2026-11-07",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "conventional",
+    "date": "2026-11-08",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
