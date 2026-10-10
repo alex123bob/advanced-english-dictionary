@@ -602,8 +602,8 @@
   {
     "word": "exhaustive",
     "date": "2026-10-10",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-10T11:59:04.885237+00:00",
     "difficulty": null,
     "category": null
   },
@@ -834,6 +834,14 @@
   {
     "word": "conventional",
     "date": "2026-11-08",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "bureaucracy",
+    "date": "2026-11-09",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
