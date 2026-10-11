@@ -610,8 +610,8 @@
   {
     "word": "candid",
     "date": "2026-10-11",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-11T12:11:40.742752+00:00",
     "difficulty": null,
     "category": null
   },
@@ -842,6 +842,14 @@
   {
     "word": "bureaucracy",
     "date": "2026-11-09",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "minimize",
+    "date": "2026-11-10",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
