@@ -618,8 +618,8 @@
   {
     "word": "iconic",
     "date": "2026-10-12",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-12T14:33:53.694810+00:00",
     "difficulty": null,
     "category": null
   },
@@ -850,6 +850,14 @@
   {
     "word": "minimize",
     "date": "2026-11-10",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "maximize",
+    "date": "2026-11-11",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
