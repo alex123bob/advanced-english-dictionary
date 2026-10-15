@@ -642,8 +642,8 @@
   {
     "word": "enforce",
     "date": "2026-10-15",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-15T10:56:14.644844+00:00",
     "difficulty": null,
     "category": null
   },
@@ -874,6 +874,14 @@
   {
     "word": "abstract",
     "date": "2026-11-13",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "anecdote",
+    "date": "2026-11-14",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
