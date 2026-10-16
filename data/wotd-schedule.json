@@ -650,8 +650,8 @@
   {
     "word": "stable",
     "date": "2026-10-16",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-16T10:48:32.278809+00:00",
     "difficulty": null,
     "category": null
   },
@@ -882,6 +882,14 @@
   {
     "word": "anecdote",
     "date": "2026-11-14",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "impeccable",
+    "date": "2026-11-15",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
