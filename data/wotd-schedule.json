@@ -658,8 +658,8 @@
   {
     "word": "fastidious",
     "date": "2026-10-17",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-17T10:13:40.373758+00:00",
     "difficulty": null,
     "category": null
   },
@@ -890,6 +890,14 @@
   {
     "word": "impeccable",
     "date": "2026-11-15",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "deviate",
+    "date": "2026-11-16",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
