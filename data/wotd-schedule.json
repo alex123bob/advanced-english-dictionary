@@ -666,8 +666,8 @@
   {
     "word": "increment",
     "date": "2026-10-18",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-18T10:28:55.905659+00:00",
     "difficulty": null,
     "category": null
   },
@@ -898,6 +898,14 @@
   {
     "word": "deviate",
     "date": "2026-11-16",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "enhance",
+    "date": "2026-11-17",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
