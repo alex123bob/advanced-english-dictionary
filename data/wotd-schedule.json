@@ -682,8 +682,8 @@
   {
     "word": "articulate",
     "date": "2026-10-20",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-20T10:59:10.940860+00:00",
     "difficulty": null,
     "category": null
   },
@@ -914,6 +914,14 @@
   {
     "word": "indifferent",
     "date": "2026-11-18",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "incentive",
+    "date": "2026-11-19",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
