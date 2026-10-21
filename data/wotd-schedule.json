@@ -690,8 +690,8 @@
   {
     "word": "inevitable",
     "date": "2026-10-21",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-21T11:15:38.387529+00:00",
     "difficulty": null,
     "category": null
   },
@@ -922,6 +922,14 @@
   {
     "word": "incentive",
     "date": "2026-11-19",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "rationale",
+    "date": "2026-11-20",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
