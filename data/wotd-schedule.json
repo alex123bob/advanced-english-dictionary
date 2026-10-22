@@ -698,8 +698,8 @@
   {
     "word": "generate",
     "date": "2026-10-22",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-22T11:14:43.785080+00:00",
     "difficulty": null,
     "category": null
   },
@@ -930,6 +930,14 @@
   {
     "word": "rationale",
     "date": "2026-11-20",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "infrastructure",
+    "date": "2026-11-21",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
