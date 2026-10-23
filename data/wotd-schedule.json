@@ -706,8 +706,8 @@
   {
     "word": "ubiquitous",
     "date": "2026-10-23",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-23T11:06:02.735619+00:00",
     "difficulty": null,
     "category": null
   },
@@ -938,6 +938,14 @@
   {
     "word": "infrastructure",
     "date": "2026-11-21",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "diligent",
+    "date": "2026-11-22",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
