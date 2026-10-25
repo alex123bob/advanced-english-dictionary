@@ -722,8 +722,8 @@
   {
     "word": "gregarious",
     "date": "2026-10-25",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-25T10:50:07.769953+00:00",
     "difficulty": null,
     "category": null
   },
@@ -954,6 +954,14 @@
   {
     "word": "assertive",
     "date": "2026-11-23",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "equivalent",
+    "date": "2026-11-24",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
