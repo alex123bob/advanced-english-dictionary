@@ -283,6 +283,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const loadingContainer = document.getElementById('loadingContainer');
     const emptyState = document.getElementById('emptyState');
     const notFoundState = document.getElementById('notFoundState');
+    let notFoundRequestToken = 0;
 
     const headword = document.getElementById('headword');
     const frequency = document.getElementById('frequency');
@@ -971,8 +972,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         emptyState.style.display = show ? 'block' : 'none';
         if (show) hideNotFoundState();
     }
-
-    let notFoundRequestToken = 0;
 
     function hideNotFoundState() {
         if (!notFoundState) return;
