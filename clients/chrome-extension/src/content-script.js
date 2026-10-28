@@ -3,9 +3,10 @@
   const hintHostId = 'advanced-dictionary-selection-hint';
   const hintDismissedStorageKey = 'advancedDictionarySelectionHintDismissed';
   const selectionDelayMs = 90;
-  const cardWidthPx = 300;
+  const cardWidthPx = 340;
   const cardGapPx = 10;
   const cardEdgePx = 10;
+  const cardBodyMaxHeightPx = 220;
   const hintDelayMs = 1200;
   const hintHideMs = 5600;
   const hoverDwellMs = 300;
@@ -210,8 +211,41 @@
       color: #111827;
     }
 
+    .forms {
+      box-sizing: border-box;
+      width: 100%;
+      margin-top: 8px;
+      border: 1px solid rgba(20, 184, 166, 0.35);
+      border-radius: 10px;
+      padding: 5px 8px;
+      background: rgba(255, 255, 255, 0.9);
+      color: #0f766e;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    .forms[hidden] {
+      display: none;
+    }
+
+    .forms:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.25);
+    }
+
     .body {
-      margin: 8px 0 10px;
+      max-height: ${cardBodyMaxHeightPx}px;
+      margin: 8px -6px 10px 0;
+      padding-right: 6px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .senses {
+      margin: 0;
+      padding-left: 20px;
     }
 
     .sense,
@@ -219,22 +253,16 @@
       margin: 0 0 6px;
       font-size: 13px;
       line-height: 1.45;
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+    }
+
+    .sense::marker {
+      color: #0f766e;
+      font-size: 12px;
+      font-weight: 750;
     }
 
     .message {
       color: #64748b;
-    }
-
-    .pos {
-      margin-right: 6px;
-      color: #0f766e;
-      font-size: 11px;
-      font-style: italic;
-      font-weight: 750;
     }
 
     .skeleton {
@@ -295,25 +323,46 @@
     }
   `;
 
+  function getFormLabel(entry, index) {
+    const count = entry.senses.length;
+    const pos = entry.partsOfSpeech.join(', ') || 'word';
+    return `Form ${index + 1}: ${pos} (${count} ${count === 1 ? 'sense' : 'senses'})`;
+  }
+
+  function renderQuickCardEntry(shadow, entry) {
+    shadow.querySelector('.ipa').textContent = entry.ipa;
+    const body = shadow.querySelector('.body');
+    body.innerHTML = `
+      <ol class="senses">
+        ${entry.senses.map(definition => `<li class="sense">${escapeHtml(definition)}</li>`).join('')}
+      </ol>
+    `;
+    body.scrollTop = 0;
+  }
+
   function renderQuickCardResult(shadow, result) {
     const body = shadow.querySelector('.body');
 
     if (!result.ok) {
       const message = result.notFound
         ? 'No quick definition found for this word.'
-        : 'Couldn’t load a quick definition.';
+        : 'Couldn\u2019t load a quick definition.';
       body.innerHTML = `<p class="message">${message}</p>`;
       return;
     }
 
     if (result.headword) shadow.querySelector('.word').textContent = result.headword;
-    shadow.querySelector('.ipa').textContent = result.ipa || '';
 
-    body.innerHTML = result.senses.length
-      ? result.senses.map(sense => `
-          <p class="sense">${sense.partOfSpeech ? `<span class="pos">${escapeHtml(sense.partOfSpeech)}</span>` : ''}${escapeHtml(sense.definition)}</p>
-        `).join('')
-      : '<p class="message">No short definition available.</p>';
+    if (result.entries.length > 1) {
+      const select = shadow.querySelector('.forms');
+      select.innerHTML = result.entries
+        .map((entry, index) => `<option value="${index}">${escapeHtml(getFormLabel(entry, index))}</option>`)
+        .join('');
+      select.addEventListener('change', () => renderQuickCardEntry(shadow, result.entries[Number(select.value)]));
+      select.hidden = false;
+    }
+
+    renderQuickCardEntry(shadow, result.entries[0]);
   }
 
   function renderQuickCard(word, range) {
@@ -344,6 +393,7 @@
           <span class="ipa"></span>
           <button class="close" type="button" aria-label="Close quick definition">×</button>
         </div>
+        <select class="forms" aria-label="Word forms" hidden></select>
         <div class="body" aria-live="polite">
           <span class="skeleton"></span>
           <span class="skeleton short"></span>
@@ -353,7 +403,9 @@
     `;
 
     // Keep the page selection intact while interacting with the card
-    shadow.querySelector('.card').addEventListener('mousedown', event => event.preventDefault());
+    shadow.querySelector('.card').addEventListener('mousedown', event => {
+      if (!event.target.closest('select')) event.preventDefault();
+    });
     shadow.querySelector('.close').addEventListener('click', () => {
       removeCard();
       clearPageSelection();
@@ -693,7 +745,8 @@
       }
     });
 
-    document.addEventListener('scroll', () => {
+    document.addEventListener('scroll', event => {
+      if (isEventFromCard(event)) return;
       window.clearTimeout(selectionTimer);
       removeCard();
     }, true);
