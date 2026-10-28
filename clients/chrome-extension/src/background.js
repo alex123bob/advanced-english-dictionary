@@ -1,6 +1,7 @@
 importScripts('shared.js');
 
 const CONTEXT_MENU_ID = 'advanced-dictionary-search-selection';
+const QUICK_DEFINITION_SENSE_LIMIT = 2;
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
@@ -45,12 +46,57 @@ async function openExtensionSearch(word) {
   return { ok: true, opened: 'tab' };
 }
 
+function isLookupNotFoundError(error) {
+  const message = error && error.message ? error.message : '';
+  return Boolean(error) && (
+    error.status === 404 ||
+    /not found|no result|no entry|no definition/i.test(message)
+  );
+}
+
+// Brief summary for the in-page card: headword, IPA and the first short sense per part of speech
+async function lookupQuickDefinition(word) {
+  const cleanWord = getSearchableSelection(word);
+  if (!cleanWord) {
+    return { ok: false, notFound: true };
+  }
+
+  try {
+    const data = await fetchDictionaryEntry(cleanWord, await getSettings());
+    const entry = data.entries && data.entries.length ? data.entries[0] : null;
+    if (!data.headword || !entry) {
+      return { ok: false, notFound: true };
+    }
+
+    const senses = [];
+    (entry.meanings_summary || []).forEach(meaning => {
+      const sense = (meaning.senses || []).find(item => item && item.definition);
+      if (sense) senses.push({ partOfSpeech: meaning.part_of_speech || '', definition: sense.definition });
+    });
+
+    return {
+      ok: true,
+      headword: data.headword,
+      ipa: entry.ipa || '',
+      senses: senses.slice(0, QUICK_DEFINITION_SENSE_LIMIT)
+    };
+  } catch (error) {
+    return { ok: false, notFound: isLookupNotFoundError(error), error: error.message };
+  }
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type !== 'OPEN_DICTIONARY_SEARCH') return false;
+  if (message.type === 'OPEN_DICTIONARY_SEARCH') {
+    (async () => {
+      sendResponse(await openExtensionSearch(message.word));
+    })().catch(error => sendResponse({ ok: false, error: error.message }));
+    return true;
+  }
 
-  (async () => {
-    sendResponse(await openExtensionSearch(message.word));
-  })().catch(error => sendResponse({ ok: false, error: error.message }));
+  if (message.type === 'QUICK_DEFINITION_LOOKUP') {
+    lookupQuickDefinition(message.word).then(sendResponse);
+    return true;
+  }
 
-  return true;
+  return false;
 });

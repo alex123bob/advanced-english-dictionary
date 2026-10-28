@@ -1,15 +1,17 @@
 (function () {
-  const lensHostId = 'advanced-dictionary-inspection-lens';
+  const cardHostId = 'advanced-dictionary-quick-card';
   const hintHostId = 'advanced-dictionary-selection-hint';
   const hintDismissedStorageKey = 'advancedDictionarySelectionHintDismissed';
   const selectionDelayMs = 90;
-  const lensHideMs = 2600;
+  const cardWidthPx = 300;
+  const cardGapPx = 10;
+  const cardEdgePx = 10;
   const hintDelayMs = 1200;
   const hintHideMs = 5600;
   const hoverDwellMs = 300;
 
   let activeWord = '';
-  let lensHideTimer = null;
+  let cardRequestToken = 0;
   let selectionTimer = null;
   let hintTimer = null;
   let hoverDwellTimer = null;
@@ -32,10 +34,10 @@
     if (element) element.remove();
   }
 
-  function removeLens() {
-    removeElement(lensHostId);
+  function removeCard() {
+    removeElement(cardHostId);
     activeWord = '';
-    window.clearTimeout(lensHideTimer);
+    cardRequestToken++;
   }
 
   function removeHint() {
@@ -59,21 +61,6 @@
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(value, max));
-  }
-
-  function getPlacement(range, width, height) {
-    const rects = Array.from(range.getClientRects()).filter(rect => rect.width || rect.height);
-    const rect = rects[0] || range.getBoundingClientRect();
-    if (!rect || (!rect.width && !rect.height)) return null;
-
-    const centerX = window.scrollX + rect.left + rect.width / 2;
-    const top = window.scrollY + rect.top - height - 12;
-
-    return {
-      left: clamp(centerX - width / 2, window.scrollX + 10, window.scrollX + document.documentElement.clientWidth - width - 10),
-      top: clamp(top, window.scrollY + 10, window.scrollY + document.documentElement.clientHeight - height - 10),
-      width
-    };
   }
 
   function sendOpenDictionaryMessage(word) {
@@ -101,197 +88,302 @@
     if (!word) return;
 
     if (sendOpenDictionaryMessage(word)) {
-      removeLens();
+      removeCard();
     }
   }
 
-  function scheduleLensHide() {
-    window.clearTimeout(lensHideTimer);
-    lensHideTimer = window.setTimeout(removeLens, lensHideMs);
+  function requestQuickDefinition(word) {
+    return new Promise(resolve => {
+      const runtime = globalThis.chrome && chrome.runtime;
+      if (!runtime || typeof runtime.sendMessage !== 'function') {
+        resolve({ ok: false, error: 'Extension runtime is unavailable.' });
+        return;
+      }
+
+      try {
+        runtime.sendMessage({ type: 'QUICK_DEFINITION_LOOKUP', word }, response => {
+          if (runtime.lastError || !response) {
+            resolve({ ok: false, error: runtime.lastError ? runtime.lastError.message : 'No response.' });
+            return;
+          }
+          resolve(response);
+        });
+      } catch (error) {
+        resolve({ ok: false, error: error.message });
+      }
+    });
   }
 
-  function renderLens(lookupInfo) {
-    const placement = getPlacement(lookupInfo.range, 236, 54);
-    if (!placement) return;
+  function getAnchorRect(range) {
+    const rects = Array.from(range.getClientRects()).filter(rect => rect.width || rect.height);
+    const rect = rects[0] || range.getBoundingClientRect();
+    if (!rect || (!rect.width && !rect.height)) return null;
+
+    return { left: rect.left, top: rect.top, bottom: rect.bottom, width: rect.width };
+  }
+
+  // Prefer the space above the word; flip below when there is no room
+  function placeCard(host, anchorRect) {
+    const viewportWidth = document.documentElement.clientWidth;
+    const viewportHeight = document.documentElement.clientHeight;
+    const width = host.offsetWidth;
+    const height = host.offsetHeight;
+    const centerX = anchorRect.left + anchorRect.width / 2;
+
+    let top = anchorRect.top - height - cardGapPx;
+    if (top < cardEdgePx) top = anchorRect.bottom + cardGapPx;
+
+    host.style.left = `${window.scrollX + clamp(centerX - width / 2, cardEdgePx, viewportWidth - width - cardEdgePx)}px`;
+    host.style.top = `${window.scrollY + clamp(top, cardEdgePx, viewportHeight - height - cardEdgePx)}px`;
+  }
+
+  const quickCardStyles = `
+    :host {
+      position: absolute;
+      z-index: 2147483647;
+      pointer-events: auto;
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #172033;
+    }
+
+    .card {
+      box-sizing: border-box;
+      width: ${cardWidthPx}px;
+      border: 1px solid rgba(255, 255, 255, 0.74);
+      border-radius: 18px;
+      padding: 12px 14px;
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 253, 250, 0.95)),
+        radial-gradient(circle at 12% 10%, rgba(45, 212, 191, 0.36), transparent 34%);
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.26), 0 0 0 1px rgba(20, 184, 166, 0.14);
+      animation: cardIn 160ms cubic-bezier(.2,.8,.2,1);
+      -webkit-backdrop-filter: blur(18px) saturate(1.35);
+      backdrop-filter: blur(18px) saturate(1.35);
+    }
+
+    .header {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .word {
+      overflow: hidden;
+      color: #111827;
+      font-size: 16px;
+      font-weight: 850;
+      line-height: 1.25;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ipa {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      color: #64748b;
+      font-size: 12px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .close {
+      align-self: flex-start;
+      border: 0;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      margin: -2px -4px 0 auto;
+      padding: 0;
+      background: transparent;
+      color: #64748b;
+      font-size: 16px;
+      line-height: 22px;
+      cursor: pointer;
+    }
+
+    .close:hover,
+    .close:focus-visible {
+      outline: none;
+      background: rgba(15, 23, 42, 0.08);
+      color: #111827;
+    }
+
+    .body {
+      margin: 8px 0 10px;
+    }
+
+    .sense,
+    .message {
+      margin: 0 0 6px;
+      font-size: 13px;
+      line-height: 1.45;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .message {
+      color: #64748b;
+    }
+
+    .pos {
+      margin-right: 6px;
+      color: #0f766e;
+      font-size: 11px;
+      font-style: italic;
+      font-weight: 750;
+    }
+
+    .skeleton {
+      display: block;
+      height: 10px;
+      margin: 6px 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(148, 163, 184, 0.18), rgba(148, 163, 184, 0.36), rgba(148, 163, 184, 0.18));
+      background-size: 200% 100%;
+      animation: shimmer 1.1s linear infinite;
+    }
+
+    .skeleton.short {
+      width: 62%;
+    }
+
+    .open {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border: 0;
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: #172554;
+      color: #f8fafc;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .open::after {
+      content: "\\2197";
+      font-size: 11px;
+    }
+
+    .open:hover,
+    .open:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.3);
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(6px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes shimmer {
+      from { background-position: 200% 0; }
+      to { background-position: -200% 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .card,
+      .skeleton {
+        animation: none;
+      }
+    }
+  `;
+
+  function renderQuickCardResult(shadow, result) {
+    const body = shadow.querySelector('.body');
+
+    if (!result.ok) {
+      const message = result.notFound
+        ? 'No quick definition found for this word.'
+        : 'Couldn’t load a quick definition.';
+      body.innerHTML = `<p class="message">${message}</p>`;
+      return;
+    }
+
+    if (result.headword) shadow.querySelector('.word').textContent = result.headword;
+    shadow.querySelector('.ipa').textContent = result.ipa || '';
+
+    body.innerHTML = result.senses.length
+      ? result.senses.map(sense => `
+          <p class="sense">${sense.partOfSpeech ? `<span class="pos">${escapeHtml(sense.partOfSpeech)}</span>` : ''}${escapeHtml(sense.definition)}</p>
+        `).join('')
+      : '<p class="message">No short definition available.</p>';
+  }
+
+  function renderQuickCard(word, range) {
+    const cleanWord = sanitizeWord(word);
+    if (!cleanWord) return;
+    if (cleanWord === activeWord && document.getElementById(cardHostId)) return;
+
+    const anchorRect = getAnchorRect(range);
+    if (!anchorRect) return;
 
     removeHint();
-    removeLens();
-    activeWord = lookupInfo.word;
+    removeCard();
+    activeWord = cleanWord;
+    const requestToken = ++cardRequestToken;
 
     const host = document.createElement('div');
-    host.id = lensHostId;
+    host.id = cardHostId;
     host.style.position = 'absolute';
     host.style.zIndex = '2147483647';
     host.style.pointerEvents = 'auto';
-    host.style.left = `${placement.left}px`;
-    host.style.top = `${placement.top}px`;
-    host.style.width = `${placement.width}px`;
 
     const shadow = host.attachShadow({ mode: 'open' });
     shadow.innerHTML = `
-      <style>
-        :host {
-          position: absolute;
-          z-index: 2147483647;
-          pointer-events: auto;
-          font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          color: #172033;
-        }
-
-        .lens {
-          position: relative;
-          display: grid;
-          grid-template-columns: 34px minmax(0, 1fr) auto;
-          align-items: center;
-          gap: 10px;
-          width: 100%;
-          border: 1px solid rgba(255, 255, 255, 0.74);
-          border-radius: 18px;
-          padding: 8px 9px;
-          background:
-            linear-gradient(135deg, rgba(255, 255, 255, 0.97), rgba(239, 253, 250, 0.93)),
-            radial-gradient(circle at 18% 16%, rgba(45, 212, 191, 0.42), transparent 32%);
-          box-shadow: 0 18px 42px rgba(15, 23, 42, 0.26), 0 0 0 1px rgba(20, 184, 166, 0.12);
-          cursor: pointer;
-          transform-origin: 50% 100%;
-          animation: lensIn 160ms cubic-bezier(.2,.8,.2,1);
-          -webkit-backdrop-filter: blur(18px) saturate(1.35);
-          backdrop-filter: blur(18px) saturate(1.35);
-        }
-
-        .lens::after {
-          content: "";
-          position: absolute;
-          inset: -5px;
-          border-radius: 22px;
-          border: 1px solid rgba(45, 212, 191, 0.34);
-          pointer-events: none;
-        }
-
-        .lens:hover,
-        .lens:focus-visible {
-          outline: none;
-          transform: translateY(-2px) scale(1.012);
-          box-shadow: 0 24px 54px rgba(15, 23, 42, 0.31), 0 0 0 4px rgba(20, 184, 166, 0.16);
-        }
-
-        .mark {
-          position: relative;
-          display: grid;
-          place-items: center;
-          width: 34px;
-          height: 34px;
-          border-radius: 50%;
-          background: conic-gradient(from 210deg, #22d3ee, #14b8a6, #8b5cf6, #22d3ee);
-          color: white;
-          box-shadow: 0 8px 22px rgba(20, 184, 166, 0.35);
-        }
-
-        .mark::before {
-          content: "";
-          width: 15px;
-          height: 15px;
-          border: 2px solid currentColor;
-          border-radius: 50%;
-          transform: translate(-2px, -1px);
-        }
-
-        .mark::after {
-          content: "";
-          position: absolute;
-          width: 9px;
-          height: 2px;
-          border-radius: 999px;
-          background: currentColor;
-          transform: translate(8px, 9px) rotate(45deg);
-        }
-
-        .copy {
-          min-width: 0;
-        }
-
-        .kicker {
-          display: block;
-          color: #0f766e;
-          font-size: 9px;
-          font-weight: 850;
-          letter-spacing: 0.08em;
-          line-height: 1;
-          text-transform: uppercase;
-        }
-
-        .word {
-          display: block;
-          overflow: hidden;
-          color: #111827;
-          font-size: 14px;
-          font-weight: 850;
-          line-height: 1.18;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .action {
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          border-radius: 999px;
-          padding: 6px 8px;
-          background: #172554;
-          color: #f8fafc;
-          font-size: 11px;
-          font-weight: 800;
-          white-space: nowrap;
-        }
-
-        .action::after {
-          content: "\\2197";
-          font-size: 11px;
-        }
-
-        @keyframes lensIn {
-          from { opacity: 0; transform: translateY(6px) scale(0.94); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .lens {
-            animation: none;
-          }
-        }
-      </style>
-      <button class="lens" type="button" aria-label="Look up ${escapeAttribute(activeWord)} in Advanced English Dictionary">
-        <span class="mark" aria-hidden="true"></span>
-        <span class="copy">
-          <span class="kicker">Selected text</span>
-          <span class="word">${escapeHtml(activeWord)}</span>
-        </span>
-        <span class="action">Open</span>
-      </button>
+      <style>${quickCardStyles}</style>
+      <div class="card" role="dialog" aria-label="Quick definition of ${escapeAttribute(cleanWord)}">
+        <div class="header">
+          <span class="word">${escapeHtml(cleanWord)}</span>
+          <span class="ipa"></span>
+          <button class="close" type="button" aria-label="Close quick definition">×</button>
+        </div>
+        <div class="body" aria-live="polite">
+          <span class="skeleton"></span>
+          <span class="skeleton short"></span>
+        </div>
+        <button class="open" type="button">Open full entry</button>
+      </div>
     `;
 
-    const button = shadow.querySelector('button');
-    button.addEventListener('mousedown', event => event.preventDefault());
-    button.addEventListener('click', openDictionary);
-    button.addEventListener('keydown', event => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        openDictionary();
-      }
+    // Keep the page selection intact while interacting with the card
+    shadow.querySelector('.card').addEventListener('mousedown', event => event.preventDefault());
+    shadow.querySelector('.close').addEventListener('click', () => {
+      removeCard();
+      clearPageSelection();
     });
-    button.addEventListener('mouseenter', () => window.clearTimeout(lensHideTimer));
-    button.addEventListener('mouseleave', scheduleLensHide);
+    shadow.querySelector('.open').addEventListener('click', openDictionary);
 
     document.documentElement.appendChild(host);
-    scheduleLensHide();
+    placeCard(host, anchorRect);
+
+    requestQuickDefinition(cleanWord).then(result => {
+      if (requestToken !== cardRequestToken || !host.isConnected) return;
+      renderQuickCardResult(shadow, result);
+      placeCard(host, anchorRect);
+    });
   }
 
-  function scheduleSelectionLookup() {
+  function isEventFromCard(event) {
+    const cardHost = document.getElementById(cardHostId);
+    if (!cardHost || !event || typeof event.composedPath !== 'function') return false;
+    return event.composedPath().includes(cardHost);
+  }
+
+  function scheduleSelectionLookup(event) {
+    if (isEventFromCard(event) || (event && event.key === 'Escape')) return;
+
     window.clearTimeout(selectionTimer);
     selectionTimer = window.setTimeout(() => {
       const selectionInfo = getSelectedLookup();
       if (selectionInfo) {
-        renderLens(selectionInfo);
+        renderQuickCard(selectionInfo.word, selectionInfo.range);
       }
     }, selectionDelayMs);
   }
@@ -307,12 +399,12 @@
   }
 
   function maybeShowSelectionHint() {
-    if (document.getElementById(hintHostId) || document.getElementById(lensHostId)) return;
+    if (document.getElementById(hintHostId) || document.getElementById(cardHostId)) return;
     const storage = getLocalStorage();
 
     const showHint = () => {
       window.setTimeout(() => {
-        if (!document.getElementById(lensHostId)) {
+        if (!document.getElementById(cardHostId)) {
           renderSelectionHint();
         }
       }, hintDelayMs);
@@ -472,10 +564,10 @@
       <div class="hint" role="status">
         <span class="icon" aria-hidden="true"></span>
         <span class="main">
-          <span class="title">Dictionary Lens</span>
-          <span class="body">Select any word to look it up.</span>
+          <span class="title">Quick Definitions</span>
+          <span class="body">Select any word to see a quick definition.</span>
         </span>
-        <button class="close" type="button" aria-label="Dismiss Dictionary Lens hint">×</button>
+        <button class="close" type="button" aria-label="Dismiss quick definitions hint">×</button>
         <label class="never">
           <input class="never-checkbox" type="checkbox">
           <span>Don’t show again</span>
@@ -526,7 +618,7 @@
     return event => event.ctrlKey; // safe fallback
   }
 
-  function getWordAtPoint(x, y) {
+  function getWordRangeAtPoint(x, y) {
     let range = null;
     if (document.caretRangeFromPoint) {
       range = document.caretRangeFromPoint(x, y);
@@ -556,28 +648,37 @@
     if (start === end) return null;
 
     const word = sanitizeWord(text.slice(start, end));
-    return word || null;
+    if (!word) return null;
+
+    const wordRange = document.createRange();
+    wordRange.setStart(textNode, start);
+    wordRange.setEnd(textNode, end);
+    return { word, range: wordRange };
   }
 
-  function openDictionaryWord(word) {
-    const clean = sanitizeWord(word);
-    if (!clean) return;
-    sendOpenDictionaryMessage(clean);
+  function getWordAtPoint(x, y) {
+    const wordInfo = getWordRangeAtPoint(x, y);
+    return wordInfo ? wordInfo.word : null;
   }
 
-  function handleOutsidePointerDown(event) {
-    const lensHost = document.getElementById(lensHostId);
-    if (!lensHost) return;
+  function showQuickCardAtPoint(x, y) {
+    const wordInfo = getWordRangeAtPoint(x, y);
+    if (wordInfo) renderQuickCard(wordInfo.word, wordInfo.range);
+  }
 
-    const path = typeof event.composedPath === 'function' ? event.composedPath() : [];
-    if (path.includes(lensHost)) return;
-
-    window.clearTimeout(selectionTimer);
-    removeLens();
+  function clearPageSelection() {
     const selection = window.getSelection && window.getSelection();
     if (selection && selection.rangeCount > 0) {
       selection.removeAllRanges();
     }
+  }
+
+  function handleOutsidePointerDown(event) {
+    if (!document.getElementById(cardHostId) || isEventFromCard(event)) return;
+
+    window.clearTimeout(selectionTimer);
+    removeCard();
+    clearPageSelection();
   }
 
   function setupAlwaysListeners() {
@@ -588,18 +689,18 @@
       if (event.key === 'Escape') {
         window.clearTimeout(selectionTimer);
         removeHint();
-        removeLens();
+        removeCard();
       }
     });
 
     document.addEventListener('scroll', () => {
       window.clearTimeout(selectionTimer);
-      removeLens();
+      removeCard();
     }, true);
 
     window.addEventListener('pagehide', () => {
       removeHint();
-      removeLens();
+      removeCard();
     });
   }
 
@@ -747,7 +848,7 @@
       if (!word) return;
 
       removeHighlight();
-      openDictionaryWord(word);
+      showQuickCardAtPoint(event.clientX, event.clientY);
     }, true);
 
     // Clean up on scroll
@@ -864,6 +965,7 @@
     document.addEventListener('mousemove', event => {
       lastMouseX = event.clientX;
       lastMouseY = event.clientY;
+      if (isEventFromCard(event)) return;
 
       const word = getWordAtPoint(event.clientX, event.clientY);
 
@@ -877,7 +979,7 @@
           showHighlight(event.clientX, event.clientY);
           hoverDwellTimer = window.setTimeout(() => {
             removeHighlight();
-            openDictionaryWord(hoverTrackedWord);
+            showQuickCardAtPoint(lastMouseX, lastMouseY);
           }, hoverDwellMs);
         } else {
           removeHighlight();
@@ -889,7 +991,7 @@
         showHighlight(event.clientX, event.clientY);
         hoverDwellTimer = window.setTimeout(() => {
           removeHighlight();
-          openDictionaryWord(hoverTrackedWord);
+          showQuickCardAtPoint(lastMouseX, lastMouseY);
         }, hoverDwellMs);
       }
     });
@@ -903,7 +1005,7 @@
         showHighlight(lastMouseX, lastMouseY);
         hoverDwellTimer = window.setTimeout(() => {
           removeHighlight();
-          openDictionaryWord(hoverTrackedWord);
+          showQuickCardAtPoint(lastMouseX, lastMouseY);
         }, hoverDwellMs);
       }
     });
