@@ -1195,6 +1195,17 @@ input:focus-visible,
         white-space: normal;
         line-height: 1.25;
     }
+
+    .not-found-suggestions,
+    .not-found-retry {
+        grid-area: features;
+        justify-self: center;
+        text-align: center;
+    }
+
+    .not-found-suggestions .empty-state-features {
+        margin-top: 0;
+    }
 }
 
 @media (max-width: 939px) {

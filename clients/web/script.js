@@ -282,6 +282,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const resultsContainer = document.getElementById('resultsContainer');
     const loadingContainer = document.getElementById('loadingContainer');
     const emptyState = document.getElementById('emptyState');
+    const notFoundState = document.getElementById('notFoundState');
 
     const headword = document.getElementById('headword');
     const frequency = document.getElementById('frequency');
@@ -968,6 +969,78 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     function showEmptyState(show) {
         emptyState.style.display = show ? 'block' : 'none';
+        if (show) hideNotFoundState();
+    }
+
+    let notFoundRequestToken = 0;
+
+    function hideNotFoundState() {
+        if (!notFoundState) return;
+        notFoundRequestToken++;
+        notFoundState.style.display = 'none';
+    }
+
+    // Shown when a lookup fails: 'not-found' for non-words, 'error' for network/server failures
+    function showNotFoundState(query, kind = 'not-found') {
+        if (!notFoundState) {
+            showEmptyState(true);
+            return;
+        }
+        emptyState.style.display = 'none';
+        const isError = kind === 'error';
+        const requestToken = ++notFoundRequestToken;
+
+        document.getElementById('notFoundIcon').className = isError
+            ? 'fas fa-triangle-exclamation'
+            : 'fas fa-magnifying-glass';
+        document.getElementById('notFoundTitle').innerHTML = isError
+            ? escapeHtml(t('lookupErrorTitle'))
+            : t('notFoundTitle', { word: `<strong>"${escapeHtml(query)}"</strong>` });
+        document.getElementById('notFoundDescription').textContent = t(isError ? 'lookupErrorDescription' : 'notFoundDescription');
+
+        const retryButton = document.getElementById('notFoundRetry');
+        retryButton.style.display = isError ? '' : 'none';
+        retryButton.onclick = () => {
+            searchInput.value = query;
+            handleSearch();
+        };
+
+        const suggestionsWrap = document.getElementById('notFoundSuggestions');
+        const suggestionList = document.getElementById('notFoundSuggestionList');
+        suggestionsWrap.style.display = 'none';
+        suggestionList.innerHTML = '';
+        notFoundState.style.display = 'block';
+
+        if (!isError) {
+            loadNotFoundSuggestions(query, requestToken, suggestionsWrap, suggestionList);
+        }
+    }
+
+    async function loadNotFoundSuggestions(query, requestToken, suggestionsWrap, suggestionList) {
+        try {
+            const apiUrl = config.api.getUrl('suggest');
+            const response = await fetch(`${apiUrl}?q=${encodeURIComponent(query)}&limit=6`);
+            if (!response.ok) return;
+            const data = await response.json();
+            if (requestToken !== notFoundRequestToken) return;
+
+            const suggestions = (data.success && Array.isArray(data.suggestions) ? data.suggestions : [])
+                .filter(suggestion => suggestion && suggestion.toLowerCase() !== query.toLowerCase())
+                .slice(0, 6);
+            if (suggestions.length === 0) return;
+
+            suggestionList.innerHTML = suggestions.map(suggestion => `
+                <button type="button" class="empty-feature-pill not-found-suggestion" data-value="${escapeHtml(suggestion)}">
+                    <i class="fas fa-search"></i> ${escapeHtml(suggestion)}
+                </button>
+            `).join('');
+            suggestionList.querySelectorAll('.not-found-suggestion').forEach(button => {
+                button.addEventListener('click', () => selectSuggestion(button.dataset.value));
+            });
+            suggestionsWrap.style.display = '';
+        } catch (err) {
+            console.warn('Could not load suggestions for not-found word:', err);
+        }
     }
 
     // Helper function to check if pronunciation is a URL
@@ -2309,6 +2382,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         DeepLinks._pendingHash = null;
         
         showEmptyState(false);
+        hideNotFoundState();
         showResults(false);
         showLoading(true);
         clearResults();
@@ -2329,7 +2403,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.log('✅ Cache hit (fresh)');
             }
             if (!basicData || !basicData.headword) {
-                showEmptyState(true);
+                showNotFoundState(query);
                 return;
             }
             
@@ -2386,13 +2460,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             
         } catch (error) {
             showLoading(false);
-            showEmptyState(true);
             if (isLookupNotFoundError(error)) {
                 console.log('Dictionary lookup returned no result:', query);
+                showNotFoundState(query);
                 return;
             }
 
             console.error('Search error:', error);
+            showNotFoundState(query, 'error');
         }
     }
     

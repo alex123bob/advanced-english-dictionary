@@ -551,3 +551,54 @@
 .confusion-detail-container {
     margin-top: 1.25rem;
 }
+
+/* --- Not-found / lookup error state --- */
+.not-found-state h3 strong {
+    color: var(--primary-color);
+    word-break: break-word;
+}
+
+.not-found-suggestions-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-light);
+    margin-bottom: 0.75rem;
+}
+
+.not-found-suggestion {
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.not-found-suggestion:hover,
+.not-found-suggestion:focus-visible {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.not-found-retry {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.4rem;
+    border: none;
+    border-radius: 20px;
+    background: var(--primary-color);
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.not-found-retry i {
+    color: inherit;
+    opacity: 1;
+}
+
+.not-found-retry:hover,
+.not-found-retry:focus-visible {
+    filter: brightness(0.95);
+}
