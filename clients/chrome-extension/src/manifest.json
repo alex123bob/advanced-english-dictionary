@@ -40,8 +40,7 @@
   "options_page": "options.html",
   "permissions": [
     "contextMenus",
-    "storage",
-    "tabs"
+    "storage"
   ],
   "host_permissions": [
     "<all_urls>"
