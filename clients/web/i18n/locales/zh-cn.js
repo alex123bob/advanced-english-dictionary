@@ -159,6 +159,8 @@
             "extModifierMeta": "Command (⌘)",
             "extModifierCtrl": "Control (Ctrl)",
             "extModifierAlt": "Alt / Option",
+            "extCardTheme": "卡片主题",
+            "extCardThemeDesc": "网页上快速释义卡片的配色。",
             "extApiBaseUrl": "词典 API 地址",
             "extWebsiteUrl": "网站地址",
             "extSaveSettings": "保存设置",

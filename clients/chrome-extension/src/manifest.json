@@ -29,6 +29,7 @@
       ],
       "js": [
         "shared.js",
+        "card-themes.js",
         "content-script.js"
       ],
       "css": [

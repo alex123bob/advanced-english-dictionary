@@ -156,3 +156,122 @@ h1 {
   color: #94a3b8;
   font-size: 12px;
 }
+
+/* Card theme picker */
+.theme-fieldset {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  border: none;
+  padding: 0;
+}
+
+.field-desc {
+  margin: -4px 0 2px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.theme-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
+  gap: 12px;
+}
+
+.settings-form .theme-option {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 10px 10px 12px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.theme-option:hover {
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.theme-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.theme-option:has(input:checked) {
+  border-color: rgb(var(--qc-accent-rgb));
+  box-shadow: 0 0 0 3px rgba(var(--qc-accent-rgb), 0.18);
+}
+
+.theme-option:has(input:focus-visible) {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.theme-preview {
+  position: relative;
+  display: block;
+  height: 86px;
+  margin-bottom: 6px;
+  overflow: hidden;
+  border-radius: 11px;
+  padding: 14px 12px 0;
+  background:
+    radial-gradient(120% 60% at 100% 0%, rgba(var(--qc-glow-a), 0.22), transparent 60%),
+    var(--qc-paper);
+  box-shadow: inset 0 0 0 1px rgba(var(--qc-line-rgb), 0.1);
+}
+
+.theme-preview::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: var(--qc-stripe);
+}
+
+.settings-form .theme-preview-word {
+  display: block;
+  color: var(--qc-heading);
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.theme-preview-line {
+  display: block;
+  width: 78%;
+  height: 5px;
+  margin-top: 8px;
+  border-radius: 999px;
+  background: rgba(var(--qc-line-rgb), 0.16);
+}
+
+.theme-preview-line.short {
+  width: 52%;
+}
+
+.theme-preview-button {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 44px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--qc-button);
+}
+
+.settings-form .theme-name {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.settings-form .theme-desc {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 500;
+}

@@ -2,7 +2,8 @@ const DEFAULT_SETTINGS = {
   apiBaseUrl: 'https://www.lijialab.com',
   websiteUrl: 'https://www.lijialab.com',
   triggerMode: 'text-selection',
-  modifierKey: 'auto'
+  modifierKey: 'auto',
+  cardTheme: 'ember'
 };
 
 const STORAGE_KEYS = {
@@ -64,7 +65,8 @@ function saveSettings(settings) {
       apiBaseUrl: normalizeBaseUrl(settings.apiBaseUrl),
       websiteUrl: normalizeBaseUrl(settings.websiteUrl),
       triggerMode: settings.triggerMode != null ? settings.triggerMode : DEFAULT_SETTINGS.triggerMode,
-      modifierKey: settings.modifierKey != null ? settings.modifierKey : DEFAULT_SETTINGS.modifierKey
+      modifierKey: settings.modifierKey != null ? settings.modifierKey : DEFAULT_SETTINGS.modifierKey,
+      cardTheme: settings.cardTheme || DEFAULT_SETTINGS.cardTheme
     }
   });
 }

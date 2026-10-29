@@ -13,6 +13,7 @@ const extensionFiles = [
   'content-script.js',
   'content-script.css',
   'shared.js',
+  'card-themes.js',
   'extension-config.js',
   'extension-popup.css',
   'options.html',

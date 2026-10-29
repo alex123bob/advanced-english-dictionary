@@ -13,6 +13,7 @@
   const hoverDwellMs = 300;
 
   let activeWord = '';
+  let cardThemeId = DEFAULT_CARD_THEME;
   let cardRequestToken = 0;
   let selectionTimer = null;
   let hintTimer = null;
@@ -153,7 +154,7 @@
       position: absolute;
       z-index: 2147483647;
       pointer-events: auto;
-      color: #2b1a17;
+      color: var(--qc-ink);
       font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       -webkit-font-smoothing: antialiased;
     }
@@ -166,16 +167,16 @@
       width: min(${cardWidthPx}px, calc(100vw - ${cardEdgePx * 2}px));
       max-height: min(${cardMaxHeightPx}px, calc(100vh - ${cardEdgePx * 2}px));
       overflow: hidden;
-      border: 1px solid rgba(190, 52, 38, 0.14);
+      border: 1px solid rgba(var(--qc-accent-rgb), 0.14);
       border-radius: 22px;
       background:
-        radial-gradient(120% 60% at 100% 0%, rgba(251, 146, 60, 0.16), transparent 60%),
-        radial-gradient(90% 50% at 0% 0%, rgba(220, 38, 38, 0.10), transparent 55%),
-        #fffaf5;
+        radial-gradient(120% 60% at 100% 0%, rgba(var(--qc-glow-a), 0.16), transparent 60%),
+        radial-gradient(90% 50% at 0% 0%, rgba(var(--qc-glow-b), 0.10), transparent 55%),
+        var(--qc-paper);
       box-shadow:
-        0 30px 70px -18px rgba(87, 21, 12, 0.38),
-        0 10px 24px -12px rgba(87, 21, 12, 0.22),
-        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+        0 30px 70px -18px rgba(var(--qc-shadow-rgb), 0.38),
+        0 10px 24px -12px rgba(var(--qc-shadow-rgb), 0.22),
+        inset 0 1px 0 var(--qc-highlight);
       animation: cardIn 200ms cubic-bezier(.2,.8,.2,1);
     }
 
@@ -184,7 +185,7 @@
       position: absolute;
       inset: 0 0 auto;
       height: 4px;
-      background: linear-gradient(90deg, #9f1239, #dc2626 38%, #f97316 78%, #fbbf24);
+      background: var(--qc-stripe);
     }
 
     .header {
@@ -202,7 +203,7 @@
     .word {
       display: block;
       overflow: hidden;
-      color: #3b0d0c;
+      color: var(--qc-heading);
       font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
       font-size: 30px;
       font-weight: 600;
@@ -222,7 +223,7 @@
     }
 
     .ipa {
-      color: #9a3412;
+      color: var(--qc-ipa);
       font-family: "Iowan Old Style", Palatino, Georgia, serif;
       font-size: 15px;
       font-style: italic;
@@ -235,8 +236,8 @@
     .pos {
       border-radius: 999px;
       padding: 3px 10px;
-      background: rgba(220, 38, 38, 0.08);
-      color: #b91c1c;
+      background: rgba(var(--qc-accent-rgb), 0.08);
+      color: var(--qc-accent);
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.06em;
@@ -254,7 +255,7 @@
       border-radius: 50%;
       padding: 0;
       background: transparent;
-      color: #a8746a;
+      color: var(--qc-faint);
       font-size: 20px;
       line-height: 1;
       cursor: pointer;
@@ -264,8 +265,8 @@
     .close:hover,
     .close:focus-visible {
       outline: none;
-      background: rgba(185, 28, 28, 0.08);
-      color: #7f1d1d;
+      background: rgba(var(--qc-accent-rgb), 0.08);
+      color: var(--qc-heading);
     }
 
     .forms {
@@ -284,8 +285,8 @@
       top: 50%;
       width: 7px;
       height: 7px;
-      border-right: 1.5px solid #b91c1c;
-      border-bottom: 1.5px solid #b91c1c;
+      border-right: 1.5px solid var(--qc-accent);
+      border-bottom: 1.5px solid var(--qc-accent);
       transform: translateY(-70%) rotate(45deg);
       pointer-events: none;
     }
@@ -293,11 +294,11 @@
     .form-select {
       box-sizing: border-box;
       width: 100%;
-      border: 1px solid rgba(185, 28, 28, 0.18);
+      border: 1px solid rgba(var(--qc-accent-rgb), 0.18);
       border-radius: 12px;
       padding: 10px 40px 10px 14px;
-      background: rgba(255, 255, 255, 0.75);
-      color: #7c2d12;
+      background: var(--qc-field);
+      color: var(--qc-field-text);
       font: inherit;
       font-size: 13px;
       font-weight: 600;
@@ -308,13 +309,13 @@
     }
 
     .form-select:hover {
-      border-color: rgba(185, 28, 28, 0.38);
+      border-color: rgba(var(--qc-accent-rgb), 0.38);
     }
 
     .form-select:focus-visible {
       outline: none;
-      border-color: rgba(234, 88, 12, 0.6);
-      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.22);
+      border-color: rgba(var(--qc-warm-rgb), 0.6);
+      box-shadow: 0 0 0 3px rgba(var(--qc-warm-rgb), 0.22);
     }
 
     .scroll {
@@ -324,7 +325,7 @@
       overscroll-behavior: contain;
       padding: 0 26px;
       scrollbar-width: thin;
-      scrollbar-color: rgba(185, 28, 28, 0.25) transparent;
+      scrollbar-color: rgba(var(--qc-accent-rgb), 0.25) transparent;
     }
 
     .section {
@@ -333,7 +334,7 @@
 
     .section + .section {
       margin-top: 8px;
-      border-top: 1px solid rgba(124, 45, 18, 0.1);
+      border-top: 1px solid rgba(var(--qc-line-rgb), 0.1);
     }
 
     .label {
@@ -341,7 +342,7 @@
       align-items: center;
       gap: 8px;
       margin: 0 0 12px;
-      color: #c2410c;
+      color: var(--qc-label);
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.14em;
@@ -352,7 +353,7 @@
       content: "";
       flex: 1;
       height: 1px;
-      background: linear-gradient(90deg, rgba(234, 88, 12, 0.3), transparent);
+      background: linear-gradient(90deg, rgba(var(--qc-warm-rgb), 0.3), transparent);
     }
 
     .senses {
@@ -366,7 +367,7 @@
       position: relative;
       margin: 0 0 14px;
       padding-left: 30px;
-      color: #3f2a26;
+      color: var(--qc-body);
       font-size: 14.5px;
       line-height: 1.6;
       counter-increment: sense;
@@ -382,8 +383,8 @@
       width: 20px;
       height: 20px;
       border-radius: 50%;
-      background: rgba(220, 38, 38, 0.09);
-      color: #b91c1c;
+      background: rgba(var(--qc-accent-rgb), 0.09);
+      color: var(--qc-accent);
       font-size: 11px;
       font-weight: 700;
       line-height: 1;
@@ -394,7 +395,7 @@
       border: 0;
       padding: 0;
       background: none;
-      color: #c2410c;
+      color: var(--qc-label);
       font: inherit;
       font-size: 13px;
       font-weight: 600;
@@ -410,29 +411,29 @@
 
     .origin {
       margin: 0 0 14px;
-      color: #4a2f2a;
+      color: var(--qc-origin);
       font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
       font-size: 15px;
       line-height: 1.65;
     }
 
     .lang {
-      color: #9f1239;
+      color: var(--qc-accent-deep);
       font-style: italic;
     }
 
     .roots {
       margin: 0 0 14px;
-      border-left: 2px solid rgba(234, 88, 12, 0.45);
+      border-left: 2px solid rgba(var(--qc-warm-rgb), 0.45);
       padding: 2px 0 2px 14px;
-      color: #6b4a43;
+      color: var(--qc-roots);
       font-size: 13px;
       line-height: 1.6;
     }
 
     .message {
       margin: 4px 0 14px;
-      color: #8a6a63;
+      color: var(--qc-muted);
       font-size: 14px;
       line-height: 1.55;
     }
@@ -442,7 +443,7 @@
       height: 11px;
       margin: 10px 0;
       border-radius: 999px;
-      background: linear-gradient(90deg, rgba(234, 88, 12, 0.08), rgba(234, 88, 12, 0.2), rgba(234, 88, 12, 0.08));
+      background: linear-gradient(90deg, rgba(var(--qc-warm-rgb), 0.08), rgba(var(--qc-warm-rgb), 0.2), rgba(var(--qc-warm-rgb), 0.08));
       background-size: 200% 100%;
       animation: shimmer 1.2s linear infinite;
     }
@@ -462,12 +463,12 @@
       justify-content: space-between;
       gap: 12px;
       padding: 16px 26px 20px;
-      border-top: 1px solid rgba(124, 45, 18, 0.08);
-      background: linear-gradient(180deg, rgba(255, 250, 245, 0), rgba(255, 237, 213, 0.45));
+      border-top: 1px solid rgba(var(--qc-line-rgb), 0.08);
+      background: linear-gradient(180deg, transparent, rgba(var(--qc-glow-a), 0.12));
     }
 
     .brand {
-      color: #b08a80;
+      color: var(--qc-faint);
       font-size: 11px;
       font-weight: 600;
       letter-spacing: 0.04em;
@@ -480,9 +481,9 @@
       border: 0;
       border-radius: 999px;
       padding: 10px 18px;
-      background: linear-gradient(135deg, #9f1239, #dc2626 55%, #ea580c);
-      box-shadow: 0 10px 22px -10px rgba(185, 28, 28, 0.7);
-      color: #fff7ed;
+      background: var(--qc-button);
+      box-shadow: 0 10px 22px -10px rgba(var(--qc-accent-rgb), 0.7);
+      color: var(--qc-on-accent);
       font: inherit;
       font-size: 13px;
       font-weight: 650;
@@ -499,7 +500,7 @@
     .open:focus-visible {
       outline: none;
       transform: translateY(-1px);
-      box-shadow: 0 14px 26px -10px rgba(185, 28, 28, 0.8), 0 0 0 3px rgba(251, 146, 60, 0.3);
+      box-shadow: 0 14px 26px -10px rgba(var(--qc-accent-rgb), 0.8), 0 0 0 3px rgba(var(--qc-warm-rgb), 0.3);
     }
 
     .open:hover::after {
@@ -665,7 +666,7 @@
 
     const shadow = host.attachShadow({ mode: 'open' });
     shadow.innerHTML = `
-      <style>${quickCardStyles}</style>
+      <style>:host { ${getCardThemeCss(cardThemeId)} }${quickCardStyles}</style>
       <div class="card" role="dialog" aria-label="Quick look at ${escapeAttribute(cleanWord)}">
         <div class="header">
           <div class="title">
@@ -795,21 +796,24 @@
     shadow.innerHTML = `
       <style>
         :host {
-          color: #172033;
+          ${getCardThemeCss(cardThemeId)}
+          color: var(--qc-ink);
           font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
 
         .hint {
+          color: var(--qc-ink);
+          font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
           display: grid;
           grid-template-columns: 30px minmax(0, 1fr) 22px;
           align-items: center;
           gap: 10px;
           max-width: min(330px, calc(100vw - 36px));
-          border: 1px solid rgba(255, 255, 255, 0.72);
+          border: 1px solid rgba(var(--qc-accent-rgb), 0.14);
           border-radius: 16px;
           padding: 10px;
-          background: rgba(255, 255, 255, 0.94);
-          box-shadow: 0 18px 44px rgba(15, 23, 42, 0.2), 0 0 0 1px rgba(20, 184, 166, 0.1);
+          background: var(--qc-paper);
+          box-shadow: 0 22px 50px -16px rgba(var(--qc-shadow-rgb), 0.38), inset 0 1px 0 var(--qc-highlight);
           -webkit-backdrop-filter: blur(18px) saturate(1.3);
           backdrop-filter: blur(18px) saturate(1.3);
           animation: hintIn 180ms cubic-bezier(.2,.8,.2,1);
@@ -826,8 +830,8 @@
           width: 30px;
           height: 30px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #22d3ee, #14b8a6 52%, #6366f1);
-          color: white;
+          background: var(--qc-button);
+          color: var(--qc-on-accent);
         }
 
         .icon::before {
@@ -850,7 +854,7 @@
         }
 
         .title {
-          color: #0f766e;
+          color: var(--qc-label);
           font-size: 10px;
           font-weight: 850;
           letter-spacing: 0.08em;
@@ -860,7 +864,7 @@
 
         .body {
           margin-top: 3px;
-          color: #111827;
+          color: var(--qc-heading);
           font-size: 13px;
           font-weight: 750;
           line-height: 1.25;
@@ -873,7 +877,7 @@
           gap: 7px;
           width: fit-content;
           margin-top: 2px;
-          color: #475569;
+          color: var(--qc-muted);
           font-size: 12px;
           font-weight: 650;
           cursor: pointer;
@@ -884,7 +888,7 @@
           width: 14px;
           height: 14px;
           margin: 0;
-          accent-color: #0f766e;
+          accent-color: var(--qc-accent);
           cursor: pointer;
         }
 
@@ -895,8 +899,8 @@
           height: 22px;
           border: 0;
           border-radius: 50%;
-          background: rgba(15, 23, 42, 0.06);
-          color: #475569;
+          background: rgba(var(--qc-accent-rgb), 0.08);
+          color: var(--qc-muted);
           cursor: pointer;
           font: inherit;
           line-height: 1;
@@ -905,8 +909,8 @@
         .close:hover,
         .close:focus-visible {
           outline: none;
-          background: rgba(15, 23, 42, 0.12);
-          color: #0f172a;
+          background: rgba(var(--qc-accent-rgb), 0.14);
+          color: var(--qc-heading);
         }
 
         @keyframes hintIn {
@@ -1131,13 +1135,13 @@
       const shadow = host.attachShadow({ mode: 'open' });
       shadow.innerHTML = `
         <style>
-          :host { display: block; }
+          :host { display: block; ${getCardThemeCss(cardThemeId)} }
           .hl {
             position: absolute;
             inset: 0;
-            border-bottom: 2px dashed #14b8a6;
+            border-bottom: 2px dashed var(--qc-accent);
             border-radius: 1px;
-            background: rgba(20, 184, 166, 0.08);
+            background: rgba(var(--qc-accent-rgb), 0.08);
           }
         </style>
         <div class="hl"></div>
@@ -1272,13 +1276,13 @@
       const shadow = host.attachShadow({ mode: 'open' });
       shadow.innerHTML = `
         <style>
-          :host { display: block; }
+          :host { display: block; ${getCardThemeCss(cardThemeId)} }
           .hl {
             position: absolute;
             inset: 0;
-            border-bottom: 2px dashed #14b8a6;
+            border-bottom: 2px dashed var(--qc-accent);
             border-radius: 1px;
-            background: rgba(20, 184, 166, 0.08);
+            background: rgba(var(--qc-accent-rgb), 0.08);
             cursor: pointer;
           }
         </style>
@@ -1393,6 +1397,8 @@
     } catch (_) {
       settings = { triggerMode: 'text-selection', modifierKey: 'auto' };
     }
+
+    cardThemeId = settings.cardTheme || DEFAULT_CARD_THEME;
 
     const triggerMode = settings.triggerMode || 'text-selection';
     const modifierKey = settings.modifierKey || 'auto';

@@ -158,6 +158,8 @@
             "extModifierMeta": "Command (⌘)",
             "extModifierCtrl": "Control (Ctrl)",
             "extModifierAlt": "Alt / Option",
+            "extCardTheme": "Card theme",
+            "extCardThemeDesc": "Colours for the quick-definition card shown on web pages.",
             "extApiBaseUrl": "Dictionary API base URL",
             "extWebsiteUrl": "Website base URL",
             "extSaveSettings": "Save settings",
