@@ -1205,11 +1205,17 @@
       }
     }, true);
 
-    document.addEventListener('click', event => {
-      if (!isModifierHeld(event)) return;
+    // Registered on window in the capture phase so it runs before page handlers.
+    // A modifier+click that opens the card would otherwise also follow the link:
+    // Cmd/Ctrl opens a new tab, Alt downloads the target, and SPA routers navigate.
+    window.addEventListener('click', event => {
+      if (!isModifierHeld(event) || isEventFromCard(event)) return;
 
       const word = getWordAtPoint(event.clientX, event.clientY);
       if (!word) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
 
       removeHighlight();
       showQuickCardAtPoint(event.clientX, event.clientY);
