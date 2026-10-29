@@ -1,0 +1,15 @@
+{
+  "name": "@advanced-english-dictionary/chrome-store-assets",
+  "version": "1.0.0",
+  "description": "Generates Chrome Web Store listing images for the Advanced English Dictionary extension",
+  "private": true,
+  "scripts": {
+    "generate": "node generate.js",
+    "generate:icon": "node generate.js icon",
+    "generate:screenshots": "node generate.js screenshots",
+    "generate:small-tile": "node generate.js small-tile",
+    "generate:marquee": "node generate.js marquee",
+    "check": "node generate.js check",
+    "list": "node generate.js list"
+  }
+}

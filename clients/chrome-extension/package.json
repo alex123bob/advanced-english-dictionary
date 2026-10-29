@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "build": "node build.js",
-    "release": "node release.js"
+    "release": "node release.js",
+    "store-assets": "npm --prefix store-assets run generate --"
   }
 }
