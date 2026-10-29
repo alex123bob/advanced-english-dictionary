@@ -1,0 +1,37 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  html,body{margin:0;width:1400px;height:560px;overflow:hidden}
+  body{background:linear-gradient(120deg,#2e239f 0%,#4f46e5 45%,#0e8fb8 100%);
+    font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;color:#fff;position:relative}
+  .glow{position:absolute;border-radius:50%;filter:blur(80px);opacity:.4}
+  .g1{width:520px;height:520px;background:#5eead4;right:120px;top:-260px}
+  .g2{width:420px;height:420px;background:#a78bfa;left:-140px;bottom:-220px}
+  .left{position:absolute;left:84px;top:0;bottom:0;width:560px;display:flex;flex-direction:column;justify-content:center}
+  .brand{display:flex;align-items:center;gap:18px;margin-bottom:26px}
+  .brand img{width:76px;height:76px;filter:drop-shadow(0 8px 14px rgba(15,23,42,.35))}
+  .brand span{font-size:22px;font-weight:600;letter-spacing:.02em;opacity:.95}
+  h1{font-family:Georgia,"Times New Roman",serif;font-size:58px;line-height:1.08;margin:0 0 22px;font-weight:700}
+  p{margin:0 0 28px;font-size:21px;line-height:1.5;opacity:.9;max-width:520px}
+  .chips{display:flex;gap:12px;flex-wrap:wrap}
+  .chips span{padding:9px 18px;border-radius:999px;border:1.5px solid rgba(255,255,255,.45);background:rgba(255,255,255,.12);font-size:16px;font-weight:500}
+  .shot{position:absolute;overflow:hidden;border-radius:18px;box-shadow:0 30px 60px rgba(10,10,40,.45);background:#fff}
+  .shot img{position:absolute;display:block}
+  /* main-popup.png: content area is x 16..1612, y 12..1208 */
+  .popup{width:620px;height:430px;right:190px;top:62px;transform:rotate(-2deg)}
+  .popup img{width:633px;left:-6px;top:-5px}
+  /* in-page-card.png: card spans x 10..846, y 126..1244 */
+  .card{width:300px;height:401px;right:56px;top:96px;border-radius:20px;transform:rotate(2.5deg);background:#1f1714}
+  .card img{width:306px;left:-4px;top:-45px}
+</style></head>
+<body>
+  <div class="glow g1"></div><div class="glow g2"></div>
+  <div class="left">
+    <div class="brand"><img src="../../src/icons/icon.svg" alt=""><span>Advanced English Dictionary</span></div>
+    <h1>Every word,<br>one click away.</h1>
+    <p>Select a word on any page for an instant definition, or open the full dictionary for etymology, synonyms and real-world examples.</p>
+    <div class="chips"><span>Instant lookups</span><span>Word origins</span><span>20 card themes</span></div>
+  </div>
+  <div class="shot popup"><img src="../sources/screenshots/main-popup.png" alt=""></div>
+  <div class="shot card"><img src="../sources/screenshots/in-page-card.png" alt=""></div>
+</body></html>
