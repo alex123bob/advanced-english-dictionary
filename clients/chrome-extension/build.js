@@ -77,14 +77,27 @@ copyDirectory(path.join(webDir, 'i18n'), path.join(distDir, 'i18n'));
 copyDirectory(path.join(sourceDir, 'icons'), path.join(distDir, 'icons'));
 copyDirectory(path.join(sourceDir, 'vendor'), path.join(distDir, 'vendor'));
 
+// Extension pages forbid inline scripts (CSP script-src 'self'): drop the service
+// worker registration and move any other inline script into its own file
+let inlineScriptCount = 0;
+function externalizeInlineScripts(html) {
+  return html.replace(/(\s*)<script>([\s\S]*?)<\/script>\n?/g, (match, indent, code) => {
+    if (code.includes('serviceWorker')) return '\n';
+
+    inlineScriptCount++;
+    const fileName = `popup-inline-${inlineScriptCount}.js`;
+    fs.writeFileSync(path.join(distDir, fileName), `${code.trim()}\n`, 'utf8');
+    return `${indent}<script src="${fileName}"></script>\n`;
+  });
+}
+
 const webIndex = fs.readFileSync(path.join(webDir, 'index.html'), 'utf8');
-const popupHtml = webIndex
+const popupHtml = externalizeInlineScripts(webIndex)
   .replace(/\s*<link rel="manifest" href="manifest\.webmanifest">\n?/g, '\n')
   .replace(/\s*<meta name="theme-color"[^>]*>\n?/g, '\n')
   .replace(/\s*<meta name="apple-mobile-web-app-capable"[^>]*>\n?/g, '\n')
   .replace(/\s*<meta name="apple-mobile-web-app-title"[^>]*>\n?/g, '\n')
   .replace(/\s*<link rel="apple-touch-icon"[^>]*>\n?/g, '\n')
-  .replace(/\s*<script>\s*if \('serviceWorker' in navigator\)[\s\S]*?<\/script>\n?/g, '\n')
   .replace(/\s*<link rel="stylesheet" href="https:\/\/cdnjs\.cloudflare\.com\/ajax\/libs\/font-awesome\/6\.4\.0\/css\/all\.min\.css"[^>]*>\n?/g, '\n    <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">\n')
   .replace(/\s*<link href="https:\/\/fonts\.googleapis\.com\/css2\?[^"]+"[^>]*>\n?/g, '')
   .replace(/<link href="(https:\/\/fonts\.loli\.net\/css2\?[^"]+)"[^>]*>/, '<link href="$1" rel="stylesheet">')
@@ -95,6 +108,12 @@ const popupHtml = webIndex
   .replace('<script src="script.js" onload="console.log(\'script.js loaded successfully\')" onerror="console.error(\'Failed to load script.js\')"></script>', '<script src="script.js"></script>')
   .replace(/\s*<script src="extension-config\.js"><\/script>\s*/g, '\n    <script src="extension-config.js"></script>\n')
   .replace('</head>', '    <link rel="stylesheet" href="extension-popup.css">\n</head>');
+
+const inlineCode = popupHtml.match(/<script>|\son[a-z]+="/i);
+if (inlineCode) {
+  console.error(`✗ popup.html still contains inline code (${inlineCode[0].trim()}), which the extension CSP blocks`);
+  process.exit(1);
+}
 
 fs.writeFileSync(path.join(distDir, 'popup.html'), popupHtml, 'utf8');
 
