@@ -754,8 +754,8 @@
   {
     "word": "quirky",
     "date": "2026-10-29",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-29T12:22:47.301969+00:00",
     "difficulty": null,
     "category": null
   },
@@ -986,6 +986,14 @@
   {
     "word": "revenue",
     "date": "2026-11-27",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "frugal",
+    "date": "2026-11-28",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
