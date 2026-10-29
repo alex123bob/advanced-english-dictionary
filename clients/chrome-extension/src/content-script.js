@@ -3,10 +3,11 @@
   const hintHostId = 'advanced-dictionary-selection-hint';
   const hintDismissedStorageKey = 'advancedDictionarySelectionHintDismissed';
   const selectionDelayMs = 90;
-  const cardWidthPx = 340;
-  const cardGapPx = 10;
-  const cardEdgePx = 10;
-  const cardBodyMaxHeightPx = 220;
+  const cardWidthPx = 420;
+  const cardMaxHeightPx = 560;
+  const cardGapPx = 12;
+  const cardEdgePx = 12;
+  const quickCardSenseLimit = 4;
   const hintDelayMs = 1200;
   const hintHideMs = 5600;
   const hoverDwellMs = 300;
@@ -93,7 +94,7 @@
     }
   }
 
-  function requestQuickDefinition(word) {
+  function requestFromBackground(message) {
     return new Promise(resolve => {
       const runtime = globalThis.chrome && chrome.runtime;
       if (!runtime || typeof runtime.sendMessage !== 'function') {
@@ -102,7 +103,7 @@
       }
 
       try {
-        runtime.sendMessage({ type: 'QUICK_DEFINITION_LOOKUP', word }, response => {
+        runtime.sendMessage(message, response => {
           if (runtime.lastError || !response) {
             resolve({ ok: false, error: runtime.lastError ? runtime.lastError.message : 'No response.' });
             return;
@@ -115,6 +116,14 @@
     });
   }
 
+  function requestQuickDefinition(word) {
+    return requestFromBackground({ type: 'QUICK_DEFINITION_LOOKUP', word });
+  }
+
+  function requestEtymology(word, entryIndex) {
+    return requestFromBackground({ type: 'QUICK_ETYMOLOGY_LOOKUP', word, entryIndex });
+  }
+
   function getAnchorRect(range) {
     const rects = Array.from(range.getClientRects()).filter(rect => rect.width || rect.height);
     const rect = rects[0] || range.getBoundingClientRect();
@@ -125,8 +134,9 @@
 
   // Prefer the space above the word; flip below when there is no room
   function placeCard(host, anchorRect) {
-    const viewportWidth = document.documentElement.clientWidth;
-    const viewportHeight = document.documentElement.clientHeight;
+    // window.inner* stays correct on quirks-mode pages, where documentElement.client* is the page size
+    const viewportWidth = Math.min(window.innerWidth, document.documentElement.clientWidth || window.innerWidth);
+    const viewportHeight = window.innerHeight;
     const width = host.offsetWidth;
     const height = host.offsetHeight;
     const centerX = anchorRect.left + anchorRect.width / 2;
@@ -143,170 +153,361 @@
       position: absolute;
       z-index: 2147483647;
       pointer-events: auto;
+      color: #2b1a17;
       font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: #172033;
+      -webkit-font-smoothing: antialiased;
     }
 
     .card {
+      position: relative;
       box-sizing: border-box;
-      width: ${cardWidthPx}px;
-      border: 1px solid rgba(255, 255, 255, 0.74);
-      border-radius: 18px;
-      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      width: min(${cardWidthPx}px, calc(100vw - ${cardEdgePx * 2}px));
+      max-height: min(${cardMaxHeightPx}px, calc(100vh - ${cardEdgePx * 2}px));
+      overflow: hidden;
+      border: 1px solid rgba(190, 52, 38, 0.14);
+      border-radius: 22px;
       background:
-        linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 253, 250, 0.95)),
-        radial-gradient(circle at 12% 10%, rgba(45, 212, 191, 0.36), transparent 34%);
-      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.26), 0 0 0 1px rgba(20, 184, 166, 0.14);
-      animation: cardIn 160ms cubic-bezier(.2,.8,.2,1);
-      -webkit-backdrop-filter: blur(18px) saturate(1.35);
-      backdrop-filter: blur(18px) saturate(1.35);
+        radial-gradient(120% 60% at 100% 0%, rgba(251, 146, 60, 0.16), transparent 60%),
+        radial-gradient(90% 50% at 0% 0%, rgba(220, 38, 38, 0.10), transparent 55%),
+        #fffaf5;
+      box-shadow:
+        0 30px 70px -18px rgba(87, 21, 12, 0.38),
+        0 10px 24px -12px rgba(87, 21, 12, 0.22),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      animation: cardIn 200ms cubic-bezier(.2,.8,.2,1);
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 4px;
+      background: linear-gradient(90deg, #9f1239, #dc2626 38%, #f97316 78%, #fbbf24);
     }
 
     .header {
       display: flex;
-      align-items: baseline;
-      gap: 8px;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 26px 26px 0;
+    }
+
+    .title {
+      flex: 1;
       min-width: 0;
     }
 
     .word {
+      display: block;
       overflow: hidden;
-      color: #111827;
-      font-size: 16px;
-      font-weight: 850;
-      line-height: 1.25;
+      color: #3b0d0c;
+      font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+      font-size: 30px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      line-height: 1.1;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      min-height: 22px;
     }
 
     .ipa {
-      flex: 1;
-      min-width: 0;
-      overflow: hidden;
-      color: #64748b;
-      font-size: 12px;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      color: #9a3412;
+      font-family: "Iowan Old Style", Palatino, Georgia, serif;
+      font-size: 15px;
+      font-style: italic;
+    }
+
+    .ipa:empty {
+      display: none;
+    }
+
+    .pos {
+      border-radius: 999px;
+      padding: 3px 10px;
+      background: rgba(220, 38, 38, 0.08);
+      color: #b91c1c;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
     }
 
     .close {
-      align-self: flex-start;
+      flex: none;
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      margin: -4px -8px 0 0;
       border: 0;
       border-radius: 50%;
-      width: 22px;
-      height: 22px;
-      margin: -2px -4px 0 auto;
       padding: 0;
       background: transparent;
-      color: #64748b;
-      font-size: 16px;
-      line-height: 22px;
+      color: #a8746a;
+      font-size: 20px;
+      line-height: 1;
       cursor: pointer;
+      transition: background 140ms ease, color 140ms ease;
     }
 
     .close:hover,
     .close:focus-visible {
       outline: none;
-      background: rgba(15, 23, 42, 0.08);
-      color: #111827;
+      background: rgba(185, 28, 28, 0.08);
+      color: #7f1d1d;
     }
 
     .forms {
-      box-sizing: border-box;
-      width: 100%;
-      margin-top: 8px;
-      border: 1px solid rgba(20, 184, 166, 0.35);
-      border-radius: 10px;
-      padding: 5px 8px;
-      background: rgba(255, 255, 255, 0.9);
-      color: #0f766e;
-      font: inherit;
-      font-size: 12px;
-      font-weight: 750;
-      cursor: pointer;
+      position: relative;
+      margin: 18px 26px 0;
     }
 
     .forms[hidden] {
       display: none;
     }
 
-    .forms:focus-visible {
-      outline: none;
-      box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.25);
+    .forms::after {
+      content: "";
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      width: 7px;
+      height: 7px;
+      border-right: 1.5px solid #b91c1c;
+      border-bottom: 1.5px solid #b91c1c;
+      transform: translateY(-70%) rotate(45deg);
+      pointer-events: none;
     }
 
-    .body {
-      max-height: ${cardBodyMaxHeightPx}px;
-      margin: 8px -6px 10px 0;
-      padding-right: 6px;
+    .form-select {
+      box-sizing: border-box;
+      width: 100%;
+      border: 1px solid rgba(185, 28, 28, 0.18);
+      border-radius: 12px;
+      padding: 10px 40px 10px 14px;
+      background: rgba(255, 255, 255, 0.75);
+      color: #7c2d12;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      transition: border-color 140ms ease, box-shadow 140ms ease;
+    }
+
+    .form-select:hover {
+      border-color: rgba(185, 28, 28, 0.38);
+    }
+
+    .form-select:focus-visible {
+      outline: none;
+      border-color: rgba(234, 88, 12, 0.6);
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.22);
+    }
+
+    .scroll {
+      flex: 1 1 auto;
+      min-height: 0;
       overflow-y: auto;
       overscroll-behavior: contain;
+      padding: 0 26px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(185, 28, 28, 0.25) transparent;
+    }
+
+    .section {
+      padding: 20px 0 4px;
+    }
+
+    .section + .section {
+      margin-top: 8px;
+      border-top: 1px solid rgba(124, 45, 18, 0.1);
+    }
+
+    .label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 12px;
+      color: #c2410c;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .label::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(234, 88, 12, 0.3), transparent);
     }
 
     .senses {
       margin: 0;
-      padding-left: 20px;
+      padding: 0;
+      list-style: none;
+      counter-reset: sense;
     }
 
-    .sense,
-    .message {
-      margin: 0 0 6px;
+    .sense {
+      position: relative;
+      margin: 0 0 14px;
+      padding-left: 30px;
+      color: #3f2a26;
+      font-size: 14.5px;
+      line-height: 1.6;
+      counter-increment: sense;
+    }
+
+    .sense::before {
+      content: counter(sense);
+      position: absolute;
+      left: 0;
+      top: 1px;
+      display: grid;
+      place-items: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(220, 38, 38, 0.09);
+      color: #b91c1c;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .more {
+      margin: -4px 0 6px 30px;
+      border: 0;
+      padding: 0;
+      background: none;
+      color: #c2410c;
+      font: inherit;
       font-size: 13px;
-      line-height: 1.45;
+      font-weight: 600;
+      cursor: pointer;
     }
 
-    .sense::marker {
-      color: #0f766e;
-      font-size: 12px;
-      font-weight: 750;
+    .more:hover,
+    .more:focus-visible {
+      outline: none;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .origin {
+      margin: 0 0 14px;
+      color: #4a2f2a;
+      font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      font-size: 15px;
+      line-height: 1.65;
+    }
+
+    .lang {
+      color: #9f1239;
+      font-style: italic;
+    }
+
+    .roots {
+      margin: 0 0 14px;
+      border-left: 2px solid rgba(234, 88, 12, 0.45);
+      padding: 2px 0 2px 14px;
+      color: #6b4a43;
+      font-size: 13px;
+      line-height: 1.6;
     }
 
     .message {
-      color: #64748b;
+      margin: 4px 0 14px;
+      color: #8a6a63;
+      font-size: 14px;
+      line-height: 1.55;
     }
 
     .skeleton {
       display: block;
-      height: 10px;
-      margin: 6px 0;
+      height: 11px;
+      margin: 10px 0;
       border-radius: 999px;
-      background: linear-gradient(90deg, rgba(148, 163, 184, 0.18), rgba(148, 163, 184, 0.36), rgba(148, 163, 184, 0.18));
+      background: linear-gradient(90deg, rgba(234, 88, 12, 0.08), rgba(234, 88, 12, 0.2), rgba(234, 88, 12, 0.08));
       background-size: 200% 100%;
-      animation: shimmer 1.1s linear infinite;
+      animation: shimmer 1.2s linear infinite;
+    }
+
+    .skeleton.mid {
+      width: 82%;
     }
 
     .skeleton.short {
-      width: 62%;
+      width: 56%;
+    }
+
+    .footer {
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 26px 20px;
+      border-top: 1px solid rgba(124, 45, 18, 0.08);
+      background: linear-gradient(180deg, rgba(255, 250, 245, 0), rgba(255, 237, 213, 0.45));
+    }
+
+    .brand {
+      color: #b08a80;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
     }
 
     .open {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 8px;
       border: 0;
       border-radius: 999px;
-      padding: 6px 10px;
-      background: #172554;
-      color: #f8fafc;
+      padding: 10px 18px;
+      background: linear-gradient(135deg, #9f1239, #dc2626 55%, #ea580c);
+      box-shadow: 0 10px 22px -10px rgba(185, 28, 28, 0.7);
+      color: #fff7ed;
       font: inherit;
-      font-size: 11px;
-      font-weight: 800;
+      font-size: 13px;
+      font-weight: 650;
       cursor: pointer;
+      transition: transform 140ms ease, box-shadow 140ms ease;
     }
 
     .open::after {
-      content: "\\2197";
-      font-size: 11px;
+      content: "\\2192";
+      transition: transform 140ms ease;
     }
 
     .open:hover,
     .open:focus-visible {
       outline: none;
-      box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.3);
+      transform: translateY(-1px);
+      box-shadow: 0 14px 26px -10px rgba(185, 28, 28, 0.8), 0 0 0 3px rgba(251, 146, 60, 0.3);
+    }
+
+    .open:hover::after {
+      transform: translateX(3px);
     }
 
     @keyframes cardIn {
-      from { opacity: 0; transform: translateY(6px) scale(0.96); }
+      from { opacity: 0; transform: translateY(8px) scale(0.97); }
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
@@ -317,52 +518,130 @@
 
     @media (prefers-reduced-motion: reduce) {
       .card,
-      .skeleton {
+      .skeleton,
+      .open,
+      .open::after {
         animation: none;
+        transition: none;
       }
     }
   `;
 
+  const etymologyLanguages = [
+    'Proto-Indo-European', 'Proto-Germanic', 'West Germanic', 'Germanic', 'Indo-European',
+    'Old English', 'Middle English', 'Early Modern English',
+    'Classical Latin', 'Medieval Latin', 'Late Latin', 'Latin',
+    'Ancient Greek', 'Greek',
+    'Old French', 'Middle French', 'Anglo-Norman', 'Norman French', 'French',
+    'Old Norse', 'Norse', 'Middle Dutch', 'Dutch',
+    'Old High German', 'Middle High German', 'German',
+    'Italian', 'Spanish', 'Portuguese', 'Sanskrit', 'Arabic', 'Persian', 'Hebrew',
+    'Old Irish', 'Celtic', 'Gaelic', 'Welsh'
+  ];
+  const etymologyLanguagePattern = new RegExp(`\\b(${etymologyLanguages.join('|')})\\b`, 'g');
+
+  function highlightLanguages(text) {
+    return escapeHtml(text).replace(etymologyLanguagePattern, '<span class="lang">$1</span>');
+  }
+
   function getFormLabel(entry, index) {
     const count = entry.senses.length;
     const pos = entry.partsOfSpeech.join(', ') || 'word';
-    return `Form ${index + 1}: ${pos} (${count} ${count === 1 ? 'sense' : 'senses'})`;
+    return `Form ${index + 1} \u00b7 ${pos} \u00b7 ${count} ${count === 1 ? 'sense' : 'senses'}`;
   }
 
-  function renderQuickCardEntry(shadow, entry) {
-    shadow.querySelector('.ipa').textContent = entry.ipa;
-    const body = shadow.querySelector('.body');
-    body.innerHTML = `
+  function renderSkeleton(lines) {
+    return lines.map(width => `<span class="skeleton ${width}"></span>`).join('');
+  }
+
+  function renderSenses(container, senses) {
+    const visible = senses.slice(0, quickCardSenseLimit);
+    const hiddenCount = senses.length - visible.length;
+
+    container.innerHTML = `
       <ol class="senses">
-        ${entry.senses.map(definition => `<li class="sense">${escapeHtml(definition)}</li>`).join('')}
+        ${visible.map(definition => `<li class="sense">${escapeHtml(definition)}</li>`).join('')}
       </ol>
+      ${hiddenCount > 0 ? `<button class="more" type="button">Show ${hiddenCount} more ${hiddenCount === 1 ? 'sense' : 'senses'}</button>` : ''}
     `;
-    body.scrollTop = 0;
+
+    const more = container.querySelector('.more');
+    if (more) {
+      more.addEventListener('click', () => {
+        more.remove();
+        container.querySelector('.senses').insertAdjacentHTML('beforeend',
+          senses.slice(visible.length).map(definition => `<li class="sense">${escapeHtml(definition)}</li>`).join(''));
+      });
+    }
   }
 
-  function renderQuickCardResult(shadow, result) {
-    const body = shadow.querySelector('.body');
-
-    if (!result.ok) {
-      const message = result.notFound
-        ? 'No quick definition found for this word.'
-        : 'Couldn\u2019t load a quick definition.';
-      body.innerHTML = `<p class="message">${message}</p>`;
+  function renderEtymology(container, result) {
+    if (!result.ok || (!result.etymology && !result.rootAnalysis)) {
+      container.innerHTML = '<p class="message">No origin notes for this word yet.</p>';
       return;
     }
 
-    if (result.headword) shadow.querySelector('.word').textContent = result.headword;
+    container.innerHTML = `
+      ${result.etymology ? `<p class="origin">${highlightLanguages(result.etymology)}</p>` : ''}
+      ${result.rootAnalysis ? `<p class="roots">${highlightLanguages(result.rootAnalysis)}</p>` : ''}
+    `;
+  }
+
+  // Etymology is fetched per form and cached so switching back is instant
+  function showEntry(shadow, state, index) {
+    const entry = state.entries[index];
+    state.selected = index;
+
+    shadow.querySelector('.ipa').textContent = entry.ipa;
+    shadow.querySelector('.pos').textContent = entry.partsOfSpeech.join(' · ') || 'word';
+    shadow.querySelector('.pos').hidden = false;
+    shadow.querySelector('.form-select').value = String(index);
+
+    renderSenses(shadow.querySelector('.definitions'), entry.senses);
+    shadow.querySelector('.scroll').scrollTop = 0;
+
+    const originSection = shadow.querySelector('.origin-section');
+    originSection.hidden = false;
+    const originBody = shadow.querySelector('.origin-body');
+    const entryIndex = entry.entryIndex;
+
+    if (state.etymology.has(entryIndex)) {
+      renderEtymology(originBody, state.etymology.get(entryIndex));
+      return;
+    }
+
+    originBody.innerHTML = renderSkeleton(['', 'mid', 'short']);
+    requestEtymology(state.word, entryIndex).then(result => {
+      state.etymology.set(entryIndex, result);
+      if (state.token !== cardRequestToken || state.selected !== index) return;
+      renderEtymology(originBody, result);
+    });
+  }
+
+  function renderQuickCardResult(shadow, result, state) {
+    const definitions = shadow.querySelector('.definitions');
+
+    if (!result.ok) {
+      definitions.innerHTML = result.notFound
+        ? '<p class="message">No entry found for this word. The full dictionary may still have suggestions.</p>'
+        : '<p class="message">Couldn’t load a quick definition. Check your connection and try again.</p>';
+      return;
+    }
+
+    state.word = result.headword || state.word;
+    state.entries = result.entries;
+    shadow.querySelector('.word').textContent = state.word;
 
     if (result.entries.length > 1) {
-      const select = shadow.querySelector('.forms');
+      const select = shadow.querySelector('.form-select');
       select.innerHTML = result.entries
         .map((entry, index) => `<option value="${index}">${escapeHtml(getFormLabel(entry, index))}</option>`)
         .join('');
-      select.addEventListener('change', () => renderQuickCardEntry(shadow, result.entries[Number(select.value)]));
-      select.hidden = false;
+      select.addEventListener('change', () => showEntry(shadow, state, Number(select.value)));
+      shadow.querySelector('.forms').hidden = false;
     }
 
-    renderQuickCardEntry(shadow, result.entries[0]);
+    showEntry(shadow, state, 0);
   }
 
   function renderQuickCard(word, range) {
@@ -376,7 +655,7 @@
     removeHint();
     removeCard();
     activeWord = cleanWord;
-    const requestToken = ++cardRequestToken;
+    const state = { token: ++cardRequestToken, word: cleanWord, entries: [], selected: 0, etymology: new Map() };
 
     const host = document.createElement('div');
     host.id = cardHostId;
@@ -387,18 +666,34 @@
     const shadow = host.attachShadow({ mode: 'open' });
     shadow.innerHTML = `
       <style>${quickCardStyles}</style>
-      <div class="card" role="dialog" aria-label="Quick definition of ${escapeAttribute(cleanWord)}">
+      <div class="card" role="dialog" aria-label="Quick look at ${escapeAttribute(cleanWord)}">
         <div class="header">
-          <span class="word">${escapeHtml(cleanWord)}</span>
-          <span class="ipa"></span>
-          <button class="close" type="button" aria-label="Close quick definition">×</button>
+          <div class="title">
+            <span class="word">${escapeHtml(cleanWord)}</span>
+            <div class="meta">
+              <span class="ipa"></span>
+              <span class="pos" hidden></span>
+            </div>
+          </div>
+          <button class="close" type="button" aria-label="Close">×</button>
         </div>
-        <select class="forms" aria-label="Word forms" hidden></select>
-        <div class="body" aria-live="polite">
-          <span class="skeleton"></span>
-          <span class="skeleton short"></span>
+        <div class="forms" hidden>
+          <select class="form-select" aria-label="Word forms"></select>
         </div>
-        <button class="open" type="button">Open full entry</button>
+        <div class="scroll">
+          <section class="section">
+            <h3 class="label">Meaning</h3>
+            <div class="definitions" aria-live="polite">${renderSkeleton(['', 'mid', '', 'short'])}</div>
+          </section>
+          <section class="section origin-section" hidden>
+            <h3 class="label">Origin</h3>
+            <div class="origin-body" aria-live="polite"></div>
+          </section>
+        </div>
+        <div class="footer">
+          <span class="brand">Advanced English Dictionary</span>
+          <button class="open" type="button">Full entry</button>
+        </div>
       </div>
     `;
 
@@ -415,9 +710,21 @@
     document.documentElement.appendChild(host);
     placeCard(host, anchorRect);
 
+    // Sections load at different times; keep the card on screen as it grows
+    if (typeof ResizeObserver === 'function') {
+      const resizeObserver = new ResizeObserver(() => {
+        if (!host.isConnected) {
+          resizeObserver.disconnect();
+          return;
+        }
+        placeCard(host, anchorRect);
+      });
+      resizeObserver.observe(shadow.querySelector('.card'));
+    }
+
     requestQuickDefinition(cleanWord).then(result => {
-      if (requestToken !== cardRequestToken || !host.isConnected) return;
-      renderQuickCardResult(shadow, result);
+      if (state.token !== cardRequestToken || !host.isConnected) return;
+      renderQuickCardResult(shadow, result, state);
       placeCard(host, anchorRect);
     });
   }

@@ -91,7 +91,7 @@ async function addRecentSearch(word) {
   return nextSearches;
 }
 
-async function fetchDictionaryEntry(word, settings) {
+async function fetchDictionaryEntry(word, settings, section = 'basic', extraParams = {}) {
   const cleanWord = sanitizeWord(word);
   if (!cleanWord) {
     throw new Error('Enter a word to search.');
@@ -103,7 +103,7 @@ async function fetchDictionaryEntry(word, settings) {
       Accept: 'application/json',
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ word: cleanWord, section: 'basic' })
+    body: JSON.stringify({ word: cleanWord, section, ...extraParams })
   });
 
   if (!response.ok) {

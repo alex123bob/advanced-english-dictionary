@@ -62,7 +62,7 @@ async function lookupQuickDefinition(word) {
 
   try {
     const data = await fetchDictionaryEntry(cleanWord, await getSettings());
-    const entries = (data.entries || []).map(entry => {
+    const entries = (data.entries || []).map((entry, index) => {
       const meanings = entry.meanings_summary || [];
       const senses = [];
       meanings.forEach(meaning => {
@@ -72,6 +72,7 @@ async function lookupQuickDefinition(word) {
       });
 
       return {
+        entryIndex: entry.entry_index != null ? entry.entry_index : index,
         ipa: entry.ipa || '',
         partsOfSpeech: meanings.map(meaning => meaning.part_of_speech).filter(Boolean),
         senses
@@ -88,6 +89,27 @@ async function lookupQuickDefinition(word) {
   }
 }
 
+async function lookupQuickEtymology(word, entryIndex) {
+  const cleanWord = getSearchableSelection(word);
+  if (!cleanWord) {
+    return { ok: false, notFound: true };
+  }
+
+  try {
+    const data = await fetchDictionaryEntry(cleanWord, await getSettings(), 'etymology', { entry_index: entryIndex || 0 });
+    const etymology = data.etymology;
+    if (!etymology) {
+      return { ok: false, notFound: true };
+    }
+
+    return typeof etymology === 'string'
+      ? { ok: true, etymology, rootAnalysis: '' }
+      : { ok: true, etymology: etymology.etymology || '', rootAnalysis: etymology.root_analysis || '' };
+  } catch (error) {
+    return { ok: false, notFound: isLookupNotFoundError(error), error: error.message };
+  }
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'OPEN_DICTIONARY_SEARCH') {
     (async () => {
@@ -98,6 +120,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === 'QUICK_DEFINITION_LOOKUP') {
     lookupQuickDefinition(message.word).then(sendResponse);
+    return true;
+  }
+
+  if (message.type === 'QUICK_ETYMOLOGY_LOOKUP') {
+    lookupQuickEtymology(message.word, message.entryIndex).then(sendResponse);
     return true;
   }
 
