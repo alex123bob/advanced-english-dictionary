@@ -762,8 +762,8 @@
   {
     "word": "clandestine",
     "date": "2026-10-30",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-30T12:13:33.506250+00:00",
     "difficulty": null,
     "category": null
   },
@@ -994,6 +994,14 @@
   {
     "word": "frugal",
     "date": "2026-11-28",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "demographic",
+    "date": "2026-11-29",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
