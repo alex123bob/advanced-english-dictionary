@@ -48,18 +48,48 @@
     window.clearTimeout(hintTimer);
   }
 
-  function getSelectedLookup() {
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return null;
+  // Selections inside open shadow roots (e.g. msn.com articles) are retargeted to the shadow
+  // host by getRangeAt, which has no usable rect. Rebuild the real range with getComposedRanges,
+  // and fall back to anchoring at the mouse when that is unavailable (Chrome < 137).
+  function getComposedSelectionRange(selection, shadowRoots) {
+    if (typeof selection.getComposedRanges !== 'function' || shadowRoots.length === 0) return null;
 
-    const selectedText = selection.toString().trim();
-    const word = getSearchableSelection(selectedText);
+    try {
+      const staticRange = selection.getComposedRanges({ shadowRoots })[0];
+      if (!staticRange) return null;
+      const range = document.createRange();
+      range.setStart(staticRange.startContainer, staticRange.startOffset);
+      range.setEnd(staticRange.endContainer, staticRange.endOffset);
+      return range;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function hasUsableRect(range) {
+    const rect = range.getBoundingClientRect();
+    return !!rect && (rect.width > 0 || rect.height > 0);
+  }
+
+  // Minimal stand-in for a Range so getAnchorRect can place the card at a point
+  function createPointRange(x, y) {
+    const rect = { left: x, top: y - 8, bottom: y + 8, width: 0, height: 16 };
+    return { getClientRects: () => [], getBoundingClientRect: () => rect };
+  }
+
+  function getSelectedLookup(pointerInfo) {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return null;
+
+    const word = getSearchableSelection(selection.toString().trim());
     if (!word) return null;
 
-    return {
-      word,
-      range: selection.getRangeAt(0).cloneRange()
-    };
+    let range = selection.getRangeAt(0).cloneRange();
+    if (!hasUsableRect(range) && pointerInfo) {
+      range = getComposedSelectionRange(selection, pointerInfo.shadowRoots)
+        || (pointerInfo.hasPoint ? createPointRange(pointerInfo.x, pointerInfo.y) : range);
+    }
+    return { word, range };
   }
 
   function clamp(value, min, max) {
@@ -740,8 +770,19 @@
     if (isEventFromCard(event) || (event && event.key === 'Escape')) return;
 
     window.clearTimeout(selectionTimer);
+    // Capture shadow roots now: composedPath() is empty once the event has finished dispatching
+    const hasPoint = !!event && typeof event.clientX === 'number';
+    const pathRoots = event && typeof event.composedPath === 'function'
+      ? event.composedPath().filter(node => node instanceof ShadowRoot)
+      : [];
+    const pointerInfo = {
+      hasPoint,
+      x: hasPoint ? event.clientX : 0,
+      y: hasPoint ? event.clientY : 0,
+      shadowRoots: pathRoots.length || !hasPoint ? pathRoots : getShadowRootsAtPoint(event.clientX, event.clientY).roots
+    };
     selectionTimer = window.setTimeout(() => {
-      const selectionInfo = getSelectedLookup();
+      const selectionInfo = getSelectedLookup(pointerInfo);
       if (selectionInfo) {
         renderQuickCard(selectionInfo.word, selectionInfo.range);
       }
@@ -981,7 +1022,47 @@
     return event => event.ctrlKey; // safe fallback
   }
 
-  function getWordRangeAtPoint(x, y) {
+  // Open shadow roots (e.g. msn.com articles) hide their text from document.caretRangeFromPoint,
+  // which returns the shadow host instead of a text node, so descend into them explicitly
+  function getShadowRootsAtPoint(x, y) {
+    const roots = [];
+    let element = document.elementFromPoint(x, y);
+    while (element && element.shadowRoot) {
+      const inner = element.shadowRoot.elementFromPoint(x, y);
+      roots.push(element.shadowRoot);
+      if (!inner || inner === element) break;
+      element = inner;
+    }
+    return { roots, element };
+  }
+
+  function findTextRangeInElement(element, x, y) {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    const probe = document.createRange();
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      if (!node.textContent.trim()) continue;
+      probe.selectNodeContents(node);
+      const hit = Array.from(probe.getClientRects()).some(rect =>
+        x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom);
+      if (!hit) continue;
+
+      for (let i = 0; i < node.length; i++) {
+        probe.setStart(node, i);
+        probe.setEnd(node, i + 1);
+        const box = probe.getBoundingClientRect();
+        if (x >= box.left && x <= box.right && y >= box.top && y <= box.bottom) {
+          const caret = document.createRange();
+          caret.setStart(node, i);
+          caret.setEnd(node, i);
+          return caret;
+        }
+      }
+    }
+    return null;
+  }
+
+  function getCaretRangeAtPoint(x, y) {
     let range = null;
     if (document.caretRangeFromPoint) {
       range = document.caretRangeFromPoint(x, y);
@@ -993,6 +1074,29 @@
         range.setEnd(pos.offsetNode, pos.offset);
       }
     }
+    if (range && range.startContainer.nodeType === Node.TEXT_NODE) return range;
+
+    const { roots, element } = getShadowRootsAtPoint(x, y);
+    if (roots.length === 0) return range;
+
+    if (document.caretPositionFromPoint) {
+      try {
+        const pos = document.caretPositionFromPoint(x, y, { shadowRoots: roots });
+        if (pos && pos.offsetNode && pos.offsetNode.nodeType === Node.TEXT_NODE) {
+          const shadowRange = document.createRange();
+          shadowRange.setStart(pos.offsetNode, pos.offset);
+          shadowRange.setEnd(pos.offsetNode, pos.offset);
+          return shadowRange;
+        }
+      } catch (error) {
+        // Older Chrome ignores the options argument; fall through to the text scan
+      }
+    }
+    return element ? findTextRangeInElement(element, x, y) : range;
+  }
+
+  function getWordRangeAtPoint(x, y) {
+    const range = getCaretRangeAtPoint(x, y);
 
     if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) return null;
 
@@ -1091,17 +1195,7 @@
     function showHighlight(x, y) {
       removeHighlight();
 
-      let range = null;
-      if (document.caretRangeFromPoint) {
-        range = document.caretRangeFromPoint(x, y);
-      } else if (document.caretPositionFromPoint) {
-        const pos = document.caretPositionFromPoint(x, y);
-        if (pos) {
-          range = document.createRange();
-          range.setStart(pos.offsetNode, pos.offset);
-          range.setEnd(pos.offsetNode, pos.offset);
-        }
-      }
+      const range = getCaretRangeAtPoint(x, y);
       if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) return;
 
       const textNode = range.startContainer;
@@ -1240,17 +1334,7 @@
       removeHighlight();
 
       // Get the range for the tracked word to position the highlight
-      let range = null;
-      if (document.caretRangeFromPoint) {
-        range = document.caretRangeFromPoint(x, y);
-      } else if (document.caretPositionFromPoint) {
-        const pos = document.caretPositionFromPoint(x, y);
-        if (pos) {
-          range = document.createRange();
-          range.setStart(pos.offsetNode, pos.offset);
-          range.setEnd(pos.offsetNode, pos.offset);
-        }
-      }
+      const range = getCaretRangeAtPoint(x, y);
       if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) return;
 
       const textNode = range.startContainer;
