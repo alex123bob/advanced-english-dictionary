@@ -770,8 +770,8 @@
   {
     "word": "cogent",
     "date": "2026-10-31",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-10-31T11:45:30.544042+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1002,6 +1002,14 @@
   {
     "word": "demographic",
     "date": "2026-11-29",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "critique",
+    "date": "2026-11-30",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
