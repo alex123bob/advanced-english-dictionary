@@ -786,8 +786,8 @@
   {
     "word": "ominous",
     "date": "2026-11-02",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-02T14:53:26.221903+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1018,6 +1018,14 @@
   {
     "word": "verify",
     "date": "2026-12-01",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "juxtapose",
+    "date": "2026-12-02",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
