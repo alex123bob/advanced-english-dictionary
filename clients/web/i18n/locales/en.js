@@ -164,6 +164,22 @@
             "extWebsiteUrl": "Website base URL",
             "extSaveSettings": "Save settings",
             "extSaved": "Saved.",
-            "extReloadNote": "Changes take effect on the next page load."
+            "extReloadNote": "Changes take effect on the next page load.",
+            "cardLanguage": "Language",
+            "cardQuickLook": "Quick look at {word}",
+            "cardClose": "Close",
+            "cardWordForms": "Word forms",
+            "cardWord": "word",
+            "cardForm": "Form {n}",
+            "cardSenseCountOne": "1 sense",
+            "cardSenseCountMany": "{count} senses",
+            "cardMeaning": "Meaning",
+            "cardOrigin": "Origin",
+            "cardShowMoreOne": "Show 1 more sense",
+            "cardShowMoreMany": "Show {count} more senses",
+            "cardNoOrigin": "No origin notes for this word yet.",
+            "cardNoEntry": "No entry found for this word. The full dictionary may still have suggestions.",
+            "cardLoadError": "Couldn’t load a quick definition. Check your connection and try again.",
+            "cardFullEntry": "Full entry"
     });
 })();

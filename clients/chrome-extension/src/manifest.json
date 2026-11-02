@@ -28,6 +28,9 @@
         "<all_urls>"
       ],
       "js": [
+        "i18n/i18n.js",
+        "i18n/locales/en.js",
+        "i18n/locales/zh-cn.js",
         "shared.js",
         "card-themes.js",
         "content-script.js"

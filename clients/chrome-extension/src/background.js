@@ -54,20 +54,50 @@ function isLookupNotFoundError(error) {
 }
 
 // Summary for the in-page card: every entry (form) with its basic definitions
-async function lookupQuickDefinition(word) {
+function hasContent(value) {
+  if (value == null) return false;
+  if (typeof value === 'string') return value.trim().length > 0;
+  if (Array.isArray(value)) return value.some(hasContent);
+  if (typeof value === 'object') return Object.values(value).some(hasContent);
+  return true;
+}
+
+// The API wraps translations in zh_data and/or a section key; unwrap to the payload
+function unwrapZhData(sectionZh, preferredKey) {
+  if (!hasContent(sectionZh)) return null;
+  if (typeof sectionZh === 'string') return sectionZh;
+  if (preferredKey && hasContent(sectionZh[preferredKey])) return sectionZh[preferredKey];
+  if (hasContent(sectionZh.zh_data)) return unwrapZhData(sectionZh.zh_data, preferredKey);
+  return sectionZh;
+}
+
+function findZhEntry(data, entryIndex, position) {
+  const zhEntries = data.basic_zh && Array.isArray(data.basic_zh.entries) ? data.basic_zh.entries : [];
+  return zhEntries.find(entry => Number(entry.entry_index) === Number(entryIndex)) || zhEntries[position] || null;
+}
+
+function getLangParams(lang) {
+  return lang && lang !== 'en' ? { lang } : {};
+}
+
+async function lookupQuickDefinition(word, lang) {
   const cleanWord = getSearchableSelection(word);
   if (!cleanWord) {
     return { ok: false, notFound: true };
   }
 
   try {
-    const data = await fetchDictionaryEntry(cleanWord, await getSettings());
+    const data = await fetchDictionaryEntry(cleanWord, await getSettings(), 'basic', getLangParams(lang));
     const entries = (data.entries || []).map((entry, index) => {
       const meanings = entry.meanings_summary || [];
+      const zhEntry = findZhEntry(data, entry.entry_index != null ? entry.entry_index : index, index);
       const senses = [];
-      meanings.forEach(meaning => {
-        (meaning.senses || []).forEach(sense => {
-          if (sense && sense.definition) senses.push(sense.definition);
+      meanings.forEach((meaning, meaningIndex) => {
+        const zhMeaning = zhEntry && Array.isArray(zhEntry.meanings_summary) ? zhEntry.meanings_summary[meaningIndex] : null;
+        (meaning.senses || []).forEach((sense, senseIndex) => {
+          if (!sense || !sense.definition) return;
+          const zhSense = zhMeaning && Array.isArray(zhMeaning.definitions) ? zhMeaning.definitions[senseIndex] : null;
+          senses.push(zhSense && hasContent(zhSense.definition) ? zhSense.definition : sense.definition);
         });
       });
 
@@ -89,15 +119,16 @@ async function lookupQuickDefinition(word) {
   }
 }
 
-async function lookupQuickEtymology(word, entryIndex) {
+async function lookupQuickEtymology(word, entryIndex, lang) {
   const cleanWord = getSearchableSelection(word);
   if (!cleanWord) {
     return { ok: false, notFound: true };
   }
 
   try {
-    const data = await fetchDictionaryEntry(cleanWord, await getSettings(), 'etymology', { entry_index: entryIndex || 0 });
-    const etymology = data.etymology;
+    const data = await fetchDictionaryEntry(cleanWord, await getSettings(), 'etymology', { entry_index: entryIndex || 0, ...getLangParams(lang) });
+    const zhEtymology = unwrapZhData(data.etymology_zh, 'etymology');
+    const etymology = hasContent(zhEtymology) ? zhEtymology : data.etymology;
     if (!etymology) {
       return { ok: false, notFound: true };
     }
@@ -119,12 +150,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.type === 'QUICK_DEFINITION_LOOKUP') {
-    lookupQuickDefinition(message.word).then(sendResponse);
+    lookupQuickDefinition(message.word, message.lang).then(sendResponse);
     return true;
   }
 
   if (message.type === 'QUICK_ETYMOLOGY_LOOKUP') {
-    lookupQuickEtymology(message.word, message.entryIndex).then(sendResponse);
+    lookupQuickEtymology(message.word, message.entryIndex, message.lang).then(sendResponse);
     return true;
   }
 

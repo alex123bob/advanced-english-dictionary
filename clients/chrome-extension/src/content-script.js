@@ -15,6 +15,9 @@
   let activeWord = '';
   let cardThemeId = DEFAULT_CARD_THEME;
   let cardRequestToken = 0;
+  let cardLanguage = 'en';
+  const i18n = window.AdvancedDictionaryI18n;
+  const languageStorageKey = 'advancedDictionaryCardLanguage';
   let selectionTimer = null;
   let hintTimer = null;
   let hoverDwellTimer = null;
@@ -35,6 +38,52 @@
   function removeElement(id) {
     const element = document.getElementById(id);
     if (element) element.remove();
+  }
+
+  function tr(key, replacements) {
+    return i18n.t(key, replacements || {}, cardLanguage);
+  }
+
+  function isSupportedLanguage(code) {
+    return i18n.getLanguages().some(language => language.code === code);
+  }
+
+  // Simplified Chinese is the only non-English dictionary language the API serves
+  function resolveSystemLanguage() {
+    const candidates = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language]);
+    for (const candidate of candidates) {
+      const code = String(candidate || '').toLowerCase().replace('_', '-');
+      if (code === 'zh' || code === 'zh-cn' || code === 'zh-sg' || code === 'zh-hans' || code.startsWith('zh-hans-')) return 'zh-cn';
+      if (code === 'en' || code.startsWith('en-')) return 'en';
+    }
+    return 'en';
+  }
+
+  function loadCardLanguage() {
+    return new Promise(resolve => {
+      const storage = globalThis.chrome && chrome.storage && chrome.storage.local;
+      const fallback = resolveSystemLanguage();
+      if (!storage) {
+        resolve(fallback);
+        return;
+      }
+      try {
+        storage.get(languageStorageKey, result => {
+          const saved = result && result[languageStorageKey];
+          resolve(saved && isSupportedLanguage(saved) ? saved : fallback);
+        });
+      } catch (_) {
+        resolve(fallback);
+      }
+    });
+  }
+
+  function saveCardLanguage(code) {
+    const storage = globalThis.chrome && chrome.storage && chrome.storage.local;
+    if (!storage) return;
+    try {
+      storage.set({ [languageStorageKey]: code });
+    } catch (_) {}
   }
 
   function removeCard() {
@@ -147,12 +196,12 @@
     });
   }
 
-  function requestQuickDefinition(word) {
-    return requestFromBackground({ type: 'QUICK_DEFINITION_LOOKUP', word });
+  function requestQuickDefinition(word, lang) {
+    return requestFromBackground({ type: 'QUICK_DEFINITION_LOOKUP', word, lang });
   }
 
-  function requestEtymology(word, entryIndex) {
-    return requestFromBackground({ type: 'QUICK_ETYMOLOGY_LOOKUP', word, entryIndex });
+  function requestEtymology(word, entryIndex, lang) {
+    return requestFromBackground({ type: 'QUICK_ETYMOLOGY_LOOKUP', word, entryIndex, lang });
   }
 
   function getAnchorRect(range) {
@@ -272,6 +321,34 @@
       font-weight: 700;
       letter-spacing: 0.06em;
       text-transform: uppercase;
+    }
+
+    .lang-picker {
+      flex: none;
+      margin: -2px 0 0 auto;
+    }
+
+    .lang-select {
+      box-sizing: border-box;
+      border: 1px solid rgba(var(--qc-accent-rgb), 0.18);
+      border-radius: 999px;
+      padding: 4px 10px;
+      background: var(--qc-field);
+      color: var(--qc-field-text);
+      font: inherit;
+      font-size: 11px;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .lang-select:hover {
+      border-color: rgba(var(--qc-accent-rgb), 0.38);
+    }
+
+    .lang-select:focus-visible {
+      outline: none;
+      border-color: rgba(var(--qc-warm-rgb), 0.6);
+      box-shadow: 0 0 0 3px rgba(var(--qc-warm-rgb), 0.22);
     }
 
     .close {
@@ -577,8 +654,9 @@
 
   function getFormLabel(entry, index) {
     const count = entry.senses.length;
-    const pos = entry.partsOfSpeech.join(', ') || 'word';
-    return `Form ${index + 1} \u00b7 ${pos} \u00b7 ${count} ${count === 1 ? 'sense' : 'senses'}`;
+    const pos = entry.partsOfSpeech.join(', ') || tr('cardWord');
+    const senseCount = count === 1 ? tr('cardSenseCountOne') : tr('cardSenseCountMany', { count });
+    return `${tr('cardForm', { n: index + 1 })} \u00b7 ${pos} \u00b7 ${senseCount}`;
   }
 
   function renderSkeleton(lines) {
@@ -593,7 +671,7 @@
       <ol class="senses">
         ${visible.map(definition => `<li class="sense">${escapeHtml(definition)}</li>`).join('')}
       </ol>
-      ${hiddenCount > 0 ? `<button class="more" type="button">Show ${hiddenCount} more ${hiddenCount === 1 ? 'sense' : 'senses'}</button>` : ''}
+      ${hiddenCount > 0 ? `<button class="more" type="button">${escapeHtml(hiddenCount === 1 ? tr('cardShowMoreOne') : tr('cardShowMoreMany', { count: hiddenCount }))}</button>` : ''}
     `;
 
     const more = container.querySelector('.more');
@@ -608,7 +686,7 @@
 
   function renderEtymology(container, result) {
     if (!result.ok || (!result.etymology && !result.rootAnalysis)) {
-      container.innerHTML = '<p class="message">No origin notes for this word yet.</p>';
+      container.innerHTML = `<p class="message">${escapeHtml(tr('cardNoOrigin'))}</p>`;
       return;
     }
 
@@ -624,7 +702,7 @@
     state.selected = index;
 
     shadow.querySelector('.ipa').textContent = entry.ipa;
-    shadow.querySelector('.pos').textContent = entry.partsOfSpeech.join(' · ') || 'word';
+    shadow.querySelector('.pos').textContent = entry.partsOfSpeech.join(' · ') || tr('cardWord');
     shadow.querySelector('.pos').hidden = false;
     shadow.querySelector('.form-select').value = String(index);
 
@@ -642,7 +720,9 @@
     }
 
     originBody.innerHTML = renderSkeleton(['', 'mid', 'short']);
-    requestEtymology(state.word, entryIndex).then(result => {
+    const language = cardLanguage;
+    requestEtymology(state.word, entryIndex, language).then(result => {
+      if (language !== cardLanguage) return;
       state.etymology.set(entryIndex, result);
       if (state.token !== cardRequestToken || state.selected !== index) return;
       renderEtymology(originBody, result);
@@ -653,9 +733,7 @@
     const definitions = shadow.querySelector('.definitions');
 
     if (!result.ok) {
-      definitions.innerHTML = result.notFound
-        ? '<p class="message">No entry found for this word. The full dictionary may still have suggestions.</p>'
-        : '<p class="message">Couldn’t load a quick definition. Check your connection and try again.</p>';
+      definitions.innerHTML = `<p class="message">${escapeHtml(tr(result.notFound ? 'cardNoEntry' : 'cardLoadError'))}</p>`;
       return;
     }
 
@@ -668,11 +746,43 @@
       select.innerHTML = result.entries
         .map((entry, index) => `<option value="${index}">${escapeHtml(getFormLabel(entry, index))}</option>`)
         .join('');
-      select.addEventListener('change', () => showEntry(shadow, state, Number(select.value)));
+      select.onchange = () => showEntry(shadow, state, Number(select.value));
       shadow.querySelector('.forms').hidden = false;
+    } else {
+      shadow.querySelector('.forms').hidden = true;
     }
 
     showEntry(shadow, state, 0);
+  }
+
+  function applyCardLabels(shadow, state) {
+    const card = shadow.querySelector('.card');
+    card.setAttribute('aria-label', tr('cardQuickLook', { word: state.word }));
+    shadow.querySelector('.close').setAttribute('aria-label', tr('cardClose'));
+    shadow.querySelector('.form-select').setAttribute('aria-label', tr('cardWordForms'));
+    shadow.querySelector('.lang-select').setAttribute('aria-label', tr('cardLanguage'));
+    shadow.querySelector('.meaning-label').textContent = tr('cardMeaning');
+    shadow.querySelector('.origin-label').textContent = tr('cardOrigin');
+    shadow.querySelector('.open').textContent = tr('cardFullEntry');
+  }
+
+  function loadQuickCard(shadow, state, host, anchorRect) {
+    const token = state.token;
+    const language = cardLanguage;
+    applyCardLabels(shadow, state);
+    state.entries = [];
+    state.etymology = new Map();
+    shadow.querySelector('.definitions').innerHTML = renderSkeleton(['', 'mid', '', 'short']);
+    shadow.querySelector('.origin-section').hidden = true;
+    shadow.querySelector('.forms').hidden = true;
+    shadow.querySelector('.ipa').textContent = '';
+    shadow.querySelector('.pos').hidden = true;
+
+    requestQuickDefinition(state.word, language).then(result => {
+      if (token !== cardRequestToken || language !== cardLanguage || !host.isConnected) return;
+      renderQuickCardResult(shadow, result, state);
+      placeCard(host, anchorRect);
+    });
   }
 
   function renderQuickCard(word, range) {
@@ -697,7 +807,7 @@
     const shadow = host.attachShadow({ mode: 'open' });
     shadow.innerHTML = `
       <style>:host { ${getCardThemeCss(cardThemeId)} }${quickCardStyles}</style>
-      <div class="card" role="dialog" aria-label="Quick look at ${escapeAttribute(cleanWord)}">
+      <div class="card" role="dialog" aria-label="${escapeAttribute(tr('cardQuickLook', { word: cleanWord }))}">
         <div class="header">
           <div class="title">
             <span class="word">${escapeHtml(cleanWord)}</span>
@@ -706,24 +816,29 @@
               <span class="pos" hidden></span>
             </div>
           </div>
-          <button class="close" type="button" aria-label="Close">×</button>
+          <div class="lang-picker">
+            <select class="lang-select" aria-label="${escapeAttribute(tr('cardLanguage'))}">
+              ${i18n.getLanguages().map(language => `<option value="${escapeAttribute(language.code)}"${language.code === cardLanguage ? ' selected' : ''}>${escapeHtml(language.nativeLabel || language.label)}</option>`).join('')}
+            </select>
+          </div>
+          <button class="close" type="button" aria-label="${escapeAttribute(tr('cardClose'))}">×</button>
         </div>
         <div class="forms" hidden>
-          <select class="form-select" aria-label="Word forms"></select>
+          <select class="form-select" aria-label="${escapeAttribute(tr('cardWordForms'))}"></select>
         </div>
         <div class="scroll">
           <section class="section">
-            <h3 class="label">Meaning</h3>
+            <h3 class="label meaning-label">${escapeHtml(tr('cardMeaning'))}</h3>
             <div class="definitions" aria-live="polite">${renderSkeleton(['', 'mid', '', 'short'])}</div>
           </section>
           <section class="section origin-section" hidden>
-            <h3 class="label">Origin</h3>
+            <h3 class="label origin-label">${escapeHtml(tr('cardOrigin'))}</h3>
             <div class="origin-body" aria-live="polite"></div>
           </section>
         </div>
         <div class="footer">
           <span class="brand">Advanced English Dictionary</span>
-          <button class="open" type="button">Full entry</button>
+          <button class="open" type="button">${escapeHtml(tr('cardFullEntry'))}</button>
         </div>
       </div>
     `;
@@ -753,11 +868,13 @@
       resizeObserver.observe(shadow.querySelector('.card'));
     }
 
-    requestQuickDefinition(cleanWord).then(result => {
-      if (state.token !== cardRequestToken || !host.isConnected) return;
-      renderQuickCardResult(shadow, result, state);
-      placeCard(host, anchorRect);
+    shadow.querySelector('.lang-select').addEventListener('change', event => {
+      cardLanguage = i18n.normalizeLanguage(event.target.value);
+      saveCardLanguage(cardLanguage);
+      loadQuickCard(shadow, state, host, anchorRect);
     });
+
+    loadQuickCard(shadow, state, host, anchorRect);
   }
 
   function isEventFromCard(event) {
@@ -1489,6 +1606,7 @@
     }
 
     cardThemeId = settings.cardTheme || DEFAULT_CARD_THEME;
+    cardLanguage = await loadCardLanguage();
 
     const triggerMode = settings.triggerMode || 'text-selection';
     const modifierKey = settings.modifierKey || 'auto';

@@ -165,6 +165,22 @@
             "extWebsiteUrl": "网站地址",
             "extSaveSettings": "保存设置",
             "extSaved": "已保存。",
-            "extReloadNote": "更改将在刷新页面后生效。"
+            "extReloadNote": "更改将在刷新页面后生效。",
+            "cardLanguage": "语言",
+            "cardQuickLook": "速览 {word}",
+            "cardClose": "关闭",
+            "cardWordForms": "词形",
+            "cardWord": "单词",
+            "cardForm": "词形 {n}",
+            "cardSenseCountOne": "1 条释义",
+            "cardSenseCountMany": "{count} 条释义",
+            "cardMeaning": "释义",
+            "cardOrigin": "词源",
+            "cardShowMoreOne": "再显示 1 条释义",
+            "cardShowMoreMany": "再显示 {count} 条释义",
+            "cardNoOrigin": "这个单词暂无词源说明。",
+            "cardNoEntry": "没有找到这个单词的词条。完整词典里可能有相近建议。",
+            "cardLoadError": "无法加载快速释义，请检查网络后重试。",
+            "cardFullEntry": "完整词条"
     });
 })();
