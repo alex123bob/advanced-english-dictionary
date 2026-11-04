@@ -802,8 +802,8 @@
   {
     "word": "labyrinth",
     "date": "2026-11-04",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-04T13:51:28.133881+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1034,6 +1034,14 @@
   {
     "word": "audacious",
     "date": "2026-12-03",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "attribute",
+    "date": "2026-12-04",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
