@@ -810,8 +810,8 @@
   {
     "word": "erudite",
     "date": "2026-11-05",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-05T14:04:25.824571+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1042,6 +1042,14 @@
   {
     "word": "attribute",
     "date": "2026-12-04",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "rigorous",
+    "date": "2026-12-05",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
