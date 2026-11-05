@@ -786,24 +786,24 @@
   {
     "word": "ominous",
     "date": "2026-11-02",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-02T14:53:26.221903+00:00",
     "difficulty": null,
     "category": null
   },
   {
     "word": "prioritize",
     "date": "2026-11-03",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-03T13:42:11.254121+00:00",
     "difficulty": null,
     "category": null
   },
   {
     "word": "labyrinth",
     "date": "2026-11-04",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-04T13:51:28.133881+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1018,6 +1018,30 @@
   {
     "word": "verify",
     "date": "2026-12-01",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "juxtapose",
+    "date": "2026-12-02",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "audacious",
+    "date": "2026-12-03",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "attribute",
+    "date": "2026-12-04",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
