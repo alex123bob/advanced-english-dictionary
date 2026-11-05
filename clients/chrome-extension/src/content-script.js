@@ -224,8 +224,8 @@
     let top = anchorRect.top - height - cardGapPx;
     if (top < cardEdgePx) top = anchorRect.bottom + cardGapPx;
 
-    host.style.left = `${window.scrollX + clamp(centerX - width / 2, cardEdgePx, viewportWidth - width - cardEdgePx)}px`;
-    host.style.top = `${window.scrollY + clamp(top, cardEdgePx, viewportHeight - height - cardEdgePx)}px`;
+    host.style.setProperty('left', `${window.scrollX + clamp(centerX - width / 2, cardEdgePx, viewportWidth - width - cardEdgePx)}px`, 'important');
+    host.style.setProperty('top', `${window.scrollY + clamp(top, cardEdgePx, viewportHeight - height - cardEdgePx)}px`, 'important');
   }
 
   const quickCardStyles = `
@@ -239,6 +239,10 @@
     }
 
     .card {
+      all: initial;
+      color: var(--qc-ink);
+      font: 400 16px/normal Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
       position: relative;
       box-sizing: border-box;
       display: flex;
@@ -800,9 +804,11 @@
 
     const host = document.createElement('div');
     host.id = cardHostId;
-    host.style.position = 'absolute';
-    host.style.zIndex = '2147483647';
-    host.style.pointerEvents = 'auto';
+    // Cut off page CSS and inherited properties (e.g. Baidu's global div/line-height rules)
+    host.style.setProperty('display', 'block', 'important');
+    host.style.setProperty('position', 'absolute', 'important');
+    host.style.setProperty('z-index', '2147483647', 'important');
+    host.style.setProperty('pointer-events', 'auto', 'important');
 
     const shadow = host.attachShadow({ mode: 'open' });
     shadow.innerHTML = `
@@ -1290,9 +1296,10 @@
   }
 
   function setupTextSelectionListeners() {
-    document.addEventListener('mouseup', scheduleSelectionLookup);
-    document.addEventListener('keyup', scheduleSelectionLookup);
-    document.addEventListener('touchend', scheduleSelectionLookup, { passive: true });
+    // Capture phase so pages that stopPropagation on mouse/key events still trigger lookups
+    document.addEventListener('mouseup', scheduleSelectionLookup, true);
+    document.addEventListener('keyup', scheduleSelectionLookup, true);
+    document.addEventListener('touchend', scheduleSelectionLookup, { capture: true, passive: true });
   }
 
   function setupModifierClickListeners(isModifierHeld) {
