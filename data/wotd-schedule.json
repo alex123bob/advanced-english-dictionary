@@ -818,8 +818,8 @@
   {
     "word": "exemplary",
     "date": "2026-11-06",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-06T13:49:00.674090+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1050,6 +1050,14 @@
   {
     "word": "rigorous",
     "date": "2026-12-05",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "imminent",
+    "date": "2026-12-06",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
