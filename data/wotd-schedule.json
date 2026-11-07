@@ -826,8 +826,8 @@
   {
     "word": "paramount",
     "date": "2026-11-07",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-07T12:32:09.609529+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1058,6 +1058,14 @@
   {
     "word": "imminent",
     "date": "2026-12-06",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "disparate",
+    "date": "2026-12-07",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
