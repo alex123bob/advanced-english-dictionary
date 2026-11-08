@@ -834,8 +834,8 @@
   {
     "word": "conventional",
     "date": "2026-11-08",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-08T12:50:14.966453+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1066,6 +1066,14 @@
   {
     "word": "disparate",
     "date": "2026-12-07",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "terminate",
+    "date": "2026-12-08",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
