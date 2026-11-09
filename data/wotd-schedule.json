@@ -842,8 +842,8 @@
   {
     "word": "bureaucracy",
     "date": "2026-11-09",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-09T15:20:42.420584+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1074,6 +1074,14 @@
   {
     "word": "terminate",
     "date": "2026-12-08",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "discrepancy",
+    "date": "2026-12-09",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
