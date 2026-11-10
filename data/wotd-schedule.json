@@ -850,8 +850,8 @@
   {
     "word": "minimize",
     "date": "2026-11-10",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-10T14:25:33.328759+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1082,6 +1082,14 @@
   {
     "word": "discrepancy",
     "date": "2026-12-09",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "mediate",
+    "date": "2026-12-10",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
