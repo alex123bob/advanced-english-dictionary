@@ -866,8 +866,8 @@
   {
     "word": "derive",
     "date": "2026-11-12",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-12T14:42:38.132531+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1098,6 +1098,14 @@
   {
     "word": "feasible",
     "date": "2026-12-11",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "nuance",
+    "date": "2026-12-12",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
