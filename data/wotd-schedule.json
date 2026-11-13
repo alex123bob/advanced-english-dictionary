@@ -874,8 +874,8 @@
   {
     "word": "abstract",
     "date": "2026-11-13",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-13T13:59:25.473522+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1106,6 +1106,14 @@
   {
     "word": "nuance",
     "date": "2026-12-12",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "circumspect",
+    "date": "2026-12-13",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
