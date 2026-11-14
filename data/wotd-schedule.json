@@ -882,8 +882,8 @@
   {
     "word": "anecdote",
     "date": "2026-11-14",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-14T13:01:23.307944+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1114,6 +1114,14 @@
   {
     "word": "circumspect",
     "date": "2026-12-13",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "debacle",
+    "date": "2026-12-14",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
