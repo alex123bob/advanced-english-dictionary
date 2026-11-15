@@ -890,8 +890,8 @@
   {
     "word": "impeccable",
     "date": "2026-11-15",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-15T13:29:57.268535+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1122,6 +1122,14 @@
   {
     "word": "debacle",
     "date": "2026-12-14",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "skeptical",
+    "date": "2026-12-15",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
