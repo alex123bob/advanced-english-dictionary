@@ -1,33 +1,17 @@
-const CACHE_NAME = 'advanced-dictionary-v1';
-const APP_SHELL = ['/', '/index.html', '/config.js', '/manifest.webmanifest'];
-
-self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
+// Retired: the dictionary no longer uses a service worker (lookups need the network anyway).
+// This file stays deployed so phones that registered an older worker pick it up on their next
+// update check, clear the dictionary's caches, and unregister. Do not delete it for months.
+// It has no fetch handler, so it never touches any request on this origin.
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
-  );
-  self.clients.claim();
-});
-
-self.addEventListener('fetch', event => {
-  const request = event.request;
-  if (request.method !== 'GET') return;
-  // Let the browser handle media byte-range requests (audio playback/seeking) directly —
-  // the Cache API cannot store 206 Partial Content responses.
-  if (request.headers.has('range')) return;
-  if (new URL(request.url).origin !== self.location.origin) return;
-
-  event.respondWith(
-    caches.match(request).then(cached => cached || fetch(request).then(response => {
-      if (response.ok && response.type === 'basic') {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
-      }
-      return response;
-    }).catch(() => caches.match('/index.html')))
-  );
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(k => k.startsWith('advanced-dictionary')).map(k => caches.delete(k)));
+    await self.registration.unregister();
+    const clients = await self.clients.matchAll({ type: 'window' });
+    clients.forEach(c => c.navigate(c.url));
+  })());
 });

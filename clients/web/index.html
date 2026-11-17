@@ -381,17 +381,13 @@
     <script src="comparison-controller.js"></script>
     <script src="script.js" onload="console.log('script.js loaded successfully')" onerror="console.error('Failed to load script.js')"></script>
     <script>
-      var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      // No service worker: lookups need the network, and a root-scope worker once served stale
+      // pages for every app on this origin. Clean up any worker/cache left by older versions.
       if ('serviceWorker' in navigator) {
-        if (isIOS) {
-          window.addEventListener('load', () => navigator.serviceWorker.register('service-worker.js'));
-        } else {
-          navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(reg => reg.unregister()));
-          if ('caches' in window) {
-            caches.keys().then(keys => keys.forEach(key => caches.delete(key)));
-          }
-        }
+        navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(reg => reg.unregister()));
+      }
+      if ('caches' in window) {
+        caches.keys().then(keys => keys.filter(k => k.startsWith('advanced-dictionary')).forEach(k => caches.delete(k)));
       }
     </script>
 </body>
