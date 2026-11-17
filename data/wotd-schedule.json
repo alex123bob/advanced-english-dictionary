@@ -906,8 +906,8 @@
   {
     "word": "enhance",
     "date": "2026-11-17",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-17T15:33:51.473972+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1138,6 +1138,14 @@
   {
     "word": "relevance",
     "date": "2026-12-16",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "spontaneous",
+    "date": "2026-12-17",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
