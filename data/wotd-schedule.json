@@ -922,8 +922,8 @@
   {
     "word": "incentive",
     "date": "2026-11-19",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-19T15:19:43.462256+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1154,6 +1154,14 @@
   {
     "word": "catalyst",
     "date": "2026-12-18",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "complacent",
+    "date": "2026-12-19",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
