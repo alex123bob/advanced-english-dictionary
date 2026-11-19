@@ -1391,3 +1391,47 @@ input:focus-visible,
         transition-duration: 0.01ms !important;
     }
 }
+
+/* Inflected query note: "got — simple past of get" */
+.inflection-note {
+    margin: 0.25rem 0 0.5rem;
+    color: var(--ink-muted);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.inflection-note .inflection-sep {
+    margin: 0 0.3rem;
+}
+
+.inflection-note[hidden] {
+    display: none;
+}
+
+.inflection-note .inflection-query {
+    font-style: italic;
+    color: var(--ink-strong);
+}
+
+.inflection-note strong {
+    color: var(--primary-dark);
+}
+
+.inflection-note .inflection-exact {
+    display: block;
+    margin-top: 0.35rem;
+    padding: 0.1rem 0.6rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--primary-color);
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.inflection-note .inflection-exact:hover,
+.inflection-note .inflection-exact:focus-visible {
+    background: var(--surface-2);
+    outline: none;
+}
