@@ -527,7 +527,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const query = searchInput.value.trim();
             if (query && currentWordData && currentWord) {
-                handleSearch({ skipBrowserHistory: true, skipSearchHistory: true });
+                handleSearch({ skipBrowserHistory: true, skipSearchHistory: true, exact: currentSearchExact });
             }
         });
 
@@ -705,9 +705,58 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    // "got — simple past · past participle of get", shown when the API served the
+    // lemma for an inflected query. If the query word also has real senses of its own
+    // (e.g. "saw" the tool), offer its exact entry.
+    function renderInflectionNote(basicData) {
+        const note = document.getElementById('inflectionNote');
+        if (!note) return;
+
+        const inflections = Array.isArray(basicData.inflection_of) ? basicData.inflection_of : [];
+        if (!basicData.query || !inflections.length) {
+            note.hidden = true;
+            note.innerHTML = '';
+            return;
+        }
+
+        const formLabel = form => {
+            const key = `inflectionForm.${form}`;
+            const label = t(key);
+            return label === key ? form : label;
+        };
+        const forms = inflections
+            .map(item => t('inflectionOf', {
+                form: escapeHtml((item.forms || []).map(formLabel).join(' / ')),
+                lemma: `<strong>${escapeHtml(item.lemma)}</strong>`
+            }))
+            .join(escapeHtml(t('inflectionJoiner')));
+
+        let html = `<span class="inflection-query">${escapeHtml(basicData.query)}</span>`
+            + `<span class="inflection-sep" aria-hidden="true">—</span>`
+            + `<span class="inflection-forms">${forms}</span>`;
+
+        if (basicData.surface && Array.isArray(basicData.surface.entries) && basicData.surface.entries.length) {
+            html += `<button type="button" class="inflection-exact" id="inflectionExactBtn">`
+                + `${escapeHtml(t('inflectionOwnEntry', { word: basicData.query }))}</button>`;
+        }
+
+        note.innerHTML = html;
+        note.hidden = false;
+
+        const exactBtn = document.getElementById('inflectionExactBtn');
+        if (exactBtn) {
+            exactBtn.addEventListener('click', () => {
+                searchInput.value = basicData.query;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                handleSearch({ exact: true });
+            });
+        }
+    }
+
     function updateHeadwordAndPronunciation(basicData, entryIndex) {
         headword.textContent = basicData.headword;
-        
+        renderInflectionNote(basicData);
+
         const entryData = basicData.entries ? basicData.entries[entryIndex] : null;
         
         const posBadge = document.getElementById('wordPosBadge');
@@ -2297,6 +2346,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Store current entry data globally for entry switching
     let currentWordData = null;
     let currentWord = null;
+    let currentSearchExact = false;
     let currentSelectedEntry = 0;
 
     class AnimationOrchestrator {
@@ -2366,7 +2416,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         );
     }
 
-    async function handleSearch({ skipBrowserHistory = false, skipSearchHistory = false } = {}) {
+    async function handleSearch({ skipBrowserHistory = false, skipSearchHistory = false, exact = false } = {}) {
         const query = searchInput.value.trim();
         if (!query) {
             searchInput.focus();
@@ -2387,7 +2437,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         clearResults();
         
         try {
-            const basicResult = await fetchSection(query, 'basic');
+            const basicResult = await fetchSection(query, 'basic', null, null, exact ? { exact: true } : {});
             const basicData = basicResult.data;
             const cacheStatus = basicResult.cacheStatus;
             
@@ -2407,7 +2457,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             
             currentWordData = basicData;
-            currentWord = query;
+            // An inflected query ("got") comes back as its lemma ("get"); every
+            // follow-up section must be fetched for the word actually shown.
+            const displayWord = basicData.headword;
+            currentSearchExact = exact;
+            currentWord = displayWord;
             currentSelectedEntry = 0;
             
             if (!skipSearchHistory) {
@@ -2446,7 +2500,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 activateTab('definitions-section');
             }
 
-            loadEntryContent(query, 0, basicData);
+            loadEntryContent(displayWord, 0, basicData);
             // Restore section-only hash tokens immediately (accordion open + scroll)
             // Sense and compare restoration happens after their respective sections load
             const _parsedHash = DeepLinks.parseHash();

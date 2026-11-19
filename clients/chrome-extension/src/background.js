@@ -113,7 +113,13 @@ async function lookupQuickDefinition(word, lang) {
       return { ok: false, notFound: true };
     }
 
-    return { ok: true, headword: data.headword, entries };
+    return {
+      ok: true,
+      headword: data.headword,
+      query: data.query || null,
+      inflectionOf: Array.isArray(data.inflection_of) ? data.inflection_of : [],
+      entries
+    };
   } catch (error) {
     return { ok: false, notFound: isLookupNotFoundError(error), error: error.message };
   }

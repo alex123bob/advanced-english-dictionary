@@ -305,6 +305,22 @@
       min-height: 22px;
     }
 
+    .inflection {
+      margin: 6px 0 0;
+      color: var(--qc-muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .inflection[hidden] {
+      display: none;
+    }
+
+    .inflection strong {
+      color: var(--qc-accent);
+      font-weight: 600;
+    }
+
     .ipa {
       color: var(--qc-ipa);
       font-family: "Iowan Old Style", Palatino, Georgia, serif;
@@ -733,6 +749,29 @@
     });
   }
 
+  // "got: simple past / past participle of get" when the API served the lemma
+  function renderInflection(el, result) {
+    const inflections = Array.isArray(result.inflectionOf) ? result.inflectionOf : [];
+    if (!result.query || !inflections.length) {
+      el.hidden = true;
+      el.innerHTML = '';
+      return;
+    }
+    const formLabel = form => {
+      const key = `inflectionForm.${form}`;
+      const label = tr(key);
+      return label === key ? form : label;
+    };
+    el.innerHTML = inflections
+      .map(item => tr('cardInflectionOf', {
+        word: escapeHtml(result.query),
+        form: escapeHtml((item.forms || []).map(formLabel).join(' / ')),
+        lemma: `<strong>${escapeHtml(item.lemma)}</strong>`
+      }))
+      .join('<br>');
+    el.hidden = false;
+  }
+
   function renderQuickCardResult(shadow, result, state) {
     const definitions = shadow.querySelector('.definitions');
 
@@ -744,6 +783,7 @@
     state.word = result.headword || state.word;
     state.entries = result.entries;
     shadow.querySelector('.word').textContent = state.word;
+    renderInflection(shadow.querySelector('.inflection'), result);
 
     if (result.entries.length > 1) {
       const select = shadow.querySelector('.form-select');
@@ -781,6 +821,7 @@
     shadow.querySelector('.forms').hidden = true;
     shadow.querySelector('.ipa').textContent = '';
     shadow.querySelector('.pos').hidden = true;
+    shadow.querySelector('.inflection').hidden = true;
 
     requestQuickDefinition(state.word, language).then(result => {
       if (token !== cardRequestToken || language !== cardLanguage || !host.isConnected) return;
@@ -817,6 +858,7 @@
         <div class="header">
           <div class="title">
             <span class="word">${escapeHtml(cleanWord)}</span>
+            <p class="inflection" hidden></p>
             <div class="meta">
               <span class="ipa"></span>
               <span class="pos" hidden></span>
