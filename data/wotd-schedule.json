@@ -938,8 +938,8 @@
   {
     "word": "infrastructure",
     "date": "2026-11-21",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-21T14:17:35.419525+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1170,6 +1170,14 @@
   {
     "word": "cumulative",
     "date": "2026-12-20",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "equivocal",
+    "date": "2026-12-21",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
