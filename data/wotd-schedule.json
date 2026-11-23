@@ -954,8 +954,8 @@
   {
     "word": "assertive",
     "date": "2026-11-23",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-23T17:29:40.778149+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1186,6 +1186,14 @@
   {
     "word": "contemplate",
     "date": "2026-12-22",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "steadfast",
+    "date": "2026-12-23",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
