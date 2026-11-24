@@ -962,8 +962,8 @@
   {
     "word": "equivalent",
     "date": "2026-11-24",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-24T17:01:28.603998+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1194,6 +1194,14 @@
   {
     "word": "steadfast",
     "date": "2026-12-23",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "isolate",
+    "date": "2026-12-24",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
