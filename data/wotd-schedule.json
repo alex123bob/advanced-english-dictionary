@@ -970,8 +970,8 @@
   {
     "word": "collaborate",
     "date": "2026-11-25",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-25T16:51:58.114373+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1202,6 +1202,14 @@
   {
     "word": "isolate",
     "date": "2026-12-24",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "tentative",
+    "date": "2026-12-25",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
