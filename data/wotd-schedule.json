@@ -978,8 +978,8 @@
   {
     "word": "adversity",
     "date": "2026-11-26",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-26T16:29:34.942589+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1210,6 +1210,14 @@
   {
     "word": "tentative",
     "date": "2026-12-25",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "framework",
+    "date": "2026-12-26",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
