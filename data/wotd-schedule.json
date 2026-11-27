@@ -986,8 +986,8 @@
   {
     "word": "revenue",
     "date": "2026-11-27",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-27T16:14:36.833262+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1218,6 +1218,14 @@
   {
     "word": "framework",
     "date": "2026-12-26",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "dynamic",
+    "date": "2026-12-27",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
