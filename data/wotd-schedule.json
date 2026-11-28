@@ -994,8 +994,8 @@
   {
     "word": "frugal",
     "date": "2026-11-28",
-    "status": "pending",
-    "published_at": null,
+    "status": "published",
+    "published_at": "2026-11-28T15:07:26.845798+00:00",
     "difficulty": null,
     "category": null
   },
@@ -1226,6 +1226,14 @@
   {
     "word": "dynamic",
     "date": "2026-12-27",
+    "status": "pending",
+    "published_at": null,
+    "difficulty": null,
+    "category": null
+  },
+  {
+    "word": "insightful",
+    "date": "2026-12-28",
     "status": "pending",
     "published_at": null,
     "difficulty": null,
